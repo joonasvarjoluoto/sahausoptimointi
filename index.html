@@ -1,0 +1,53 @@
+<body>
+
+    <h1>Sahausoptimointi</h1>
+
+    <h2>Raakalista</h2>
+
+    <label>
+        Pituus:
+        <input id="stockLength" type="number" value="6000">
+        mm
+    </label>
+    
+    <br><br>
+    
+    <label>
+        Sahanterän leveys:
+        <input id="kerf" type="number" value="3" step="0.1">
+        mm
+    </label>
+
+    <h2>Sahattavat kappaleet</h2>
+
+    <div id="cutList">
+
+        <div class="cut-row">
+            <input class="cut-length" type="number" placeholder="Mitta">
+            mm
+        
+            <input class="cut-quantity" type="number" placeholder="Kpl">
+            kpl
+        
+            <button onclick="removeCut(this)">
+                Poista
+            </button>
+        </div>
+
+    </div>
+
+    <button onclick="addCut()">
+        + Lisää mitta
+    </button>
+
+    <br><br>
+
+    <button onclick="calculate()">
+        LASKE
+    </button>
+
+    <p id="result"></p>
+
+    <script src="app.js"></script>
+
+</body>
