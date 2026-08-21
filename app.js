@@ -1,4 +1,5 @@
 
+
 function createCutRow(length = "", quantity = "1") {
 
     const row = document.createElement("div");
@@ -975,6 +976,8 @@ function scoreCuttingPlan(metrics, settings = {}) {
     const kerfRecoveryFactor =
         settings.kerfRecoveryFactor ?? 0;
 
+    const reusableRemnantHandlingPenalty =
+        settings.reusableRemnantHandlingPenalty ?? 100;
 
     if (
         !Number.isFinite(reusableRemnantThreshold) ||
@@ -983,6 +986,17 @@ function scoreCuttingPlan(metrics, settings = {}) {
 
         throw new Error(
             "Uudelleenkäytettävän jäännöksen rajan pitää olla nolla tai positiivinen luku."
+        );
+    }
+
+
+    if (
+        !Number.isFinite(reusableRemnantHandlingPenalty) ||
+        reusableRemnantHandlingPenalty < 0
+    ) {
+
+        throw new Error(
+            "Säilytettävän jäännöksen käsittelyrangaistuksen pitää olla nolla tai positiivinen luku."
         );
     }
 
@@ -1057,12 +1071,30 @@ function scoreCuttingPlan(metrics, settings = {}) {
     const kerfRecoveredValueEquivalentLength =
         metrics.totalKerfWaste * kerfRecoveryFactor;
 
-    const materialLossEquivalent =
-        metrics.totalKerfWaste * (1 - kerfRecoveryFactor) +
-        totalReusableRemnantLength *
-            (1 - reusableRemnantValueFactor) +
-        totalScrapRemnantLength * (1 - scrapValueFactor);
+    const kerfLossEquivalent =
+        metrics.totalKerfWaste *
+        (1 - kerfRecoveryFactor);
 
+    const reusableRemnantLossEquivalent =
+        totalReusableRemnantLength *
+        (1 - reusableRemnantValueFactor);
+
+    const scrapRemnantLossEquivalent =
+        totalScrapRemnantLength *
+        (1 - scrapValueFactor);
+
+    const materialLossEquivalent =
+        kerfLossEquivalent +
+        reusableRemnantLossEquivalent +
+        scrapRemnantLossEquivalent;;
+
+    const remnantHandlingPenaltyEquivalent =
+        reusableRemnants.length *
+        reusableRemnantHandlingPenalty;
+
+    const totalCostEquivalent =
+        materialLossEquivalent +
+        remnantHandlingPenaltyEquivalent;
 
     return {
         barCount: metrics.barCount,
@@ -1082,15 +1114,85 @@ function scoreCuttingPlan(metrics, settings = {}) {
         kerfRecoveredValueEquivalentLength:
             kerfRecoveredValueEquivalentLength,
         materialLossEquivalent: materialLossEquivalent,
+        remnantHandlingPenaltyEquivalent:
+            remnantHandlingPenaltyEquivalent,
+        totalCostEquivalent:
+            totalCostEquivalent,
+
+        costBreakdown: {
+            kerfLossEquivalent:
+                kerfLossEquivalent,
+            reusableRemnantLossEquivalent:
+                reusableRemnantLossEquivalent,
+            scrapRemnantLossEquivalent:
+                scrapRemnantLossEquivalent,
+            remnantHandlingPenaltyEquivalent:
+                remnantHandlingPenaltyEquivalent,
+            materialLossEquivalent:
+                materialLossEquivalent,
+            totalCostEquivalent:
+                totalCostEquivalent
+        },
+
         settings: {
             reusableRemnantThreshold: reusableRemnantThreshold,
             reusableRemnantValueFactor: reusableRemnantValueFactor,
             scrapValueFactor: scrapValueFactor,
-            kerfRecoveryFactor: kerfRecoveryFactor
+            kerfRecoveryFactor: kerfRecoveryFactor,
+            reusableRemnantHandlingPenalty:
+                reusableRemnantHandlingPenalty
         }
     };
 }
 
+function logCostBreakdown(score) {
+
+    if (
+        score === null ||
+        typeof score !== "object" ||
+        score.costBreakdown === undefined
+    ) {
+        console.log("Kustannusraporttia ei ole saatavilla.");
+        return;
+    }
+
+    const roundForDisplay = value =>
+        Math.round(value * 1000) / 1000;
+
+
+    console.table({
+        "Sahahukka": {
+            equivalentMm: roundForDisplay(
+                score.costBreakdown.kerfLossEquivalent
+            )
+        },
+        "Säilytettävien jäännösten materiaalihäviö": {
+            equivalentMm: roundForDisplay(
+                score.costBreakdown.reusableRemnantLossEquivalent
+            )
+        },
+        "Romujäännösten materiaalihäviö": {
+            equivalentMm: roundForDisplay(
+                score.costBreakdown.scrapRemnantLossEquivalent
+            )
+        },
+        "Jäännösten käsittely": {
+            equivalentMm: roundForDisplay(
+                score.costBreakdown.remnantHandlingPenaltyEquivalent
+            )
+        },
+        "Materiaalihäviö yhteensä": {
+            equivalentMm: roundForDisplay(
+                score.costBreakdown.materialLossEquivalent
+            )
+        },
+        "Kokonaiskustannus": {
+            equivalentMm: roundForDisplay(
+                score.costBreakdown.totalCostEquivalent
+            )
+        }
+    });
+}
 
 function compareCuttingPlanMaterialScores(
     firstScore,
@@ -1118,6 +1220,7 @@ function compareCuttingPlanMaterialScores(
             score === null ||
             typeof score !== "object" ||
             !Number.isFinite(score.materialLossEquivalent) ||
+            !Number.isFinite(score.totalCostEquivalent) ||
             !Number.isFinite(score.totalReusableRemnantLength) ||
             !Number.isFinite(score.totalScrapRemnantLength) ||
             !Array.isArray(score.reusableRemnants) ||
@@ -1132,15 +1235,25 @@ function compareCuttingPlanMaterialScores(
     }
 
 
-    const lossDifference =
-        firstScore.materialLossEquivalent -
-        secondScore.materialLossEquivalent;
+    const costDifference =
+        firstScore.totalCostEquivalent -
+        secondScore.totalCostEquivalent;
 
 
-    // Toleranssi rajaa vain liukulukulaskennan lähes samat materiaalihukat.
-    if (Math.abs(lossDifference) > materialLossTieTolerance) {
-        return lossDifference < 0 ? -1 : 1;
+    // Toleranssi rajaa vain liukulukulaskennan lähes samat kokonaiskustannukset.
+    if (Math.abs(costDifference) > materialLossTieTolerance) {
+        return costDifference < 0 ? -1 : 1;
     }
+
+    if (
+        firstScore.reusableRemnants.length !==
+        secondScore.reusableRemnants.length
+    ) {
+
+        return firstScore.reusableRemnants.length -
+            secondScore.reusableRemnants.length;
+    }
+
 
 
     if (
@@ -1881,6 +1994,7 @@ function optimizeOrderMaterialBeamDP(
 
     const beamWidth = options.beamWidth ?? 20;
     const patternsPerState = options.patternsPerState ?? 10;
+    const candidatePoolSize = options.candidatePoolSize ?? 50;
     const maxExtraBars = options.maxExtraBars ?? 2;
     const materialLossTieTolerance =
         options.materialLossTieTolerance ?? 1e-9;
@@ -1903,6 +2017,16 @@ function optimizeOrderMaterialBeamDP(
 
         throw new Error(
             "Tilakohtaisen ehdokasmäärän pitää olla positiivinen kokonaisluku."
+        );
+    }
+
+    if (
+        !Number.isInteger(candidatePoolSize) ||
+        candidatePoolSize < patternsPerState
+    ) {
+
+        throw new Error(
+            "Ehdokaspoolin koon pitää olla kokonaisluku ja vähintään tilakohtaisen ehdokasmäärän suuruinen."
         );
     }
 
@@ -2331,16 +2455,50 @@ function optimizeOrderMaterialBeamDP(
                 currentItems,
                 stockLength,
                 kerf,
-                patternsPerState + 1
+                candidatePoolSize + 1
             );
 
 
-            if (candidatePool.length > patternsPerState) {
+            if (candidatePool.length > candidatePoolSize) {
                 truncation.byCandidateLimit = true;
             }
 
 
-            const candidates = candidatePool.slice(
+            const rankedCandidates = candidatePool
+                .slice(0, candidatePoolSize)
+                .map(candidate => {
+
+                    const evaluation = evaluateBars([
+                        {
+                            pattern: candidate.pattern,
+                            remaining: candidate.remaining,
+                            waste: candidate.waste
+                        }
+                    ]);
+
+                    return {
+                        ...candidate,
+                        materialScore: evaluation.score
+                    };
+                })
+                .sort((first, second) => {
+
+                    const materialComparison =
+                        compareCuttingPlanMaterialScores(
+                            first.materialScore,
+                            second.materialScore,
+                            materialLossTieTolerance
+                        );
+
+                    if (materialComparison !== 0) {
+                        return materialComparison;
+                    }
+
+                    return second.dpCapacityUsed - first.dpCapacityUsed;
+                });
+
+
+            const candidates = rankedCandidates.slice(
                 0,
                 patternsPerState
             );
@@ -2415,12 +2573,13 @@ function optimizeOrderMaterialBeamDP(
 
                 if (
                     bestMaterialScore !== null &&
-                    childEvaluation.score.materialLossEquivalent >
-                        bestMaterialScore.materialLossEquivalent +
-                        materialLossTieTolerance
+                    childEvaluation.score.totalCostEquivalent >
+                    bestMaterialScore.totalCostEquivalent +
+                    materialLossTieTolerance
                 ) {
 
-                    // Valmiiden tankojen ei-negatiivinen materiaalihukka ei voi pienentyä myöhemmin.
+                    // Valmiiden tankojen materiaalihukka ja jäännösten käsittelyrangaistus
+                    // eivät voi pienentyä myöhemmin.
                     // Tasatulos jätetään silti hakuun jäännösjakauman vertailua varten.
                     stats.statesPruned++;
                     stats.statesPrunedByMaterial++;
@@ -2890,12 +3049,14 @@ function optimizeCuts(cuts, stockLength, kerf) {
 const PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS = Object.freeze({
     beamWidth: 20,
     patternsPerState: 10,
+    candidatePoolSize: 50,
     maxExtraBars: 2,
     scoreSettings: Object.freeze({
         reusableRemnantThreshold: 1000,
         reusableRemnantValueFactor: 0.9,
         scrapValueFactor: 0.1,
-        kerfRecoveryFactor: 0
+        kerfRecoveryFactor: 0,
+        reusableRemnantHandlingPenalty: 100
     })
 });
 
@@ -3130,7 +3291,7 @@ function isValidStoredWorkState(state) {
         validBarIds.has(barId)
     ) &&
         new Set(state.completedBarIds).size ===
-            state.completedBarIds.length;
+        state.completedBarIds.length;
 }
 
 
@@ -3458,11 +3619,10 @@ function renderCuttingPlan(plan) {
                     data-bar-id="${bar.id}"
                     data-bar-number="${bar.number}"
                     aria-pressed="${isCompleted}"
-                    aria-label="${
-                        isCompleted
-                            ? "Merkitse tanko " + bar.number + " keskeneräiseksi"
-                            : "Merkitse tanko " + bar.number + " tehdyksi"
-                    }"
+                    aria-label="${isCompleted
+                ? "Merkitse tanko " + bar.number + " keskeneräiseksi"
+                : "Merkitse tanko " + bar.number + " tehdyksi"
+            }"
                     onclick="toggleBarCompletion(this)"
                 >
                     ${isCompleted ? "TEHTY ✓" : "VALMIS"}
@@ -3697,6 +3857,7 @@ async function calculate() {
             return;
         }
 
+        logCostBreakdown(optimization.materialScore);
 
         const plan = adaptMaterialOptimizationForUi(
             optimization,
