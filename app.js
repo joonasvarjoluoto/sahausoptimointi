@@ -118,14 +118,6 @@ function removeRemnant(button) {
 }
 
 
-function removeRemnant(button) {
-
-    const row = button.parentElement;
-
-    row.remove();
-}
-
-
 function updateStockQuantityAvailability() {
 
     const unlimitedStock =
@@ -181,6 +173,219 @@ function getCutsFromForm() {
     return cuts;
 }
 
+function getMaterialAvailabilityFromForm() {
+
+    const stockLength =
+        Number(
+            document.getElementById("stockLength").value
+        );
+
+    const unlimitedStock =
+        document.getElementById("unlimitedStock").checked;
+
+    const stockQuantity =
+        unlimitedStock
+            ? null
+            : Number(
+                document.getElementById("stockQuantity").value
+            );
+
+    const remnantRows =
+        document.querySelectorAll(".remnant-row");
+
+    const remnants = [];
+
+    for (const row of remnantRows) {
+
+        const length =
+            Number(
+                row.querySelector(".remnant-length").value
+            );
+
+        const quantity =
+            Number(
+                row.querySelector(".remnant-quantity").value
+            );
+
+        remnants.push({
+            length: length,
+            quantity: quantity
+        });
+    }
+
+    return {
+        stockLength: stockLength,
+        unlimitedStock: unlimitedStock,
+        stockQuantity: stockQuantity,
+        remnants: remnants
+    };
+}
+
+
+function validateMaterialAvailability(materialAvailability) {
+
+    const {
+        stockLength,
+        unlimitedStock,
+        stockQuantity,
+        remnants
+    } = materialAvailability;
+
+
+    if (
+        !Number.isFinite(stockLength) ||
+        stockLength <= 0
+    ) {
+        throw new Error(
+            "Raakatangon pituuden pitää olla suurempi kuin 0."
+        );
+    }
+
+
+    if (!hasSupportedMillimeterPrecision(stockLength)) {
+        throw new Error(
+            "Raakatangon pituudessa saa olla enintään 0,1 mm tarkkuus."
+        );
+    }
+
+
+    if (typeof unlimitedStock !== "boolean") {
+        throw new Error(
+            "Raakatankojen saatavuustieto on virheellinen."
+        );
+    }
+
+
+    if (!unlimitedStock) {
+
+        if (
+            !Number.isInteger(stockQuantity) ||
+            stockQuantity < 0
+        ) {
+            throw new Error(
+                "Uusien tankojen määrän pitää olla kokonaisluku, joka on vähintään 0."
+            );
+        }
+    }
+
+
+    if (!Array.isArray(remnants)) {
+        throw new Error(
+            "Jäännösten pitää olla taulukossa."
+        );
+    }
+
+
+    for (const remnant of remnants) {
+
+        if (
+            !Number.isFinite(remnant.length) ||
+            remnant.length <= 0
+        ) {
+            throw new Error(
+                "Jäännöksen pituuden pitää olla suurempi kuin 0."
+            );
+        }
+
+
+        if (!hasSupportedMillimeterPrecision(remnant.length)) {
+            throw new Error(
+                "Jäännöksen pituudessa saa olla enintään 0,1 mm tarkkuus."
+            );
+        }
+
+
+        if (remnant.length > stockLength) {
+            throw new Error(
+                "Jäännös ei voi olla raakatankoa pidempi."
+            );
+        }
+
+
+        if (
+            !Number.isInteger(remnant.quantity) ||
+            remnant.quantity <= 0
+        ) {
+            throw new Error(
+                "Jäännöksen määrän pitää olla positiivinen kokonaisluku."
+            );
+        }
+    }
+
+
+    const remnantQuantity =
+        remnants.reduce(
+            (total, remnant) =>
+                total + remnant.quantity,
+            0
+        );
+
+
+    if (
+        !unlimitedStock &&
+        stockQuantity === 0 &&
+        remnantQuantity === 0
+    ) {
+        throw new Error(
+            "Käytettävissä ei ole yhtään materiaalikappaletta."
+        );
+    }
+
+
+    return true;
+}
+
+function createMaterialInventory(
+    materialAvailability
+) {
+
+    validateMaterialAvailability(
+        materialAvailability
+    );
+
+
+    const quantitiesByLength = new Map();
+
+
+    for (const remnant of materialAvailability.remnants) {
+
+        const currentQuantity =
+            quantitiesByLength.get(remnant.length) ?? 0;
+
+        quantitiesByLength.set(
+            remnant.length,
+            currentQuantity + remnant.quantity
+        );
+    }
+
+
+    const remnants =
+        [...quantitiesByLength.entries()]
+            .map(([length, quantity]) => ({
+                length: length,
+                quantity: quantity
+            }))
+            .sort(
+                (first, second) =>
+                    second.length - first.length
+            );
+
+
+    return {
+        newStock: {
+            length:
+                materialAvailability.stockLength,
+
+            unlimited:
+                materialAvailability.unlimitedStock,
+
+            quantity:
+                materialAvailability.stockQuantity
+        },
+
+        remnants: remnants
+    };
+}
 
 function cutPiece(remaining, piece, kerf) {
 
@@ -913,8 +1118,11 @@ function evaluateCuttingPlan(plan, stockLength) {
 
 
     const barRemnants = [];
+    const barSourceLengths = [];
+
     let totalPieceLength = 0;
     let totalKerfWaste = 0;
+    let totalStockLength = 0;
 
 
     for (const bar of plan.bars) {
@@ -929,6 +1137,32 @@ function evaluateCuttingPlan(plan, stockLength) {
                 "Jokaisen tangon pitää sisältää ryhmitelty sahauskuvio."
             );
         }
+
+        const sourceLength =
+            bar.sourceLength ?? stockLength;
+
+
+        if (
+            !Number.isFinite(sourceLength) ||
+            sourceLength <= 0
+        ) {
+
+            throw new Error(
+                "Materiaalikappaleen lähtöpituuden pitää olla suurempi kuin 0."
+            );
+        }
+
+
+        if (!hasSupportedMillimeterPrecision(sourceLength)) {
+
+            throw new Error(
+                "Materiaalikappaleen lähtöpituudessa saa olla enintään 0,1 mm tarkkuus."
+            );
+        }
+
+
+        totalStockLength += sourceLength;
+        barSourceLengths.push(sourceLength);
 
 
         if (!Number.isFinite(bar.remaining) || bar.remaining < 0) {
@@ -987,12 +1221,14 @@ function evaluateCuttingPlan(plan, stockLength) {
         0
     );
 
+
     const barCount = plan.bars.length;
 
 
     return {
         barCount: barCount,
-        totalStockLength: barCount * stockLength,
+        totalStockLength: totalStockLength,
+        barSourceLengths: [...barSourceLengths],
         totalPieceLength: totalPieceLength,
         totalKerfWaste: totalKerfWaste,
         totalRemainingLength: totalRemainingLength,
