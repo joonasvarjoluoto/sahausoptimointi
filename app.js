@@ -44,6 +44,92 @@ function createProfileTypeOptions(
         .join("");
 }
 
+function createStockProfileRow(
+    profileType,
+    quantity = "1",
+    unlimited = true
+) {
+
+    const settings = PROFILE_TYPES[profileType];
+
+    if (settings === undefined) {
+        throw new Error(
+            "Tuntematon profiilityyppi: " + profileType
+        );
+    }
+
+
+    const row = document.createElement("div");
+
+    row.className = "stock-profile-row";
+    row.dataset.profileType = profileType;
+
+    row.innerHTML = `
+        <span class="stock-profile-name">
+            ${settings.label}
+        </span>
+
+        <input
+            class="stock-profile-quantity"
+            type="number"
+            min="0"
+            step="1"
+            inputmode="numeric"
+            aria-label="${settings.label}, määrä"
+        >
+
+        <label class="stock-profile-unlimited">
+            <input
+                class="stock-profile-unlimited-checkbox"
+                type="checkbox"
+                ${unlimited ? "checked" : ""}
+                onchange="updateStockProfileQuantityAvailability(this)"
+            >
+            <span>Rajaton</span>
+        </label>
+    `;
+
+    const quantityInput =
+        row.querySelector(".stock-profile-quantity");
+
+    quantityInput.value = String(quantity);
+    quantityInput.disabled = unlimited;
+
+    return row;
+}
+
+
+function createDefaultStockProfileRows() {
+
+    const stockProfileList =
+        document.getElementById("stockProfileList");
+
+    stockProfileList.replaceChildren(
+        ...Object.keys(PROFILE_TYPES).map(
+            profileType =>
+                createStockProfileRow(profileType)
+        )
+    );
+}
+
+
+function updateStockProfileQuantityAvailability(
+    unlimitedCheckbox
+) {
+
+    const row =
+        unlimitedCheckbox.closest(".stock-profile-row");
+
+    if (row === null) {
+        return;
+    }
+
+    const quantityInput =
+        row.querySelector(".stock-profile-quantity");
+
+    quantityInput.disabled =
+        unlimitedCheckbox.checked;
+}
 
 function createCutRow(
     length = "",
@@ -4185,7 +4271,7 @@ function getRemnantStatusLabel(remnantStatus) {
 
 
 const WORK_STORAGE_KEY = "sahausoptimointi.currentWork";
-const WORK_STATE_SCHEMA_VERSION = 2;
+const WORK_STATE_SCHEMA_VERSION = 3;
 const WORK_STATE_ENGINE_VERSION = "material-v0.2";
 
 const DEFAULT_STOCK_LENGTH = "6000";
@@ -4217,11 +4303,54 @@ function isValidStoredInputRows(inputRows) {
         inputRows.length <= 1000 &&
         inputRows.every(row =>
             isPlainObject(row) &&
+            typeof row.profileType === "string" &&
+            PROFILE_TYPES[row.profileType] !== undefined &&
             isStoredInputValue(row.length) &&
             isStoredInputValue(row.quantity)
         );
 }
 
+function isValidStoredStockProfileRows(
+    stockProfileRows
+) {
+
+    if (
+        !Array.isArray(stockProfileRows) ||
+        stockProfileRows.length !==
+        Object.keys(PROFILE_TYPES).length
+    ) {
+        return false;
+    }
+
+
+    const profileTypes =
+        stockProfileRows.map(
+            row => row.profileType
+        );
+
+
+    if (
+        stockProfileRows.some(row =>
+            !isPlainObject(row) ||
+            typeof row.profileType !== "string" ||
+            PROFILE_TYPES[row.profileType] === undefined ||
+            !isStoredInputValue(row.quantity) ||
+            typeof row.unlimited !== "boolean"
+        )
+    ) {
+        return false;
+    }
+
+
+    return (
+        new Set(profileTypes).size ===
+        profileTypes.length
+    ) &&
+        Object.keys(PROFILE_TYPES).every(
+            profileType =>
+                profileTypes.includes(profileType)
+        );
+}
 
 function isValidStoredPlan(plan) {
 
@@ -4285,6 +4414,9 @@ function isValidStoredWorkState(state) {
         !isStoredInputValue(state.stockQuantity) ||
         typeof state.unlimitedStock !== "boolean" ||
         !isStoredInputValue(state.kerf) ||
+        !isValidStoredStockProfileRows(
+            state.stockProfileRows
+        ) ||
         !isValidStoredInputRows(state.remnantRows) ||
         !isValidStoredInputRows(state.inputRows) ||
         !Array.isArray(state.completedBarIds)
@@ -4321,6 +4453,9 @@ function getInputRowsForStorage() {
 
     return [...document.querySelectorAll("#cutList .cut-row")].map(
         row => ({
+            profileType:
+                row.querySelector(".cut-profile-type").value,
+
             length:
                 row.querySelector(".cut-length").value,
 
@@ -4335,6 +4470,9 @@ function getRemnantRowsForStorage() {
 
     return [...document.querySelectorAll(".remnant-row")].map(
         row => ({
+            profileType:
+                row.querySelector(".remnant-profile-type").value,
+
             length:
                 row.querySelector(".remnant-length").value,
 
@@ -4342,6 +4480,29 @@ function getRemnantRowsForStorage() {
                 row.querySelector(".remnant-quantity").value
         })
     );
+}
+
+function getStockProfileRowsForStorage() {
+
+    return [
+        ...document.querySelectorAll(
+            "#stockProfileList .stock-profile-row"
+        )
+    ].map(row => ({
+
+        profileType:
+            row.dataset.profileType,
+
+        quantity:
+            row.querySelector(
+                ".stock-profile-quantity"
+            ).value,
+
+        unlimited:
+            row.querySelector(
+                ".stock-profile-unlimited-checkbox"
+            ).checked
+    }));
 }
 
 
@@ -4363,6 +4524,9 @@ function createWorkStateSnapshot() {
 
         kerf:
             document.getElementById("kerf").value,
+
+        stockProfileRows:
+            getStockProfileRowsForStorage(),
 
         remnantRows:
             getRemnantRowsForStorage(),
@@ -4413,6 +4577,8 @@ function resetWorkToDefaults() {
         DEFAULT_KERF;
 
     updateStockQuantityAvailability();
+
+    createDefaultStockProfileRows();
 
     const remnantList =
         document.getElementById("remnantList");
@@ -4502,6 +4668,20 @@ function restoreSavedWorkState() {
 
     updateStockQuantityAvailability();
 
+    const stockProfileList =
+        document.getElementById("stockProfileList");
+
+    stockProfileList.replaceChildren(
+        ...state.stockProfileRows.map(
+            row =>
+                createStockProfileRow(
+                    row.profileType,
+                    row.quantity,
+                    row.unlimited
+                )
+        )
+    );
+
 
     const remnantList =
         document.getElementById("remnantList");
@@ -4514,7 +4694,8 @@ function restoreSavedWorkState() {
         remnantList.appendChild(
             createRemnantRow(
                 remnantRow.length,
-                remnantRow.quantity
+                remnantRow.quantity,
+                remnantRow.profileType
             )
         );
     }
@@ -4528,7 +4709,11 @@ function restoreSavedWorkState() {
 
     for (const inputRow of state.inputRows) {
         cutList.appendChild(
-            createCutRow(inputRow.length, inputRow.quantity)
+            createCutRow(
+                inputRow.length,
+                inputRow.quantity,
+                inputRow.profileType
+            )
         );
     }
 
@@ -5000,6 +5185,8 @@ async function calculate() {
 
 function initializeWorkPersistence() {
 
+    createDefaultStockProfileRows();
+
     document.addEventListener("input", event => {
 
         if (
@@ -5007,6 +5194,7 @@ function initializeWorkPersistence() {
                 "#stockLength, " +
                 "#stockQuantity, " +
                 "#kerf, " +
+                ".stock-profile-quantity, " +
                 ".remnant-length, " +
                 ".remnant-quantity, " +
                 ".cut-length, " +
@@ -5020,7 +5208,14 @@ function initializeWorkPersistence() {
 
     document.addEventListener("change", event => {
 
-        if (event.target.matches("#unlimitedStock")) {
+        if (
+            event.target.matches(
+                "#unlimitedStock, " +
+                ".stock-profile-unlimited-checkbox, " +
+                ".remnant-profile-type, " +
+                ".cut-profile-type"
+            )
+        ) {
             handleOrderInputChange();
         }
     });
