@@ -112,6 +112,23 @@ function createDefaultStockProfileRows() {
     );
 }
 
+function updateStockProfileQuantityAvailability(
+    unlimitedCheckbox
+) {
+
+    const row =
+        unlimitedCheckbox.closest(".stock-profile-row");
+
+    if (row === null) {
+        return;
+    }
+
+    const quantityInput =
+        row.querySelector(".stock-profile-quantity");
+
+    quantityInput.disabled =
+        unlimitedCheckbox.checked;
+}
 
 function createCutRow(
     length = "",
@@ -247,19 +264,6 @@ function removeRemnant(button) {
     row.remove();
 
     handleOrderInputChange();
-}
-
-
-function updateStockQuantityAvailability() {
-
-    const unlimitedStock =
-        document.getElementById("unlimitedStock");
-
-    const stockQuantity =
-        document.getElementById("stockQuantity");
-
-    stockQuantity.disabled =
-        unlimitedStock.checked;
 }
 
 
@@ -989,25 +993,41 @@ function calculatePostOrderMaterialInventory(
         );
 
 
-    const quantitiesByLength = new Map();
+    const remnantsByProfileAndLength =
+        new Map();
 
 
-    function addRemnant(length, quantity) {
+    function addRemnant(
+        profileType,
+        length,
+        quantity
+    ) {
 
         const lengthUnits =
             millimetersToDpUnits(length);
 
+        const key =
+            profileType +
+            ":" +
+            lengthUnits;
+
         const existing =
-            quantitiesByLength.get(lengthUnits);
+            remnantsByProfileAndLength.get(key);
 
 
         if (existing === undefined) {
 
-            quantitiesByLength.set(
-                lengthUnits,
+            remnantsByProfileAndLength.set(
+                key,
                 {
-                    length: length,
-                    quantity: quantity
+                    profileType:
+                        profileType,
+
+                    length:
+                        length,
+
+                    quantity:
+                        quantity
                 }
             );
 
@@ -1022,6 +1042,7 @@ function calculatePostOrderMaterialInventory(
     for (const remnant of usage.unusedRemnants) {
 
         addRemnant(
+            remnant.profileType,
             remnant.length,
             remnant.quantity
         );
@@ -1049,11 +1070,18 @@ function calculatePostOrderMaterialInventory(
         if (evaluation.disposition === "reusable") {
 
             generatedRemnants.push({
-                length: bar.remaining,
-                quantity: 1
+                profileType:
+                    bar.profileType,
+
+                length:
+                    bar.remaining,
+
+                quantity:
+                    1
             });
 
             addRemnant(
+                bar.profileType,
                 bar.remaining,
                 1
             );
@@ -1061,39 +1089,69 @@ function calculatePostOrderMaterialInventory(
         } else {
 
             scrapRemnants.push({
-                length: bar.remaining,
-                quantity: 1
+                profileType:
+                    bar.profileType,
+
+                length:
+                    bar.remaining,
+
+                quantity:
+                    1
             });
         }
     }
 
 
     const remnants =
-        [...quantitiesByLength.values()]
-            .sort(
-                (first, second) =>
-                    second.length - first.length
-            );
+        [...remnantsByProfileAndLength.values()]
+            .sort((first, second) => {
+
+                if (
+                    first.profileType !==
+                    second.profileType
+                ) {
+                    return first.profileType.localeCompare(
+                        second.profileType
+                    );
+                }
+
+                return second.length -
+                    first.length;
+            });
+
+
+    const newStock =
+        usage.newStockUsage.map(
+            stock => ({
+                profileType:
+                    stock.profileType,
+
+                unlimited:
+                    stock.unlimited,
+
+                quantity:
+                    stock.unlimited
+                        ? null
+                        : stock.remainingQuantity
+            })
+        );
 
 
     return {
-        newStock: {
-            length:
-                materialInventory.newStock.length,
+        stockLength:
+            materialInventory.stockLength,
 
-            unlimited:
-                materialInventory.newStock.unlimited,
+        newStock:
+            newStock,
 
-            quantity:
-                materialInventory.newStock.unlimited
-                    ? null
-                    : usage.newStockRemainingQuantity
-        },
+        remnants:
+            remnants,
 
-        remnants: remnants,
+        generatedRemnants:
+            generatedRemnants,
 
-        generatedRemnants: generatedRemnants,
-        scrapRemnants: scrapRemnants
+        scrapRemnants:
+            scrapRemnants
     };
 }
 
@@ -5454,6 +5512,132 @@ function initializeWorkPersistence() {
     restoreSavedWorkState();
 }
 
+function runPostOrderMaterialInventoryTest() {
+
+    const materialAvailability = {
+        stockLength: 6000,
+
+        newStock: [
+            {
+                profileType: "uProfile",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "verticalProfile",
+                unlimited: false,
+                quantity: 2
+            },
+            {
+                profileType: "horizontalProfile",
+                unlimited: false,
+                quantity: 1
+            },
+            {
+                profileType: "topRail",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "bottomRail",
+                unlimited: true,
+                quantity: null
+            }
+        ],
+
+        remnants: [
+            {
+                profileType: "verticalProfile",
+                length: 2600,
+                quantity: 2
+            },
+            {
+                profileType: "horizontalProfile",
+                length: 2600,
+                quantity: 1
+            }
+        ]
+    };
+
+
+    const inventory =
+        createMaterialInventory(
+            materialAvailability
+        );
+
+
+    const plan = {
+        complete: true,
+
+        bars: [
+            {
+                source: "remnant",
+                profileType: "verticalProfile",
+                sourceLength: 2600,
+
+                pattern: [
+                    {
+                        length: 1500,
+                        quantity: 1
+                    }
+                ],
+
+                remaining: 1097,
+                waste: 3
+            },
+
+            {
+                source: "remnant",
+                profileType: "horizontalProfile",
+                sourceLength: 2600,
+
+                pattern: [
+                    {
+                        length: 1000,
+                        quantity: 1
+                    }
+                ],
+
+                remaining: 1597,
+                waste: 3
+            },
+
+            {
+                source: "new",
+                profileType: "verticalProfile",
+                sourceLength: 6000,
+
+                pattern: [
+                    {
+                        length: 2000,
+                        quantity: 1
+                    }
+                ],
+
+                remaining: 3997,
+                waste: 3
+            }
+        ]
+    };
+
+
+    const result =
+        calculatePostOrderMaterialInventory(
+            plan,
+            inventory,
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+                .scoreSettings
+        );
+
+
+    console.log(
+        "POST-ORDER MATERIAL INVENTORY TEST"
+    );
+
+    console.log(result);
+
+    return result;
+}
 
 if (typeof document !== "undefined") {
     initializeWorkPersistence();
