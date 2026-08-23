@@ -44,6 +44,100 @@ function createCutRow(length = "", quantity = "1") {
     return row;
 }
 
+function createRemnantRow(
+    length = "",
+    quantity = "1"
+) {
+
+    const row = document.createElement("div");
+
+    row.className = "cut-row remnant-row";
+
+    row.innerHTML = `
+        <label class="form-field">
+            <span>Jäännöksen pituus (mm)</span>
+            <input
+                class="remnant-length"
+                type="number"
+                step="0.1"
+                inputmode="decimal"
+                placeholder="Mitta"
+            >
+        </label>
+
+        <label class="form-field">
+            <span>Määrä (kpl)</span>
+            <input
+                class="remnant-quantity"
+                type="number"
+                step="1"
+                inputmode="numeric"
+                placeholder="Kpl"
+            >
+        </label>
+
+        <button
+            class="remove-cut-button"
+            type="button"
+            onclick="removeRemnant(this)"
+        >
+            POISTA
+        </button>
+    `;
+
+    row.querySelector(".remnant-length").value =
+        String(length);
+
+    row.querySelector(".remnant-quantity").value =
+        String(quantity);
+
+    return row;
+}
+
+
+function addRemnant() {
+
+    const remnantList =
+        document.getElementById("remnantList");
+
+    remnantList.appendChild(
+        createRemnantRow()
+    );
+
+    handleOrderInputChange();
+}
+
+
+function removeRemnant(button) {
+
+    const row = button.parentElement;
+
+    row.remove();
+
+    handleOrderInputChange();
+}
+
+
+function removeRemnant(button) {
+
+    const row = button.parentElement;
+
+    row.remove();
+}
+
+
+function updateStockQuantityAvailability() {
+
+    const unlimitedStock =
+        document.getElementById("unlimitedStock");
+
+    const stockQuantity =
+        document.getElementById("stockQuantity");
+
+    stockQuantity.disabled =
+        unlimitedStock.checked;
+}
+
 
 function addCut() {
 
@@ -3455,9 +3549,12 @@ function getRemnantStatusLabel(remnantStatus) {
 
 
 const WORK_STORAGE_KEY = "sahausoptimointi.currentWork";
-const WORK_STATE_SCHEMA_VERSION = 1;
+const WORK_STATE_SCHEMA_VERSION = 2;
 const WORK_STATE_ENGINE_VERSION = "material-v0.2";
+
 const DEFAULT_STOCK_LENGTH = "6000";
+const DEFAULT_STOCK_QUANTITY = "1";
+const DEFAULT_UNLIMITED_STOCK = true;
 const DEFAULT_KERF = "3";
 
 const completedBarIds = new Set();
@@ -3549,7 +3646,10 @@ function isValidStoredWorkState(state) {
         typeof state.savedAt !== "string" ||
         !Number.isFinite(Date.parse(state.savedAt)) ||
         !isStoredInputValue(state.stockLength) ||
+        !isStoredInputValue(state.stockQuantity) ||
+        typeof state.unlimitedStock !== "boolean" ||
         !isStoredInputValue(state.kerf) ||
+        !isValidStoredInputRows(state.remnantRows) ||
         !isValidStoredInputRows(state.inputRows) ||
         !Array.isArray(state.completedBarIds)
     ) {
@@ -3583,10 +3683,29 @@ function isValidStoredWorkState(state) {
 
 function getInputRowsForStorage() {
 
-    return [...document.querySelectorAll(".cut-row")].map(row => ({
-        length: row.querySelector(".cut-length").value,
-        quantity: row.querySelector(".cut-quantity").value
-    }));
+    return [...document.querySelectorAll("#cutList .cut-row")].map(
+        row => ({
+            length:
+                row.querySelector(".cut-length").value,
+
+            quantity:
+                row.querySelector(".cut-quantity").value
+        })
+    );
+}
+
+
+function getRemnantRowsForStorage() {
+
+    return [...document.querySelectorAll(".remnant-row")].map(
+        row => ({
+            length:
+                row.querySelector(".remnant-length").value,
+
+            quantity:
+                row.querySelector(".remnant-quantity").value
+        })
+    );
 }
 
 
@@ -3596,14 +3715,29 @@ function createWorkStateSnapshot() {
         schemaVersion: WORK_STATE_SCHEMA_VERSION,
         engineVersion: WORK_STATE_ENGINE_VERSION,
         savedAt: new Date().toISOString(),
-        stockLength: document.getElementById("stockLength").value,
-        kerf: document.getElementById("kerf").value,
-        inputRows: getInputRowsForStorage(),
+
+        stockLength:
+            document.getElementById("stockLength").value,
+
+        stockQuantity:
+            document.getElementById("stockQuantity").value,
+
+        unlimitedStock:
+            document.getElementById("unlimitedStock").checked,
+
+        kerf:
+            document.getElementById("kerf").value,
+
+        remnantRows:
+            getRemnantRowsForStorage(),
+
+        inputRows:
+            getInputRowsForStorage(),
+
         generatedPlan: currentGeneratedPlan,
         completedBarIds: [...completedBarIds]
     };
 }
-
 
 function saveCurrentWorkState() {
 
@@ -3632,9 +3766,25 @@ function resetWorkToDefaults() {
 
     document.getElementById("stockLength").value =
         DEFAULT_STOCK_LENGTH;
-    document.getElementById("kerf").value = DEFAULT_KERF;
 
-    const cutList = document.getElementById("cutList");
+    document.getElementById("stockQuantity").value =
+        DEFAULT_STOCK_QUANTITY;
+
+    document.getElementById("unlimitedStock").checked =
+        DEFAULT_UNLIMITED_STOCK;
+
+    document.getElementById("kerf").value =
+        DEFAULT_KERF;
+
+    updateStockQuantityAvailability();
+
+    const remnantList =
+        document.getElementById("remnantList");
+
+    remnantList.replaceChildren();
+
+    const cutList =
+        document.getElementById("cutList");
 
     cutList.replaceChildren(createCutRow());
 
@@ -3704,9 +3854,38 @@ function restoreSavedWorkState() {
 
     document.getElementById("stockLength").value =
         String(state.stockLength);
-    document.getElementById("kerf").value = String(state.kerf);
 
-    const cutList = document.getElementById("cutList");
+    document.getElementById("stockQuantity").value =
+        String(state.stockQuantity);
+
+    document.getElementById("unlimitedStock").checked =
+        state.unlimitedStock;
+
+    document.getElementById("kerf").value =
+        String(state.kerf);
+
+    updateStockQuantityAvailability();
+
+
+    const remnantList =
+        document.getElementById("remnantList");
+
+    remnantList.replaceChildren();
+
+
+    for (const remnantRow of state.remnantRows) {
+
+        remnantList.appendChild(
+            createRemnantRow(
+                remnantRow.length,
+                remnantRow.quantity
+            )
+        );
+    }
+
+
+    const cutList =
+        document.getElementById("cutList");
 
     cutList.replaceChildren();
 
@@ -4189,12 +4368,27 @@ function initializeWorkPersistence() {
 
         if (
             event.target.matches(
-                "#stockLength, #kerf, .cut-length, .cut-quantity"
+                "#stockLength, " +
+                "#stockQuantity, " +
+                "#kerf, " +
+                ".remnant-length, " +
+                ".remnant-quantity, " +
+                ".cut-length, " +
+                ".cut-quantity"
             )
         ) {
             handleOrderInputChange();
         }
     });
+
+
+    document.addEventListener("change", event => {
+
+        if (event.target.matches("#unlimitedStock")) {
+            handleOrderInputChange();
+        }
+    });
+
 
     restoreSavedWorkState();
 }

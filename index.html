@@ -20,6 +20,7 @@
             <h2 id="stockHeading">Raakalista</h2>
 
             <div class="stock-fields">
+
                 <label class="form-field" for="stockLength">
                     <span>Raakatangon pituus (mm)</span>
                     <input
@@ -41,8 +42,52 @@
                         inputmode="decimal"
                     >
                 </label>
+
+                <label class="form-field" for="stockQuantity">
+                    <span>Uusien tankojen määrä (kpl)</span>
+                    <input
+                        id="stockQuantity"
+                        type="number"
+                        value="1"
+                        min="0"
+                        step="1"
+                        inputmode="numeric"
+                        disabled
+                    >
+                </label>
+
             </div>
+
+            <label class="stock-unlimited-toggle">
+                <input
+                    id="unlimitedStock"
+                    type="checkbox"
+                    checked
+                    onchange="updateStockQuantityAvailability()"
+                >
+                <span>Uusia tankoja käytettävissä rajattomasti</span>
+            </label>
         </section>
+
+
+        <section class="input-panel" aria-labelledby="remnantsHeading">
+            <h2 id="remnantsHeading">Käytettävissä olevat jäännökset</h2>
+
+            <p class="section-description">
+                Lisää tähän varastosta löytyvät jäännöspalat.
+            </p>
+
+            <div id="remnantList"></div>
+
+            <button
+                class="add-cut-button"
+                type="button"
+                onclick="addRemnant()"
+            >
+                + LISÄÄ JÄÄNNÖS
+            </button>
+        </section>
+
 
         <section class="input-panel" aria-labelledby="cutsHeading">
             <h2 id="cutsHeading">Sahattavat kappaleet</h2>
@@ -93,6 +138,7 @@
             </button>
         </section>
 
+
         <button
             id="calculateButton"
             class="calculate-button"
@@ -104,9 +150,17 @@
 
         <div id="result" aria-live="polite"></div>
 
-        <section class="new-work-section" aria-labelledby="newWorkHeading">
+
+        <section
+            class="new-work-section"
+            aria-labelledby="newWorkHeading"
+        >
             <h2 id="newWorkHeading">Aloita alusta</h2>
-            <p>Poistaa tallennetun työn ja palauttaa oletussyötteet.</p>
+
+            <p>
+                Poistaa tallennetun työn ja palauttaa oletussyötteet.
+            </p>
+
             <button
                 class="new-work-button"
                 type="button"
