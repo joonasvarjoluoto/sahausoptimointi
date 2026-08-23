@@ -4508,6 +4508,620 @@ function optimizeOrderMaterialBeamDP(
 }
 
 
+function optimizeOrderInventoryBeamDP(
+    items,
+    materialSources,
+    kerf,
+    options = {}
+) {
+
+    if (!Array.isArray(items)) {
+        throw new Error(
+            "Kappaleiden pitää olla taulukossa."
+        );
+    }
+
+
+    if (!Array.isArray(materialSources)) {
+        throw new Error(
+            "Materiaalilähteiden pitää olla taulukossa."
+        );
+    }
+
+
+    const beamWidth =
+        options.beamWidth ?? 50;
+
+    const patternsPerSource =
+        options.patternsPerState ?? 10;
+
+    const scoreSettings =
+        options.scoreSettings ?? {};
+
+
+    if (
+        !Number.isInteger(beamWidth) ||
+        beamWidth <= 0
+    ) {
+        throw new Error(
+            "Beam-leveyden pitää olla positiivinen kokonaisluku."
+        );
+    }
+
+
+    function copyItems(sourceItems) {
+
+        return sourceItems.map(item => ({
+            length: item.length,
+            quantity: item.quantity
+        }));
+    }
+
+
+    function copySources(sourceList) {
+
+        return sourceList.map(source => ({
+            ...source
+        }));
+    }
+
+
+    function copyBars(sourceBars) {
+
+        return sourceBars.map(bar => ({
+            pattern: bar.pattern.map(item => ({
+                length: item.length,
+                quantity: item.quantity
+            })),
+
+            remaining: bar.remaining,
+            waste: bar.waste,
+
+            source: bar.source,
+            profileType: bar.profileType,
+            sourceLength: bar.sourceLength
+        }));
+    }
+
+
+    function getPositiveItems(sourceItems) {
+
+        return sourceItems
+            .filter(item => item.quantity > 0)
+            .map(item => ({
+                length: item.length,
+                quantity: item.quantity
+            }));
+    }
+
+
+    function subtractPattern(
+        sourceItems,
+        pattern
+    ) {
+
+        const nextItems =
+            copyItems(sourceItems);
+
+
+        for (const patternItem of pattern) {
+
+            let quantityToSubtract =
+                patternItem.quantity;
+
+
+            for (const item of nextItems) {
+
+                if (
+                    item.length !==
+                    patternItem.length ||
+                    item.quantity <= 0
+                ) {
+                    continue;
+                }
+
+
+                const quantity =
+                    Math.min(
+                        item.quantity,
+                        quantityToSubtract
+                    );
+
+
+                item.quantity -= quantity;
+
+                quantityToSubtract -=
+                    quantity;
+
+
+                if (quantityToSubtract === 0) {
+                    break;
+                }
+            }
+
+
+            if (quantityToSubtract > 0) {
+                return null;
+            }
+        }
+
+
+        return nextItems;
+    }
+
+
+    function getRemainingQuantity(
+        remainingItems
+    ) {
+
+        return remainingItems.reduce(
+            (total, item) =>
+                total + item.quantity,
+            0
+        );
+    }
+
+
+    function getRemainingSize(
+        remainingItems
+    ) {
+
+        return remainingItems.reduce(
+            (total, item) =>
+                total +
+                item.quantity *
+                (item.length + kerf),
+            0
+        );
+    }
+
+
+    function getNewStockBarsUsed(bars) {
+
+        return bars.filter(
+            bar => bar.source === "new"
+        ).length;
+    }
+
+
+    function getStateKey(state) {
+
+        const itemKey =
+            state.remainingItems
+                .map(item => item.quantity)
+                .join(",");
+
+
+        const sourceKey =
+            state.remainingMaterialSources
+                .map(source =>
+                    source.source +
+                    ":" +
+                    source.sourceLength +
+                    ":" +
+                    (
+                        source.unlimited
+                            ? "U"
+                            : source.quantity
+                    )
+                )
+                .join("|");
+
+
+        return itemKey + "//" + sourceKey;
+    }
+
+
+    function getBarsKey(bars) {
+
+        return bars
+            .map(bar => {
+
+                const patternKey =
+                    bar.pattern
+                        .map(item =>
+                            item.length +
+                            ":" +
+                            item.quantity
+                        )
+                        .join(",");
+
+
+                return (
+                    bar.source +
+                    ":" +
+                    bar.sourceLength +
+                    ":" +
+                    patternKey
+                );
+            })
+            .join("|");
+    }
+
+
+    function compareStates(
+        first,
+        second
+    ) {
+
+        if (
+            first.remainingQuantity !==
+            second.remainingQuantity
+        ) {
+            return (
+                first.remainingQuantity -
+                second.remainingQuantity
+            );
+        }
+
+
+        if (
+            first.newStockBarsUsed !==
+            second.newStockBarsUsed
+        ) {
+            return (
+                first.newStockBarsUsed -
+                second.newStockBarsUsed
+            );
+        }
+
+
+        if (
+            first.remainingSize !==
+            second.remainingSize
+        ) {
+            return (
+                first.remainingSize -
+                second.remainingSize
+            );
+        }
+
+
+        const firstKey =
+            getBarsKey(first.bars);
+
+        const secondKey =
+            getBarsKey(second.bars);
+
+
+        if (firstKey < secondKey) {
+            return -1;
+        }
+
+
+        if (firstKey > secondKey) {
+            return 1;
+        }
+
+
+        return 0;
+    }
+
+
+    function createState(
+        remainingItems,
+        remainingMaterialSources,
+        bars
+    ) {
+
+        return {
+            remainingItems:
+                remainingItems,
+
+            remainingMaterialSources:
+                remainingMaterialSources,
+
+            bars:
+                bars,
+
+            remainingQuantity:
+                getRemainingQuantity(
+                    remainingItems
+                ),
+
+            remainingSize:
+                getRemainingSize(
+                    remainingItems
+                ),
+
+            newStockBarsUsed:
+                getNewStockBarsUsed(
+                    bars
+                )
+        };
+    }
+
+
+    const stats = {
+        statesExpanded: 0,
+        statesGenerated: 0,
+        statesDeduplicated: 0,
+        completeSolutionsEvaluated: 0,
+        maxBeamSize: 1
+    };
+
+
+    const rootState =
+        createState(
+            copyItems(items),
+            copySources(materialSources),
+            []
+        );
+
+
+    let bestIncompleteState =
+        rootState;
+
+    let bestCompleteState =
+        null;
+
+    let bestCompleteScore =
+        null;
+
+
+    let beam = [
+        rootState
+    ];
+
+
+    while (beam.length > 0) {
+
+        const generatedStates = [];
+
+
+        for (const state of beam) {
+
+            stats.statesExpanded++;
+
+
+            const currentItems =
+                getPositiveItems(
+                    state.remainingItems
+                );
+
+
+            if (currentItems.length === 0) {
+                continue;
+            }
+
+
+            const candidates =
+                findMaterialSourceCandidates(
+                    currentItems,
+                    state.remainingMaterialSources,
+                    kerf,
+                    patternsPerSource
+                );
+
+
+            for (const candidate of candidates) {
+
+                const childRemainingItems =
+                    subtractPattern(
+                        state.remainingItems,
+                        candidate.pattern
+                    );
+
+
+                if (
+                    childRemainingItems === null
+                ) {
+                    continue;
+                }
+
+
+                const childMaterialSources =
+                    consumeMaterialSource(
+                        state.remainingMaterialSources,
+                        candidate
+                    );
+
+
+                if (
+                    childMaterialSources === null
+                ) {
+                    continue;
+                }
+
+
+                const childBars = [
+                    ...state.bars,
+
+                    {
+                        pattern:
+                            candidate.pattern.map(
+                                item => ({
+                                    length:
+                                        item.length,
+
+                                    quantity:
+                                        item.quantity
+                                })
+                            ),
+
+                        remaining:
+                            candidate.remaining,
+
+                        waste:
+                            candidate.waste,
+
+                        source:
+                            candidate.source,
+
+                        profileType:
+                            candidate.profileType,
+
+                        sourceLength:
+                            candidate.sourceLength
+                    }
+                ];
+
+
+                const childState =
+                    createState(
+                        childRemainingItems,
+                        childMaterialSources,
+                        childBars
+                    );
+
+
+                stats.statesGenerated++;
+
+
+                if (
+                    compareStates(
+                        childState,
+                        bestIncompleteState
+                    ) < 0
+                ) {
+                    bestIncompleteState =
+                        childState;
+                }
+
+
+                if (
+                    childState.remainingQuantity ===
+                    0
+                ) {
+
+                    stats.completeSolutionsEvaluated++;
+
+
+                    const score =
+                        scoreCompleteMaterialTransitionPlan(
+                            {
+                                complete: true,
+                                bars:
+                                    childState.bars
+                            },
+                            scoreSettings
+                        );
+
+
+                    if (
+                        bestCompleteScore === null ||
+                        score.totalCostEquivalent <
+                        bestCompleteScore.totalCostEquivalent
+                    ) {
+
+                        bestCompleteState =
+                            childState;
+
+                        bestCompleteScore =
+                            score;
+                    }
+
+
+                    continue;
+                }
+
+
+                generatedStates.push(
+                    childState
+                );
+            }
+        }
+
+
+        const distinctStates =
+            new Map();
+
+
+        for (const state of generatedStates) {
+
+            const key =
+                getStateKey(state);
+
+            const existing =
+                distinctStates.get(key);
+
+
+            if (existing === undefined) {
+
+                distinctStates.set(
+                    key,
+                    state
+                );
+
+                continue;
+            }
+
+
+            stats.statesDeduplicated++;
+
+
+            if (
+                compareStates(
+                    state,
+                    existing
+                ) < 0
+            ) {
+
+                distinctStates.set(
+                    key,
+                    state
+                );
+            }
+        }
+
+
+        const rankedStates =
+            [...distinctStates.values()]
+                .sort(compareStates);
+
+
+        beam =
+            rankedStates.slice(
+                0,
+                beamWidth
+            );
+
+
+        stats.maxBeamSize =
+            Math.max(
+                stats.maxBeamSize,
+                beam.length
+            );
+    }
+
+
+    const resultState =
+        bestCompleteState ??
+        bestIncompleteState;
+
+
+    return {
+        complete:
+            bestCompleteState !== null,
+
+        bars:
+            copyBars(
+                resultState.bars
+            ),
+
+        remainingItems:
+            getPositiveItems(
+                resultState.remainingItems
+            ),
+
+        remainingMaterialSources:
+            copySources(
+                resultState
+                    .remainingMaterialSources
+            ),
+
+        barCount:
+            resultState.bars.length,
+
+        materialTransitionScore:
+            bestCompleteScore,
+
+        stats:
+            stats
+    };
+}
+
+
 function generateCombinations(pieces) {
 
     const combinations = [];
@@ -6634,6 +7248,90 @@ function runMaterialTransitionScoreTest() {
     };
 }
 
+
+function runInventoryBeamAvailabilityTest() {
+
+    const noNewStockSources = [
+        {
+            source: "remnant",
+            profileType: "horizontalProfile",
+            sourceLength: 2800,
+            unlimited: false,
+            quantity: 1
+        }
+    ];
+
+
+    const impossibleResult =
+        optimizeOrderInventoryBeamDP(
+            [
+                {
+                    length: 2700,
+                    quantity: 2
+                }
+            ],
+            noNewStockSources,
+            3,
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+        );
+
+
+    const mixedSources = [
+        {
+            source: "remnant",
+            profileType: "horizontalProfile",
+            sourceLength: 2800,
+            unlimited: false,
+            quantity: 1
+        },
+        {
+            source: "new",
+            profileType: "horizontalProfile",
+            sourceLength: 6000,
+            unlimited: false,
+            quantity: 1
+        }
+    ];
+
+
+    const mixedResult =
+        optimizeOrderInventoryBeamDP(
+            [
+                {
+                    length: 2700,
+                    quantity: 1
+                },
+                {
+                    length: 3300,
+                    quantity: 1
+                }
+            ],
+            mixedSources,
+            3,
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+        );
+
+
+    console.log(
+        "EI UUTTA MATERIAALIA:",
+        impossibleResult
+    );
+
+
+    console.log(
+        "JÄÄNNÖS + UUSI:",
+        mixedResult
+    );
+
+
+    return {
+        impossibleResult:
+            impossibleResult,
+
+        mixedResult:
+            mixedResult
+    };
+}
 
 
 
