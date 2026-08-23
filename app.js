@@ -671,6 +671,218 @@ function createMaterialInventory(
     };
 }
 
+function getMaterialSourcesForProfile(
+    materialInventory,
+    profileType
+) {
+
+    validateMaterialAvailability(
+        materialInventory
+    );
+
+
+    if (
+        typeof profileType !== "string" ||
+        PROFILE_TYPES[profileType] === undefined
+    ) {
+        throw new Error(
+            "Materiaalilähteiden profiilityyppi on virheellinen."
+        );
+    }
+
+
+    const sources = [];
+
+
+    for (const remnant of materialInventory.remnants) {
+
+        if (
+            remnant.profileType !==
+            profileType
+        ) {
+            continue;
+        }
+
+
+        sources.push({
+            source:
+                "remnant",
+
+            profileType:
+                profileType,
+
+            sourceLength:
+                remnant.length,
+
+            unlimited:
+                false,
+
+            quantity:
+                remnant.quantity
+        });
+    }
+
+
+    const newStock =
+        materialInventory.newStock.find(
+            stock =>
+                stock.profileType === profileType
+        );
+
+
+    if (newStock === undefined) {
+        throw new Error(
+            "Profiilityypille ei löydy uusien tankojen saatavuustietoa."
+        );
+    }
+
+
+    if (
+        newStock.unlimited ||
+        newStock.quantity > 0
+    ) {
+
+        sources.push({
+            source:
+                "new",
+
+            profileType:
+                profileType,
+
+            sourceLength:
+                materialInventory.stockLength,
+
+            unlimited:
+                newStock.unlimited,
+
+            quantity:
+                newStock.unlimited
+                    ? null
+                    : newStock.quantity
+        });
+    }
+
+
+    return sources;
+}
+
+function findMaterialSourceCandidates(
+    items,
+    materialSources,
+    kerf,
+    maxPatternsPerSource = 10
+) {
+
+    if (!Array.isArray(materialSources)) {
+        throw new Error(
+            "Materiaalilähteiden pitää olla taulukossa."
+        );
+    }
+
+
+    if (
+        !Number.isInteger(maxPatternsPerSource) ||
+        maxPatternsPerSource <= 0
+    ) {
+        throw new Error(
+            "Lähdekohtaisen ehdokasmäärän pitää olla positiivinen kokonaisluku."
+        );
+    }
+
+
+    const candidates = [];
+
+
+    for (const materialSource of materialSources) {
+
+        if (
+            !materialSource.unlimited &&
+            materialSource.quantity <= 0
+        ) {
+            continue;
+        }
+
+
+        const sourceCandidates =
+            findCandidatePatternsDP(
+                items,
+                materialSource.sourceLength,
+                kerf,
+                maxPatternsPerSource
+            );
+
+
+        for (const candidate of sourceCandidates) {
+
+            candidates.push({
+                ...candidate,
+
+                source:
+                    materialSource.source,
+
+                profileType:
+                    materialSource.profileType,
+
+                sourceLength:
+                    materialSource.sourceLength,
+
+                sourceUnlimited:
+                    materialSource.unlimited,
+
+                sourceQuantity:
+                    materialSource.quantity
+            });
+        }
+    }
+
+
+    return candidates;
+}
+
+function consumeMaterialSource(
+    materialSources,
+    candidate
+) {
+
+    const nextSources =
+        materialSources.map(source => ({
+            ...source
+        }));
+
+
+    const sourceIndex =
+        nextSources.findIndex(source =>
+            source.source === candidate.source &&
+            source.profileType === candidate.profileType &&
+            source.sourceLength === candidate.sourceLength
+        );
+
+
+    if (sourceIndex === -1) {
+        return null;
+    }
+
+
+    const source =
+        nextSources[sourceIndex];
+
+
+    if (source.unlimited) {
+        return nextSources;
+    }
+
+
+    if (source.quantity <= 0) {
+        return null;
+    }
+
+
+    source.quantity--;
+
+
+    return nextSources;
+}
+
 function calculateMaterialUsage(
     plan,
     materialInventory
@@ -5837,6 +6049,288 @@ function runProfileTypeOptimizationTest() {
             sameResult
     };
 }
+
+
+function runMaterialSourcesTest() {
+
+    const materialAvailability = {
+        stockLength: 6000,
+
+        newStock: [
+            {
+                profileType: "uProfile",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "verticalProfile",
+                unlimited: false,
+                quantity: 3
+            },
+            {
+                profileType: "horizontalProfile",
+                unlimited: false,
+                quantity: 0
+            },
+            {
+                profileType: "topRail",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "bottomRail",
+                unlimited: true,
+                quantity: null
+            }
+        ],
+
+        remnants: [
+            {
+                profileType: "verticalProfile",
+                length: 2600,
+                quantity: 2
+            },
+            {
+                profileType: "verticalProfile",
+                length: 3900,
+                quantity: 1
+            },
+            {
+                profileType: "horizontalProfile",
+                length: 2800,
+                quantity: 2
+            }
+        ]
+    };
+
+
+    const inventory =
+        createMaterialInventory(
+            materialAvailability
+        );
+
+
+    const verticalSources =
+        getMaterialSourcesForProfile(
+            inventory,
+            "verticalProfile"
+        );
+
+    const horizontalSources =
+        getMaterialSourcesForProfile(
+            inventory,
+            "horizontalProfile"
+        );
+
+
+    console.log(
+        "Pystyprofiilin materiaalilähteet:",
+        verticalSources
+    );
+
+    console.log(
+        "Vaakaprofiilin materiaalilähteet:",
+        horizontalSources
+    );
+
+
+    return {
+        verticalSources:
+            verticalSources,
+
+        horizontalSources:
+            horizontalSources
+    };
+}
+
+function runMaterialSourceCandidateTest() {
+
+    const materialAvailability = {
+        stockLength: 6000,
+
+        newStock: [
+            {
+                profileType: "uProfile",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "verticalProfile",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "horizontalProfile",
+                unlimited: false,
+                quantity: 0
+            },
+            {
+                profileType: "topRail",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "bottomRail",
+                unlimited: true,
+                quantity: null
+            }
+        ],
+
+        remnants: [
+            {
+                profileType: "horizontalProfile",
+                length: 2800,
+                quantity: 2
+            }
+        ]
+    };
+
+
+    const inventory =
+        createMaterialInventory(
+            materialAvailability
+        );
+
+
+    const sources =
+        getMaterialSourcesForProfile(
+            inventory,
+            "horizontalProfile"
+        );
+
+
+    const items = [
+        {
+            length: 2700,
+            quantity: 1
+        },
+        {
+            length: 1000,
+            quantity: 1
+        }
+    ];
+
+
+    const candidates =
+        findMaterialSourceCandidates(
+            items,
+            sources,
+            3,
+            10
+        );
+
+
+    console.log(
+        "MATERIAALILÄHTEIDEN SAHAUSKUVIOEHDOKKAAT"
+    );
+
+    console.log(candidates);
+
+    return candidates;
+}
+
+
+function runMaterialSourceConsumptionTest() {
+
+    const sources = [
+        {
+            source: "remnant",
+            profileType: "horizontalProfile",
+            sourceLength: 2800,
+            unlimited: false,
+            quantity: 2
+        },
+        {
+            source: "new",
+            profileType: "horizontalProfile",
+            sourceLength: 6000,
+            unlimited: true,
+            quantity: null
+        }
+    ];
+
+
+    const remnantCandidate = {
+        source: "remnant",
+        profileType: "horizontalProfile",
+        sourceLength: 2800
+    };
+
+
+    const newStockCandidate = {
+        source: "new",
+        profileType: "horizontalProfile",
+        sourceLength: 6000
+    };
+
+
+    const afterFirstRemnant =
+        consumeMaterialSource(
+            sources,
+            remnantCandidate
+        );
+
+
+    const afterSecondRemnant =
+        consumeMaterialSource(
+            afterFirstRemnant,
+            remnantCandidate
+        );
+
+
+    const afterThirdRemnant =
+        consumeMaterialSource(
+            afterSecondRemnant,
+            remnantCandidate
+        );
+
+
+    const afterUnlimitedNewStock =
+        consumeMaterialSource(
+            sources,
+            newStockCandidate
+        );
+
+
+    console.log(
+        "Alkuperäinen:",
+        sources
+    );
+
+    console.log(
+        "Yhden jäännöksen jälkeen:",
+        afterFirstRemnant
+    );
+
+    console.log(
+        "Kahden jäännöksen jälkeen:",
+        afterSecondRemnant
+    );
+
+    console.log(
+        "Kolmas jäännös:",
+        afterThirdRemnant
+    );
+
+    console.log(
+        "Rajattoman uuden tangon jälkeen:",
+        afterUnlimitedNewStock
+    );
+
+
+    return {
+        sources,
+        afterFirstRemnant,
+        afterSecondRemnant,
+        afterThirdRemnant,
+        afterUnlimitedNewStock
+    };
+}
+
+
+
+
+
 
 if (typeof document !== "undefined") {
     initializeWorkPersistence();
