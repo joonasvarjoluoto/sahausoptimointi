@@ -23,48 +23,23 @@
 
                 <label class="form-field" for="stockLength">
                     <span>Raakatangon pituus (mm)</span>
-                    <input
-                        id="stockLength"
-                        type="number"
-                        value="6000"
-                        step="0.1"
-                        inputmode="decimal"
-                    >
+                    <input id="stockLength" type="number" value="6000" step="0.1" inputmode="decimal">
                 </label>
 
                 <label class="form-field" for="kerf">
                     <span>Sahanterän leveys (mm)</span>
-                    <input
-                        id="kerf"
-                        type="number"
-                        value="3"
-                        step="0.1"
-                        inputmode="decimal"
-                    >
+                    <input id="kerf" type="number" value="3" step="0.1" inputmode="decimal">
                 </label>
 
                 <label class="form-field" for="stockQuantity">
                     <span>Uusien tankojen määrä (kpl)</span>
-                    <input
-                        id="stockQuantity"
-                        type="number"
-                        value="1"
-                        min="0"
-                        step="1"
-                        inputmode="numeric"
-                        disabled
-                    >
+                    <input id="stockQuantity" type="number" value="1" min="0" step="1" inputmode="numeric" disabled>
                 </label>
 
             </div>
 
             <label class="stock-unlimited-toggle">
-                <input
-                    id="unlimitedStock"
-                    type="checkbox"
-                    checked
-                    onchange="updateStockQuantityAvailability()"
-                >
+                <input id="unlimitedStock" type="checkbox" checked onchange="updateStockQuantityAvailability()">
                 <span>Uusia tankoja käytettävissä rajattomasti</span>
             </label>
         </section>
@@ -79,11 +54,7 @@
 
             <div id="remnantList"></div>
 
-            <button
-                class="add-cut-button"
-                type="button"
-                onclick="addRemnant()"
-            >
+            <button class="add-cut-button" type="button" onclick="addRemnant()">
                 + LISÄÄ JÄÄNNÖS
             </button>
         </section>
@@ -96,76 +67,69 @@
 
                 <div class="cut-row">
                     <label class="form-field">
+                        <span>Profiilityyppi</span>
+                        <select class="cut-profile-type">
+                            <option value="uProfile">
+                                U-profiili
+                            </option>
+
+                            <option value="verticalProfile" selected>
+                                Pystyprofiili
+                            </option>
+
+                            <option value="horizontalProfile">
+                                Vaakaprofiili
+                            </option>
+
+                            <option value="topRail">
+                                Yläkisko
+                            </option>
+
+                            <option value="bottomRail">
+                                Alakisko
+                            </option>
+                        </select>
+                    </label>
+
+                    <label class="form-field">
                         <span>Kappaleen pituus (mm)</span>
-                        <input
-                            class="cut-length"
-                            type="number"
-                            step="0.1"
-                            inputmode="decimal"
-                            placeholder="Mitta"
-                        >
+                        <input class="cut-length" type="number" step="0.1" inputmode="decimal" placeholder="Mitta">
                     </label>
 
                     <label class="form-field">
                         <span>Määrä (kpl)</span>
-                        <input
-                            class="cut-quantity"
-                            type="number"
-                            value="1"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Kpl"
-                        >
+                        <input class="cut-quantity" type="number" value="1" step="1" inputmode="numeric"
+                            placeholder="Kpl">
                     </label>
 
-                    <button
-                        class="remove-cut-button"
-                        type="button"
-                        onclick="removeCut(this)"
-                    >
+                    <button class="remove-cut-button" type="button" onclick="removeCut(this)">
                         POISTA
                     </button>
                 </div>
 
             </div>
 
-            <button
-                class="add-cut-button"
-                type="button"
-                onclick="addCut()"
-            >
+            <button class="add-cut-button" type="button" onclick="addCut()">
                 + LISÄÄ MITTA
             </button>
         </section>
 
 
-        <button
-            id="calculateButton"
-            class="calculate-button"
-            type="button"
-            onclick="calculate()"
-        >
+        <button id="calculateButton" class="calculate-button" type="button" onclick="calculate()">
             LASKE
         </button>
 
         <div id="result" aria-live="polite"></div>
 
 
-        <section
-            class="new-work-section"
-            aria-labelledby="newWorkHeading"
-        >
+        <section class="new-work-section" aria-labelledby="newWorkHeading">
             <h2 id="newWorkHeading">Aloita alusta</h2>
 
             <p>
                 Poistaa tallennetun työn ja palauttaa oletussyötteet.
             </p>
 
-            <button
-                class="new-work-button"
-                type="button"
-                onclick="startNewWork()"
-            >
+            <button class="new-work-button" type="button" onclick="startNewWork()">
                 UUSI TYÖ
             </button>
         </section>

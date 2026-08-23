@@ -31,10 +31,10 @@ body {
 
 
 button,
-input {
+input,
+select {
     font: inherit;
 }
-
 
 button {
     touch-action: manipulation;
@@ -130,7 +130,8 @@ h2 {
 }
 
 
-input[type="number"] {
+input[type="number"],
+select {
     width: 100%;
     min-width: 0;
     min-height: 54px;
@@ -144,7 +145,8 @@ input[type="number"] {
 }
 
 
-input[type="number"]:focus {
+input[type="number"]:focus,
+select:focus {
     border-color: #125ca7;
     outline: 3px solid rgba(18, 92, 167, 0.2);
     outline-offset: 1px;

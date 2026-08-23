@@ -1,12 +1,68 @@
+const PROFILE_TYPES = Object.freeze({
+    uProfile: Object.freeze({
+        label: "U-profiili",
+        dimensionRole: "doorHeight"
+    }),
+
+    verticalProfile: Object.freeze({
+        label: "Pystyprofiili",
+        dimensionRole: "doorHeight"
+    }),
+
+    horizontalProfile: Object.freeze({
+        label: "Vaakaprofiili",
+        dimensionRole: "doorWidth"
+    }),
+
+    topRail: Object.freeze({
+        label: "Yläkisko",
+        dimensionRole: "openingWidth"
+    }),
+
+    bottomRail: Object.freeze({
+        label: "Alakisko",
+        dimensionRole: "openingWidth"
+    })
+});
 
 
-function createCutRow(length = "", quantity = "1") {
+function createProfileTypeOptions(
+    selectedProfileType = "verticalProfile"
+) {
+
+    return Object.entries(PROFILE_TYPES)
+        .map(([profileType, settings]) => `
+            <option
+                value="${profileType}"
+                ${profileType === selectedProfileType
+                ? "selected"
+                : ""}
+            >
+                ${settings.label}
+            </option>
+        `)
+        .join("");
+}
+
+
+function createCutRow(
+    length = "",
+    quantity = "1",
+    profileType = "verticalProfile"
+) {
 
     const row = document.createElement("div");
 
     row.className = "cut-row";
 
     row.innerHTML = `
+        <label class="form-field">
+            <span>Profiilityyppi</span>
+            <select class="cut-profile-type">
+                ${createProfileTypeOptions(profileType)}
+            </select>
+        </label>
+
         <label class="form-field">
             <span>Kappaleen pituus (mm)</span>
             <input
@@ -46,7 +102,8 @@ function createCutRow(length = "", quantity = "1") {
 
 function createRemnantRow(
     length = "",
-    quantity = "1"
+    quantity = "1",
+    profileType = "verticalProfile"
 ) {
 
     const row = document.createElement("div");
@@ -54,6 +111,13 @@ function createRemnantRow(
     row.className = "cut-row remnant-row";
 
     row.innerHTML = `
+        <label class="form-field">
+            <span>Profiilityyppi</span>
+            <select class="remnant-profile-type">
+                ${createProfileTypeOptions(profileType)}
+            </select>
+        </label>
+
         <label class="form-field">
             <span>Jäännöksen pituus (mm)</span>
             <input
