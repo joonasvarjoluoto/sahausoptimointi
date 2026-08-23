@@ -482,3 +482,140 @@ input[type="number"]:focus {
         min-height: 54px;
     }
 }
+
+@media (prefers-color-scheme: dark) {
+
+    :root {
+        color-scheme: dark;
+        color: #e6edf3;
+        background: #12171c;
+    }
+
+
+    body {
+        background: #12171c;
+        color: #e6edf3;
+    }
+
+
+    .input-panel,
+    .plan-summary,
+    .completion-progress,
+    .bar-card,
+    .validation-message,
+    .work-state-message,
+    .calculation-status {
+        border-color: #3b4650;
+        background: #1b2229;
+    }
+
+
+    .form-field {
+        color: #d8e0e7;
+    }
+
+
+    input[type="number"] {
+        border-color: #56616c;
+        background: #11171c;
+        color: #f0f4f7;
+    }
+
+
+    .cut-row,
+    .bar-cuts {
+        border-color: #3b4650;
+        background: #161d23;
+    }
+
+
+    .bar-cut {
+        border-color: #3b4650;
+    }
+
+
+    .add-cut-button,
+    .remove-cut-button,
+    .new-work-button,
+    .bar-completion-button {
+        background: #1b2229;
+    }
+
+
+    .add-cut-button {
+        color: #8fc6df;
+    }
+
+
+    .remove-cut-button,
+    .new-work-button {
+        color: #e39a9a;
+    }
+
+
+    .bar-completion-button {
+        color: #93c5e8;
+    }
+
+
+    .new-work-section {
+        border-color: #3b4650;
+        background: #171e24;
+    }
+
+
+    .new-work-section p,
+    .bar-card-title span {
+        color: #a7b2bc;
+    }
+
+
+    .bar-card--completed {
+        border-color: #53675b;
+        background: #18221c;
+    }
+
+
+    .bar-card--completed .bar-cuts {
+        background: #19241e;
+    }
+
+
+    .remnant-status {
+        border-color: #596773;
+        background: #1b2229;
+        color: #dce4ea;
+    }
+
+
+    .remnant-status--reusable {
+        border-color: #4f9468;
+        background: #17251c;
+        color: #8fd0a5;
+    }
+
+
+    .remnant-status--scrap {
+        border-color: #b27a3e;
+        background: #2a2117;
+        color: #e0ae72;
+    }
+
+
+    .validation-message {
+        border-color: #b95d5d;
+        color: #efa0a0;
+    }
+
+
+    .work-state-message {
+        border-color: #ad793e;
+        color: #e3b174;
+    }
+
+
+    .calculation-status {
+        border-color: #5488ba;
+        color: #9bc8ed;
+    }
+}

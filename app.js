@@ -916,6 +916,119 @@ function evaluateCuttingPlan(plan, stockLength) {
     };
 }
 
+function calculateRemnantValueFactor(
+    remaining,
+    minimumLength,
+    fullValueLength,
+    curvePower,
+    minimumValueFactor,
+    maximumValueFactor
+) {
+
+    if (remaining <= minimumLength) {
+        return minimumValueFactor;
+    }
+
+
+    if (remaining >= fullValueLength) {
+        return maximumValueFactor;
+    }
+
+
+    const t =
+        (remaining - minimumLength) /
+        (fullValueLength - minimumLength);
+
+    const risingPart = t ** curvePower;
+    const fallingPart = (1 - t) ** curvePower;
+
+    const usefulness =
+        risingPart /
+        (risingPart + fallingPart);
+
+
+    return minimumValueFactor +
+        (maximumValueFactor - minimumValueFactor) *
+        usefulness;
+}
+
+function evaluateRemnantDisposition(
+    remaining,
+    settings = {}
+) {
+
+    const minimumLength =
+        settings.minimumLength ?? 500;
+
+    const fullValueLength =
+        settings.fullValueLength ?? 4500;
+
+    const curvePower =
+        settings.curvePower ?? 2;
+
+    const minimumValueFactor =
+        settings.minimumValueFactor ?? 0.1;
+
+    const maximumValueFactor =
+        settings.maximumValueFactor ?? 0.95;
+
+    const scrapValueFactor =
+        settings.scrapValueFactor ?? 0.1;
+
+    const handlingPenalty =
+        settings.reusableRemnantHandlingPenalty ?? 20;
+
+
+    const savedValueFactor =
+        calculateRemnantValueFactor(
+            remaining,
+            minimumLength,
+            fullValueLength,
+            curvePower,
+            minimumValueFactor,
+            maximumValueFactor
+        );
+
+
+    const savedMaterialLossEquivalent =
+        remaining * (1 - savedValueFactor);
+
+    const savedTotalCostEquivalent =
+        savedMaterialLossEquivalent +
+        handlingPenalty;
+
+
+    const scrapMaterialLossEquivalent =
+        remaining * (1 - scrapValueFactor);
+
+    const scrapTotalCostEquivalent =
+        scrapMaterialLossEquivalent;
+
+
+    const shouldSave =
+        savedTotalCostEquivalent <
+        scrapTotalCostEquivalent;
+
+
+    return {
+        remaining: remaining,
+        disposition: shouldSave
+            ? "reusable"
+            : "scrap",
+        savedValueFactor: savedValueFactor,
+        savedMaterialLossEquivalent:
+            savedMaterialLossEquivalent,
+        scrapMaterialLossEquivalent:
+            scrapMaterialLossEquivalent,
+        savedTotalCostEquivalent:
+            savedTotalCostEquivalent,
+        scrapTotalCostEquivalent:
+            scrapTotalCostEquivalent,
+        chosenCostEquivalent: shouldSave
+            ? savedTotalCostEquivalent
+            : scrapTotalCostEquivalent
+    };
+}
 
 function scoreCuttingPlan(metrics, settings = {}) {
 
@@ -964,11 +1077,20 @@ function scoreCuttingPlan(metrics, settings = {}) {
     }
 
 
-    const reusableRemnantThreshold =
-        settings.reusableRemnantThreshold ?? 1000;
+    const minimumLength =
+        settings.minimumLength ?? 500;
 
-    const reusableRemnantValueFactor =
-        settings.reusableRemnantValueFactor ?? 0.9;
+    const fullValueLength =
+        settings.fullValueLength ?? 4500;
+
+    const curvePower =
+        settings.curvePower ?? 2;
+
+    const minimumValueFactor =
+        settings.minimumValueFactor ?? 0.1;
+
+    const maximumValueFactor =
+        settings.maximumValueFactor ?? 0.95;
 
     const scrapValueFactor =
         settings.scrapValueFactor ?? 0.1;
@@ -977,15 +1099,43 @@ function scoreCuttingPlan(metrics, settings = {}) {
         settings.kerfRecoveryFactor ?? 0;
 
     const reusableRemnantHandlingPenalty =
-        settings.reusableRemnantHandlingPenalty ?? 100;
+        settings.reusableRemnantHandlingPenalty ?? 20;
+
+    const freeScrapLength =
+        settings.freeScrapLength ?? 200;
+
+    const largeScrapPenaltyFactor =
+        settings.largeScrapPenaltyFactor ?? 1.7;
 
     if (
-        !Number.isFinite(reusableRemnantThreshold) ||
-        reusableRemnantThreshold < 0
+        !Number.isFinite(minimumLength) ||
+        minimumLength < 0
     ) {
 
         throw new Error(
-            "Uudelleenkäytettävän jäännöksen rajan pitää olla nolla tai positiivinen luku."
+            "Jäännösarvokäyrän minimipituuden pitää olla nolla tai positiivinen luku."
+        );
+    }
+
+
+    if (
+        !Number.isFinite(fullValueLength) ||
+        fullValueLength <= minimumLength
+    ) {
+
+        throw new Error(
+            "Täyden jäännösarvon pituuden pitää olla minimipituutta suurempi."
+        );
+    }
+
+
+    if (
+        !Number.isFinite(curvePower) ||
+        curvePower <= 0
+    ) {
+
+        throw new Error(
+            "Jäännösarvokäyrän potenssin pitää olla suurempi kuin 0."
         );
     }
 
@@ -1000,9 +1150,31 @@ function scoreCuttingPlan(metrics, settings = {}) {
         );
     }
 
+    if (
+        !Number.isFinite(freeScrapLength) ||
+        freeScrapLength < 0
+    ) {
+
+        throw new Error(
+            "Ilman lisärangaistusta hyväksyttävän romupituuden pitää olla nolla tai positiivinen luku."
+        );
+    }
+
+
+    if (
+        !Number.isFinite(largeScrapPenaltyFactor) ||
+        largeScrapPenaltyFactor < 0
+    ) {
+
+        throw new Error(
+            "Ison romujäännöksen rangaistuskertoimen pitää olla nolla tai positiivinen luku."
+        );
+    }
+
 
     const valueFactors = [
-        reusableRemnantValueFactor,
+        minimumValueFactor,
+        maximumValueFactor,
         scrapValueFactor,
         kerfRecoveryFactor
     ];
@@ -1020,8 +1192,26 @@ function scoreCuttingPlan(metrics, settings = {}) {
     }
 
 
+    if (maximumValueFactor < minimumValueFactor) {
+
+        throw new Error(
+            "Jäännöksen maksimiarvo ei voi olla minimiarvoa pienempi."
+        );
+    }
+
+
     const reusableRemnants = [];
     const scrapRemnants = [];
+    const remnantEvaluations = [];
+
+    let reusableRecoveredValueEquivalentLength = 0;
+    let scrapRecoveredValueEquivalentLength = 0;
+
+    let reusableRemnantLossEquivalent = 0;
+    let scrapRemnantLossEquivalent = 0;
+
+    let remnantHandlingPenaltyEquivalent = 0;
+    let largeScrapPenaltyEquivalent = 0;
 
 
     for (const remaining of metrics.barRemnants) {
@@ -1039,85 +1229,152 @@ function scoreCuttingPlan(metrics, settings = {}) {
         }
 
 
-        if (remaining >= reusableRemnantThreshold) {
+        const evaluation =
+            evaluateRemnantDisposition(
+                remaining,
+                {
+                    minimumLength: minimumLength,
+                    fullValueLength: fullValueLength,
+                    curvePower: curvePower,
+                    minimumValueFactor:
+                        minimumValueFactor,
+                    maximumValueFactor:
+                        maximumValueFactor,
+                    scrapValueFactor:
+                        scrapValueFactor,
+                    reusableRemnantHandlingPenalty:
+                        reusableRemnantHandlingPenalty
+                }
+            );
+
+
+        remnantEvaluations.push(evaluation);
+
+
+        if (evaluation.disposition === "reusable") {
+
             reusableRemnants.push(remaining);
+
+            reusableRemnantLossEquivalent +=
+                evaluation.savedMaterialLossEquivalent;
+
+            reusableRecoveredValueEquivalentLength +=
+                remaining *
+                evaluation.savedValueFactor;
+
+            remnantHandlingPenaltyEquivalent +=
+                reusableRemnantHandlingPenalty;
+
         } else {
+
             scrapRemnants.push(remaining);
+
+            scrapRemnantLossEquivalent +=
+                evaluation.scrapMaterialLossEquivalent;
+
+            scrapRecoveredValueEquivalentLength +=
+                remaining *
+                scrapValueFactor;
+
+            largeScrapPenaltyEquivalent +=
+                Math.max(
+                    0,
+                    remaining - freeScrapLength
+                ) *
+                largeScrapPenaltyFactor;
         }
     }
 
 
-    reusableRemnants.sort((first, second) => second - first);
-    scrapRemnants.sort((first, second) => second - first);
-
-
-    const totalReusableRemnantLength = reusableRemnants.reduce(
-        (total, remaining) => total + remaining,
-        0
+    reusableRemnants.sort(
+        (first, second) => second - first
     );
 
-    const totalScrapRemnantLength = scrapRemnants.reduce(
-        (total, remaining) => total + remaining,
-        0
+    scrapRemnants.sort(
+        (first, second) => second - first
     );
 
-    const reusableRecoveredValueEquivalentLength =
-        totalReusableRemnantLength *
-        reusableRemnantValueFactor;
 
-    const scrapRecoveredValueEquivalentLength =
-        totalScrapRemnantLength * scrapValueFactor;
+    const totalReusableRemnantLength =
+        reusableRemnants.reduce(
+            (total, remaining) =>
+                total + remaining,
+            0
+        );
+
+    const totalScrapRemnantLength =
+        scrapRemnants.reduce(
+            (total, remaining) =>
+                total + remaining,
+            0
+        );
+
 
     const kerfRecoveredValueEquivalentLength =
-        metrics.totalKerfWaste * kerfRecoveryFactor;
+        metrics.totalKerfWaste *
+        kerfRecoveryFactor;
 
     const kerfLossEquivalent =
         metrics.totalKerfWaste *
         (1 - kerfRecoveryFactor);
 
-    const reusableRemnantLossEquivalent =
-        totalReusableRemnantLength *
-        (1 - reusableRemnantValueFactor);
-
-    const scrapRemnantLossEquivalent =
-        totalScrapRemnantLength *
-        (1 - scrapValueFactor);
-
     const materialLossEquivalent =
         kerfLossEquivalent +
         reusableRemnantLossEquivalent +
-        scrapRemnantLossEquivalent;;
-
-    const remnantHandlingPenaltyEquivalent =
-        reusableRemnants.length *
-        reusableRemnantHandlingPenalty;
+        scrapRemnantLossEquivalent;
 
     const totalCostEquivalent =
         materialLossEquivalent +
-        remnantHandlingPenaltyEquivalent;
+        remnantHandlingPenaltyEquivalent +
+        largeScrapPenaltyEquivalent;
+
 
     return {
         barCount: metrics.barCount,
+
         reusableRemnants: [...reusableRemnants],
         scrapRemnants: [...scrapRemnants],
-        totalReusableRemnantLength: totalReusableRemnantLength,
-        totalScrapRemnantLength: totalScrapRemnantLength,
-        largestReusableRemnant: reusableRemnants.length > 0
-            ? reusableRemnants[0]
-            : null,
-        reusableRemnantCount: reusableRemnants.length,
-        scrapRemnantCount: scrapRemnants.length,
+
+        totalReusableRemnantLength:
+            totalReusableRemnantLength,
+
+        totalScrapRemnantLength:
+            totalScrapRemnantLength,
+
+        largestReusableRemnant:
+            reusableRemnants.length > 0
+                ? reusableRemnants[0]
+                : null,
+
+        reusableRemnantCount:
+            reusableRemnants.length,
+
+        scrapRemnantCount:
+            scrapRemnants.length,
+
         reusableRecoveredValueEquivalentLength:
             reusableRecoveredValueEquivalentLength,
+
         scrapRecoveredValueEquivalentLength:
             scrapRecoveredValueEquivalentLength,
+
         kerfRecoveredValueEquivalentLength:
             kerfRecoveredValueEquivalentLength,
-        materialLossEquivalent: materialLossEquivalent,
+
+        materialLossEquivalent:
+            materialLossEquivalent,
+
         remnantHandlingPenaltyEquivalent:
             remnantHandlingPenaltyEquivalent,
+
         totalCostEquivalent:
             totalCostEquivalent,
+
+        remnantEvaluations:
+            remnantEvaluations,
+
+        largeScrapPenaltyEquivalent:
+            largeScrapPenaltyEquivalent,
 
         costBreakdown: {
             kerfLossEquivalent:
@@ -1131,16 +1388,33 @@ function scoreCuttingPlan(metrics, settings = {}) {
             materialLossEquivalent:
                 materialLossEquivalent,
             totalCostEquivalent:
-                totalCostEquivalent
+                totalCostEquivalent,
+            largeScrapPenaltyEquivalent:
+                largeScrapPenaltyEquivalent,
         },
 
         settings: {
-            reusableRemnantThreshold: reusableRemnantThreshold,
-            reusableRemnantValueFactor: reusableRemnantValueFactor,
-            scrapValueFactor: scrapValueFactor,
-            kerfRecoveryFactor: kerfRecoveryFactor,
+            minimumLength:
+                minimumLength,
+            fullValueLength:
+                fullValueLength,
+            curvePower:
+                curvePower,
+            minimumValueFactor:
+                minimumValueFactor,
+            maximumValueFactor:
+                maximumValueFactor,
+            scrapValueFactor:
+                scrapValueFactor,
+            kerfRecoveryFactor:
+                kerfRecoveryFactor,
             reusableRemnantHandlingPenalty:
-                reusableRemnantHandlingPenalty
+                reusableRemnantHandlingPenalty,
+            freeScrapLength:
+                freeScrapLength,
+
+            largeScrapPenaltyFactor:
+                largeScrapPenaltyFactor
         }
     };
 }
@@ -1179,6 +1453,12 @@ function logCostBreakdown(score) {
         "Jäännösten käsittely": {
             equivalentMm: roundForDisplay(
                 score.costBreakdown.remnantHandlingPenaltyEquivalent
+            )
+        },
+        "Isojen romujäännösten lisärangaistus": {
+            equivalentMm: roundForDisplay(
+                score.costBreakdown
+                    .largeScrapPenaltyEquivalent
             )
         },
         "Materiaalihäviö yhteensä": {
@@ -3052,11 +3332,16 @@ const PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS = Object.freeze({
     candidatePoolSize: 50,
     maxExtraBars: 2,
     scoreSettings: Object.freeze({
-        reusableRemnantThreshold: 1000,
-        reusableRemnantValueFactor: 0.9,
+        minimumLength: 500,
+        fullValueLength: 4500,
+        curvePower: 2,
+        minimumValueFactor: 0.1,
+        maximumValueFactor: 0.95,
         scrapValueFactor: 0.1,
         kerfRecoveryFactor: 0,
-        reusableRemnantHandlingPenalty: 100
+        reusableRemnantHandlingPenalty: 20,
+        freeScrapLength: 200,
+        largeScrapPenaltyFactor: 1.7
     })
 });
 
@@ -3087,25 +3372,26 @@ function mergeGroupedCuts(cuts) {
 }
 
 
-function getRemnantStatus(remaining, reusableRemnantThreshold) {
+function getRemnantStatus(
+    remaining,
+    scoreSettings
+) {
 
     if (remaining === 0) {
         return "none";
     }
 
 
-    if (remaining >= reusableRemnantThreshold) {
-        return "reusable";
-    }
-
-
-    return "scrap";
+    return evaluateRemnantDisposition(
+        remaining,
+        scoreSettings
+    ).disposition;
 }
 
 
 function adaptMaterialOptimizationForUi(
     optimization,
-    reusableRemnantThreshold
+    scoreSettings
 ) {
 
     return {
@@ -3121,7 +3407,7 @@ function adaptMaterialOptimizationForUi(
             waste: bar.waste,
             remnantStatus: getRemnantStatus(
                 bar.remaining,
-                reusableRemnantThreshold
+                scoreSettings
             )
         })),
         remainingItems: optimization.remainingItems.map(item => ({
@@ -3170,7 +3456,7 @@ function getRemnantStatusLabel(remnantStatus) {
 
 const WORK_STORAGE_KEY = "sahausoptimointi.currentWork";
 const WORK_STATE_SCHEMA_VERSION = 1;
-const WORK_STATE_ENGINE_VERSION = "material-v0.1";
+const WORK_STATE_ENGINE_VERSION = "material-v0.2";
 const DEFAULT_STOCK_LENGTH = "6000";
 const DEFAULT_KERF = "3";
 
@@ -3863,7 +4149,6 @@ async function calculate() {
             optimization,
             PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
                 .scoreSettings
-                .reusableRemnantThreshold
         );
 
 
