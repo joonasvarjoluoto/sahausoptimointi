@@ -2762,6 +2762,193 @@ function scoreCuttingPlan(metrics, settings = {}) {
     };
 }
 
+
+function scoreCompleteMaterialTransitionPlan(
+    plan,
+    settings = {}
+) {
+
+    if (
+        plan === null ||
+        typeof plan !== "object" ||
+        Array.isArray(plan) ||
+        plan.complete !== true ||
+        !Array.isArray(plan.bars)
+    ) {
+        throw new Error(
+            "Materiaalisiirtymä voidaan pisteyttää vain valmiille sahaussuunnitelmalle."
+        );
+    }
+
+
+    const scrapValueFactor =
+        settings.scrapValueFactor ?? 0.1;
+
+    const kerfRecoveryFactor =
+        settings.kerfRecoveryFactor ?? 0;
+
+    const reusableRemnantHandlingPenalty =
+        settings.reusableRemnantHandlingPenalty ?? 20;
+
+    const freeScrapLength =
+        settings.freeScrapLength ?? 200;
+
+    const largeScrapPenaltyFactor =
+        settings.largeScrapPenaltyFactor ?? 1.7;
+
+
+    let sourceValueEquivalent = 0;
+    let recoveredRemnantValueEquivalent = 0;
+    let kerfRecoveredValueEquivalent = 0;
+
+    let remnantHandlingPenaltyEquivalent = 0;
+    let largeScrapPenaltyEquivalent = 0;
+
+
+    for (const bar of plan.bars) {
+
+        const source =
+            bar.source ?? "new";
+
+        const sourceLength =
+            bar.sourceLength;
+
+
+        if (
+            source !== "new" &&
+            source !== "remnant"
+        ) {
+            throw new Error(
+                "Materiaalilähteen pitää olla new tai remnant."
+            );
+        }
+
+
+        if (
+            !Number.isFinite(sourceLength) ||
+            sourceLength <= 0
+        ) {
+            throw new Error(
+                "Materiaalilähteen pituuden pitää olla suurempi kuin 0."
+            );
+        }
+
+
+        if (
+            !Number.isFinite(bar.remaining) ||
+            bar.remaining < 0
+        ) {
+            throw new Error(
+                "Tangon jäännöksen pitää olla nolla tai positiivinen luku."
+            );
+        }
+
+
+        if (
+            !Number.isFinite(bar.waste) ||
+            bar.waste < 0
+        ) {
+            throw new Error(
+                "Tangon sahahukan pitää olla nolla tai positiivinen luku."
+            );
+        }
+
+
+        if (source === "new") {
+
+            sourceValueEquivalent +=
+                sourceLength;
+
+        } else {
+
+            const sourceEvaluation =
+                evaluateRemnantDisposition(
+                    sourceLength,
+                    settings
+                );
+
+            sourceValueEquivalent +=
+                sourceLength *
+                sourceEvaluation.savedValueFactor;
+        }
+
+
+        kerfRecoveredValueEquivalent +=
+            bar.waste *
+            kerfRecoveryFactor;
+
+
+        if (bar.remaining === 0) {
+            continue;
+        }
+
+
+        const remnantEvaluation =
+            evaluateRemnantDisposition(
+                bar.remaining,
+                settings
+            );
+
+
+        if (
+            remnantEvaluation.disposition ===
+            "reusable"
+        ) {
+
+            recoveredRemnantValueEquivalent +=
+                bar.remaining *
+                remnantEvaluation.savedValueFactor;
+
+            remnantHandlingPenaltyEquivalent +=
+                reusableRemnantHandlingPenalty;
+
+        } else {
+
+            recoveredRemnantValueEquivalent +=
+                bar.remaining *
+                scrapValueFactor;
+
+            largeScrapPenaltyEquivalent +=
+                Math.max(
+                    0,
+                    bar.remaining -
+                    freeScrapLength
+                ) *
+                largeScrapPenaltyFactor;
+        }
+    }
+
+
+    const totalCostEquivalent =
+        sourceValueEquivalent -
+        recoveredRemnantValueEquivalent -
+        kerfRecoveredValueEquivalent +
+        remnantHandlingPenaltyEquivalent +
+        largeScrapPenaltyEquivalent;
+
+
+    return {
+        sourceValueEquivalent:
+            sourceValueEquivalent,
+
+        recoveredRemnantValueEquivalent:
+            recoveredRemnantValueEquivalent,
+
+        kerfRecoveredValueEquivalent:
+            kerfRecoveredValueEquivalent,
+
+        remnantHandlingPenaltyEquivalent:
+            remnantHandlingPenaltyEquivalent,
+
+        largeScrapPenaltyEquivalent:
+            largeScrapPenaltyEquivalent,
+
+        totalCostEquivalent:
+            totalCostEquivalent
+    };
+}
+
+
 function logCostBreakdown(score) {
 
     if (
@@ -6324,6 +6511,126 @@ function runMaterialSourceConsumptionTest() {
         afterSecondRemnant,
         afterThirdRemnant,
         afterUnlimitedNewStock
+    };
+}
+
+
+function runMaterialTransitionScoreTest() {
+
+    const remnantPlan = {
+        complete: true,
+
+        bars: [
+            {
+                source:
+                    "remnant",
+
+                profileType:
+                    "verticalProfile",
+
+                sourceLength:
+                    1600,
+
+                pattern: [
+                    {
+                        length: 1500,
+                        quantity: 1
+                    }
+                ],
+
+                remaining:
+                    97,
+
+                waste:
+                    3
+            }
+        ]
+    };
+
+
+    const newStockPlan = {
+        complete: true,
+
+        bars: [
+            {
+                source:
+                    "new",
+
+                profileType:
+                    "verticalProfile",
+
+                sourceLength:
+                    6000,
+
+                pattern: [
+                    {
+                        length: 1500,
+                        quantity: 1
+                    }
+                ],
+
+                remaining:
+                    4497,
+
+                waste:
+                    3
+            }
+        ]
+    };
+
+
+    const settings =
+        PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+            .scoreSettings;
+
+
+    const remnantScore =
+        scoreCompleteMaterialTransitionPlan(
+            remnantPlan,
+            settings
+        );
+
+
+    const newStockScore =
+        scoreCompleteMaterialTransitionPlan(
+            newStockPlan,
+            settings
+        );
+
+
+    console.log(
+        "MATERIAALISIIRTYMÄN PISTEYTYSTESTI"
+    );
+
+
+    console.table({
+        "1600 mm jäännös": {
+            cost:
+                remnantScore.totalCostEquivalent
+        },
+
+        "6000 mm uusi": {
+            cost:
+                newStockScore.totalCostEquivalent
+        }
+    });
+
+
+    console.log(
+        "Voittaja:",
+        remnantScore.totalCostEquivalent <
+            newStockScore.totalCostEquivalent
+            ? "1600 mm jäännös"
+            : "6000 mm uusi"
+    );
+
+
+    return {
+        remnantScore:
+            remnantScore,
+
+        newStockScore:
+            newStockScore
     };
 }
 
