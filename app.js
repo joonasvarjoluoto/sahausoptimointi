@@ -387,6 +387,309 @@ function createMaterialInventory(
     };
 }
 
+function calculateMaterialUsage(
+    plan,
+    materialInventory
+) {
+
+    if (
+        plan === null ||
+        typeof plan !== "object" ||
+        Array.isArray(plan) ||
+        !Array.isArray(plan.bars)
+    ) {
+
+        throw new Error(
+            "Sahaussuunnitelman pitää sisältää tankojen taulukko."
+        );
+    }
+
+
+    if (
+        materialInventory === null ||
+        typeof materialInventory !== "object" ||
+        Array.isArray(materialInventory) ||
+        materialInventory.newStock === undefined ||
+        !Array.isArray(materialInventory.remnants)
+    ) {
+
+        throw new Error(
+            "Materiaalivaraston tiedot ovat virheelliset."
+        );
+    }
+
+
+    const newStock =
+        materialInventory.newStock;
+
+
+    validateMaterialAvailability({
+        stockLength: newStock.length,
+        unlimitedStock: newStock.unlimited,
+        stockQuantity: newStock.quantity,
+        remnants: materialInventory.remnants
+    });
+
+
+    const availableRemnants = new Map();
+    const usedRemnants = new Map();
+
+
+    for (const remnant of materialInventory.remnants) {
+
+        const lengthUnits =
+            millimetersToDpUnits(remnant.length);
+
+        availableRemnants.set(
+            lengthUnits,
+            remnant.quantity
+        );
+    }
+
+
+    let newStockUsed = 0;
+
+
+    for (const bar of plan.bars) {
+
+        const source =
+            bar.source ?? "new";
+
+        const sourceLength =
+            bar.sourceLength ?? newStock.length;
+
+
+        if (source === "new") {
+
+            if (
+                millimetersToDpUnits(sourceLength) !==
+                millimetersToDpUnits(newStock.length)
+            ) {
+
+                throw new Error(
+                    "Uuden tangon lähtöpituus ei vastaa varaston raakatangon pituutta."
+                );
+            }
+
+
+            newStockUsed++;
+
+            continue;
+        }
+
+
+        if (source !== "remnant") {
+
+            throw new Error(
+                "Materiaalilähteen pitää olla new tai remnant."
+            );
+        }
+
+
+        const lengthUnits =
+            millimetersToDpUnits(sourceLength);
+
+        const availableQuantity =
+            availableRemnants.get(lengthUnits) ?? 0;
+
+        const usedQuantity =
+            (usedRemnants.get(lengthUnits) ?? 0) + 1;
+
+
+        if (usedQuantity > availableQuantity) {
+
+            throw new Error(
+                "Suunnitelma käyttää enemmän " +
+                sourceLength +
+                " mm jäännöksiä kuin varastossa on."
+            );
+        }
+
+
+        usedRemnants.set(
+            lengthUnits,
+            usedQuantity
+        );
+    }
+
+
+    if (
+        !newStock.unlimited &&
+        newStockUsed > newStock.quantity
+    ) {
+
+        throw new Error(
+            "Suunnitelma käyttää enemmän uusia tankoja kuin varastossa on."
+        );
+    }
+
+
+    const remnantUsage =
+        materialInventory.remnants.map(remnant => {
+
+            const lengthUnits =
+                millimetersToDpUnits(remnant.length);
+
+            const usedQuantity =
+                usedRemnants.get(lengthUnits) ?? 0;
+
+            return {
+                length: remnant.length,
+                availableQuantity: remnant.quantity,
+                usedQuantity: usedQuantity,
+                remainingQuantity:
+                    remnant.quantity - usedQuantity
+            };
+        });
+
+
+    const unusedRemnants =
+        remnantUsage
+            .filter(
+                remnant =>
+                    remnant.remainingQuantity > 0
+            )
+            .map(remnant => ({
+                length: remnant.length,
+                quantity: remnant.remainingQuantity
+            }));
+
+
+    return {
+        newStockUsed: newStockUsed,
+
+        newStockRemainingQuantity:
+            newStock.unlimited
+                ? null
+                : newStock.quantity - newStockUsed,
+
+        remnantUsage: remnantUsage,
+
+        unusedRemnants: unusedRemnants
+    };
+}
+
+function calculatePostOrderMaterialInventory(
+    plan,
+    materialInventory,
+    scoreSettings = {}
+) {
+
+    const usage =
+        calculateMaterialUsage(
+            plan,
+            materialInventory
+        );
+
+
+    const quantitiesByLength = new Map();
+
+
+    function addRemnant(length, quantity) {
+
+        const lengthUnits =
+            millimetersToDpUnits(length);
+
+        const existing =
+            quantitiesByLength.get(lengthUnits);
+
+
+        if (existing === undefined) {
+
+            quantitiesByLength.set(
+                lengthUnits,
+                {
+                    length: length,
+                    quantity: quantity
+                }
+            );
+
+            return;
+        }
+
+
+        existing.quantity += quantity;
+    }
+
+
+    for (const remnant of usage.unusedRemnants) {
+
+        addRemnant(
+            remnant.length,
+            remnant.quantity
+        );
+    }
+
+
+    const generatedRemnants = [];
+    const scrapRemnants = [];
+
+
+    for (const bar of plan.bars) {
+
+        if (bar.remaining === 0) {
+            continue;
+        }
+
+
+        const evaluation =
+            evaluateRemnantDisposition(
+                bar.remaining,
+                scoreSettings
+            );
+
+
+        if (evaluation.disposition === "reusable") {
+
+            generatedRemnants.push({
+                length: bar.remaining,
+                quantity: 1
+            });
+
+            addRemnant(
+                bar.remaining,
+                1
+            );
+
+        } else {
+
+            scrapRemnants.push({
+                length: bar.remaining,
+                quantity: 1
+            });
+        }
+    }
+
+
+    const remnants =
+        [...quantitiesByLength.values()]
+            .sort(
+                (first, second) =>
+                    second.length - first.length
+            );
+
+
+    return {
+        newStock: {
+            length:
+                materialInventory.newStock.length,
+
+            unlimited:
+                materialInventory.newStock.unlimited,
+
+            quantity:
+                materialInventory.newStock.unlimited
+                    ? null
+                    : usage.newStockRemainingQuantity
+        },
+
+        remnants: remnants,
+
+        generatedRemnants: generatedRemnants,
+        scrapRemnants: scrapRemnants
+    };
+}
+
 function cutPiece(remaining, piece, kerf) {
 
     const excess = remaining - piece;
@@ -1119,10 +1422,14 @@ function evaluateCuttingPlan(plan, stockLength) {
 
     const barRemnants = [];
     const barSourceLengths = [];
+    const barSources = [];
 
     let totalPieceLength = 0;
     let totalKerfWaste = 0;
     let totalStockLength = 0;
+
+    let newStockBarCount = 0;
+    let remnantSourceBarCount = 0;
 
 
     for (const bar of plan.bars) {
@@ -1138,9 +1445,22 @@ function evaluateCuttingPlan(plan, stockLength) {
             );
         }
 
+        const source =
+            bar.source ?? "new";
+
         const sourceLength =
             bar.sourceLength ?? stockLength;
 
+
+        if (
+            source !== "new" &&
+            source !== "remnant"
+        ) {
+
+            throw new Error(
+                "Materiaalilähteen pitää olla new tai remnant."
+            );
+        }
 
         if (
             !Number.isFinite(sourceLength) ||
@@ -1162,7 +1482,16 @@ function evaluateCuttingPlan(plan, stockLength) {
 
 
         totalStockLength += sourceLength;
+
         barSourceLengths.push(sourceLength);
+        barSources.push(source);
+
+
+        if (source === "new") {
+            newStockBarCount++;
+        } else {
+            remnantSourceBarCount++;
+        }
 
 
         if (!Number.isFinite(bar.remaining) || bar.remaining < 0) {
@@ -1227,8 +1556,15 @@ function evaluateCuttingPlan(plan, stockLength) {
 
     return {
         barCount: barCount,
+
         totalStockLength: totalStockLength,
+
         barSourceLengths: [...barSourceLengths],
+        barSources: [...barSources],
+
+        newStockBarCount: newStockBarCount,
+        remnantSourceBarCount: remnantSourceBarCount,
+
         totalPieceLength: totalPieceLength,
         totalKerfWaste: totalKerfWaste,
         totalRemainingLength: totalRemainingLength,
