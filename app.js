@@ -906,7 +906,7 @@ function calculateMaterialUsage(
                         stock.unlimited
                             ? null
                             : stock.quantity -
-                                usedQuantity
+                            usedQuantity
                 };
             }
         );
@@ -4502,6 +4502,111 @@ function mergeGroupedCuts(cuts) {
     );
 }
 
+function optimizeOrderByProfileType(
+    cuts,
+    stockLength,
+    kerf,
+    options = {}
+) {
+
+    const profileResults = [];
+
+
+    for (const profileType of Object.keys(PROFILE_TYPES)) {
+
+        const profileCuts =
+            cuts.filter(
+                cut =>
+                    cut.profileType === profileType
+            );
+
+
+        if (profileCuts.length === 0) {
+            continue;
+        }
+
+
+        const groupedCuts =
+            mergeGroupedCuts(profileCuts);
+
+
+        const optimization =
+            optimizeOrderMaterialBeamDP(
+                groupedCuts,
+                stockLength,
+                kerf,
+                options
+            );
+
+
+        profileResults.push({
+            profileType:
+                profileType,
+
+            optimization:
+                optimization
+        });
+    }
+
+
+    const bars =
+        profileResults.flatMap(
+            result =>
+                result.optimization.bars.map(
+                    bar => ({
+                        ...bar,
+
+                        profileType:
+                            result.profileType,
+
+                        source:
+                            "new",
+
+                        sourceLength:
+                            stockLength
+                    })
+                )
+        );
+
+
+    const remainingItems =
+        profileResults.flatMap(
+            result =>
+                result.optimization.remainingItems.map(
+                    item => ({
+                        profileType:
+                            result.profileType,
+
+                        length:
+                            item.length,
+
+                        quantity:
+                            item.quantity
+                    })
+                )
+        );
+
+
+    return {
+        complete:
+            profileResults.every(
+                result =>
+                    result.optimization.complete
+            ),
+
+        bars:
+            bars,
+
+        remainingItems:
+            remainingItems,
+
+        barCount:
+            bars.length,
+
+        profileResults:
+            profileResults
+    };
+}
 
 function getRemnantStatus(
     remaining,
@@ -4530,6 +4635,14 @@ function adaptMaterialOptimizationForUi(
         bars: optimization.bars.map((bar, index) => ({
             id: "bar-" + (index + 1),
             number: index + 1,
+            profileType:
+                bar.profileType,
+
+            source:
+                bar.source,
+
+            sourceLength:
+                bar.sourceLength,
             groupedCuts: bar.pattern.map(item => ({
                 length: item.length,
                 quantity: item.quantity
@@ -5158,7 +5271,10 @@ function renderCuttingPlan(plan) {
             >
                 <h3 class="bar-card-title">
                     TANKO ${bar.number}
-                    <span>/ ${plan.bars.length}</span>
+                    <span>
+                        ${PROFILE_TYPES[bar.profileType].label}
+                        · ${bar.number}/${plan.bars.length}
+                     </span>
                 </h3>
                 <div class="bar-cuts">
         `;
@@ -5390,8 +5506,8 @@ async function calculate() {
     }
 
 
-    const groupedCuts = mergeGroupedCuts(cuts);
     const calculationInputRevision = workInputRevision;
+
     const calculateButton =
         document.getElementById("calculateButton");
 
@@ -5414,8 +5530,8 @@ async function calculate() {
     try {
 
         const optimization =
-            optimizeOrderMaterialBeamDP(
-                groupedCuts,
+            optimizeOrderByProfileType(
+                cuts,
                 stockLength,
                 kerf,
                 PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
@@ -5433,7 +5549,18 @@ async function calculate() {
             return;
         }
 
-        logCostBreakdown(optimization.materialScore);
+        for (const profileResult of optimization.profileResults) {
+
+            console.log(
+                PROFILE_TYPES[
+                    profileResult.profileType
+                ].label
+            );
+
+            logCostBreakdown(
+                profileResult.optimization.materialScore
+            );
+        }
 
         const plan = adaptMaterialOptimizationForUi(
             optimization,
@@ -5637,6 +5764,78 @@ function runPostOrderMaterialInventoryTest() {
     console.log(result);
 
     return result;
+}
+
+function runProfileTypeOptimizationTest() {
+
+    const separateProfiles = [
+        {
+            profileType: "verticalProfile",
+            length: 3000,
+            quantity: 1
+        },
+        {
+            profileType: "horizontalProfile",
+            length: 2997,
+            quantity: 1
+        }
+    ];
+
+
+    const sameProfile = [
+        {
+            profileType: "verticalProfile",
+            length: 3000,
+            quantity: 1
+        },
+        {
+            profileType: "verticalProfile",
+            length: 2997,
+            quantity: 1
+        }
+    ];
+
+
+    const separateResult =
+        optimizeOrderByProfileType(
+            separateProfiles,
+            6000,
+            3,
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+        );
+
+
+    const sameResult =
+        optimizeOrderByProfileType(
+            sameProfile,
+            6000,
+            3,
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+        );
+
+
+    console.log(
+        "PROFILE TYPE OPTIMIZATION TEST"
+    );
+
+    console.log(
+        "Eri profiilit:",
+        separateResult
+    );
+
+    console.log(
+        "Sama profiili:",
+        sameResult
+    );
+
+
+    return {
+        separateProfiles:
+            separateResult,
+
+        sameProfile:
+            sameResult
+    };
 }
 
 if (typeof document !== "undefined") {

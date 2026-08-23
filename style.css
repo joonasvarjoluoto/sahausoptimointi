@@ -85,6 +85,86 @@ h2 {
     background: #ffffff;
 }
 
+.section-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+.section-icon {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.stock-bar-icon {
+    display: block;
+    width: 22px;
+    height: 6px;
+    border-radius: 1px;
+    background: currentColor;
+}
+
+/* Uudet raakatangot */
+.stock-panel {
+    border-left: 6px solid #a87521;
+    background: #fbf7ee;
+}
+
+
+.stock-panel .section-icon {
+    background: #eee0bd;
+    color: #76500f;
+}
+
+
+.stock-panel .stock-profile-row {
+    border-color: #dfd0ab;
+    background: #fdfbf6;
+}
+
+/* Varastossa olevat jäännökset */
+.remnant-panel {
+    border-left: 6px solid #3f7d4a;
+    background: #f3f8f3;
+}
+
+
+.remnant-panel .section-icon {
+    background: #dcebdd;
+    color: #2f6338;
+}
+
+
+.remnant-panel .cut-row {
+    border-color: #c8ddcb;
+    background: #f8fbf8;
+}
+
+
+/* Tilaukseen sahattavat kappaleet */
+.cuts-panel {
+    border-left: 6px solid #24679e;
+    background: #f3f8fd;
+}
+
+
+.cuts-panel .section-icon {
+    background: #d9e9f7;
+    color: #174f7a;
+}
+
+
+.cuts-panel .cut-row {
+    border-color: #c7dbea;
+    background: #f8fbff;
+}
 
 .stock-fields,
 #cutList,
@@ -594,6 +674,58 @@ input[type="number"]:disabled {
         background: #161d23;
     }
 
+    .stock-panel {
+        border-left-color: #c39a4c;
+        background: #211e17;
+    }
+
+
+    .stock-panel .section-icon {
+        background: #39301f;
+        color: #dfbd72;
+    }
+
+
+    .stock-panel .stock-profile-row {
+        border-color: #55492f;
+        background: #1e1b15;
+    }
+
+    
+    .remnant-panel {
+        border-left-color: #5f9b69;
+        background: #172019;
+    }
+
+
+    .remnant-panel .section-icon {
+        background: #203225;
+        color: #8fc598;
+    }
+
+
+    .remnant-panel .cut-row {
+        border-color: #35523b;
+        background: #151d17;
+    }
+
+
+    .cuts-panel {
+        border-left-color: #5898cf;
+        background: #17212a;
+    }
+
+
+    .cuts-panel .section-icon {
+        background: #203548;
+        color: #8fc5ee;
+    }
+
+
+    .cuts-panel .cut-row {
+        border-color: #334c61;
+        background: #15202a;
+    }
 
     .bar-cut {
         border-color: #3b4650;
