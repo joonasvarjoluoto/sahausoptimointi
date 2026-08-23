@@ -113,24 +113,6 @@ function createDefaultStockProfileRows() {
 }
 
 
-function updateStockProfileQuantityAvailability(
-    unlimitedCheckbox
-) {
-
-    const row =
-        unlimitedCheckbox.closest(".stock-profile-row");
-
-    if (row === null) {
-        return;
-    }
-
-    const quantityInput =
-        row.querySelector(".stock-profile-quantity");
-
-    quantityInput.disabled =
-        unlimitedCheckbox.checked;
-}
-
 function createCutRow(
     length = "",
     quantity = "1",
@@ -301,6 +283,9 @@ function removeCut(button) {
 
 function getCutsFromForm() {
 
+    const profileTypeInputs =
+        document.querySelectorAll(".cut-profile-type");
+
     const lengthInputs =
         document.querySelectorAll(".cut-length");
 
@@ -315,6 +300,7 @@ function getCutsFromForm() {
         const quantity = Number(quantityInputs[i].value);
 
         cuts.push({
+            profileType: profileTypeInputs[i].value,
             length: length,
             quantity: quantity
         });
@@ -330,15 +316,37 @@ function getMaterialAvailabilityFromForm() {
             document.getElementById("stockLength").value
         );
 
-    const unlimitedStock =
-        document.getElementById("unlimitedStock").checked;
+    const stockProfileRows =
+        document.querySelectorAll(".stock-profile-row");
 
-    const stockQuantity =
-        unlimitedStock
-            ? null
-            : Number(
-                document.getElementById("stockQuantity").value
-            );
+    const newStock = [];
+
+
+    for (const row of stockProfileRows) {
+
+        const profileType =
+            row.dataset.profileType;
+
+        const unlimited =
+            row.querySelector(
+                ".stock-profile-unlimited-checkbox"
+            ).checked;
+
+        const quantity =
+            unlimited
+                ? null
+                : Number(
+                    row.querySelector(
+                        ".stock-profile-quantity"
+                    ).value
+                );
+
+        newStock.push({
+            profileType: profileType,
+            unlimited: unlimited,
+            quantity: quantity
+        });
+    }
 
     const remnantRows =
         document.querySelectorAll(".remnant-row");
@@ -346,6 +354,11 @@ function getMaterialAvailabilityFromForm() {
     const remnants = [];
 
     for (const row of remnantRows) {
+
+        const profileType =
+            row.querySelector(
+                ".remnant-profile-type"
+            ).value;
 
         const length =
             Number(
@@ -358,6 +371,7 @@ function getMaterialAvailabilityFromForm() {
             );
 
         remnants.push({
+            profileType: profileType,
             length: length,
             quantity: quantity
         });
@@ -365,19 +379,19 @@ function getMaterialAvailabilityFromForm() {
 
     return {
         stockLength: stockLength,
-        unlimitedStock: unlimitedStock,
-        stockQuantity: stockQuantity,
+        newStock: newStock,
         remnants: remnants
     };
 }
 
 
-function validateMaterialAvailability(materialAvailability) {
+function validateMaterialAvailability(
+    materialAvailability
+) {
 
     const {
         stockLength,
-        unlimitedStock,
-        stockQuantity,
+        newStock,
         remnants
     } = materialAvailability;
 
@@ -399,21 +413,85 @@ function validateMaterialAvailability(materialAvailability) {
     }
 
 
-    if (typeof unlimitedStock !== "boolean") {
+    if (!Array.isArray(newStock)) {
         throw new Error(
-            "Raakatankojen saatavuustieto on virheellinen."
+            "Uusien tankojen saatavuustietojen pitää olla taulukossa."
         );
     }
 
 
-    if (!unlimitedStock) {
+    const expectedProfileTypes =
+        Object.keys(PROFILE_TYPES);
+
+    if (
+        newStock.length !==
+        expectedProfileTypes.length
+    ) {
+        throw new Error(
+            "Uusien tankojen saatavuustiedot ovat puutteelliset."
+        );
+    }
+
+
+    const seenProfileTypes = new Set();
+
+
+    for (const stock of newStock) {
 
         if (
-            !Number.isInteger(stockQuantity) ||
-            stockQuantity < 0
+            typeof stock.profileType !== "string" ||
+            PROFILE_TYPES[stock.profileType] === undefined
         ) {
             throw new Error(
-                "Uusien tankojen määrän pitää olla kokonaisluku, joka on vähintään 0."
+                "Uuden tangon profiilityyppi on virheellinen."
+            );
+        }
+
+
+        if (seenProfileTypes.has(stock.profileType)) {
+            throw new Error(
+                "Sama profiilityyppi esiintyy uusien tankojen saatavuudessa useammin kuin kerran."
+            );
+        }
+
+        seenProfileTypes.add(stock.profileType);
+
+
+        if (typeof stock.unlimited !== "boolean") {
+            throw new Error(
+                "Uusien tankojen saatavuustieto on virheellinen."
+            );
+        }
+
+
+        if (stock.unlimited) {
+
+            if (stock.quantity !== null) {
+                throw new Error(
+                    "Rajattoman materiaalin määrän pitää olla null."
+                );
+            }
+
+        } else {
+
+            if (
+                !Number.isInteger(stock.quantity) ||
+                stock.quantity < 0
+            ) {
+                throw new Error(
+                    "Uusien tankojen määrän pitää olla kokonaisluku, joka on vähintään 0."
+                );
+            }
+        }
+    }
+
+
+    for (const profileType of expectedProfileTypes) {
+
+        if (!seenProfileTypes.has(profileType)) {
+            throw new Error(
+                "Uusien tankojen saatavuustiedoista puuttuu profiilityyppi: " +
+                PROFILE_TYPES[profileType].label
             );
         }
     }
@@ -427,6 +505,16 @@ function validateMaterialAvailability(materialAvailability) {
 
 
     for (const remnant of remnants) {
+
+        if (
+            typeof remnant.profileType !== "string" ||
+            PROFILE_TYPES[remnant.profileType] === undefined
+        ) {
+            throw new Error(
+                "Jäännöksen profiilityyppi on virheellinen."
+            );
+        }
+
 
         if (
             !Number.isFinite(remnant.length) ||
@@ -463,19 +551,19 @@ function validateMaterialAvailability(materialAvailability) {
     }
 
 
-    const remnantQuantity =
-        remnants.reduce(
-            (total, remnant) =>
-                total + remnant.quantity,
-            0
+    const hasNewStock =
+        newStock.some(stock =>
+            stock.unlimited ||
+            stock.quantity > 0
+        );
+
+    const hasRemnants =
+        remnants.some(remnant =>
+            remnant.quantity > 0
         );
 
 
-    if (
-        !unlimitedStock &&
-        stockQuantity === 0 &&
-        remnantQuantity === 0
-    ) {
+    if (!hasNewStock && !hasRemnants) {
         throw new Error(
             "Käytettävissä ei ole yhtään materiaalikappaletta."
         );
@@ -494,44 +582,86 @@ function createMaterialInventory(
     );
 
 
-    const quantitiesByLength = new Map();
+    const remnantsByProfileAndLength =
+        new Map();
 
 
     for (const remnant of materialAvailability.remnants) {
 
-        const currentQuantity =
-            quantitiesByLength.get(remnant.length) ?? 0;
+        const lengthUnits =
+            millimetersToDpUnits(remnant.length);
 
-        quantitiesByLength.set(
-            remnant.length,
-            currentQuantity + remnant.quantity
-        );
+        const key =
+            remnant.profileType +
+            ":" +
+            lengthUnits;
+
+        const existing =
+            remnantsByProfileAndLength.get(key);
+
+
+        if (existing === undefined) {
+
+            remnantsByProfileAndLength.set(
+                key,
+                {
+                    profileType:
+                        remnant.profileType,
+
+                    length:
+                        remnant.length,
+
+                    quantity:
+                        remnant.quantity
+                }
+            );
+
+            continue;
+        }
+
+
+        existing.quantity +=
+            remnant.quantity;
     }
 
 
     const remnants =
-        [...quantitiesByLength.entries()]
-            .map(([length, quantity]) => ({
-                length: length,
-                quantity: quantity
-            }))
-            .sort(
-                (first, second) =>
-                    second.length - first.length
-            );
+        [...remnantsByProfileAndLength.values()]
+            .sort((first, second) => {
+
+                if (
+                    first.profileType !==
+                    second.profileType
+                ) {
+                    return first.profileType.localeCompare(
+                        second.profileType
+                    );
+                }
+
+                return second.length - first.length;
+            });
+
+
+    const newStock =
+        materialAvailability.newStock.map(
+            stock => ({
+                profileType:
+                    stock.profileType,
+
+                unlimited:
+                    stock.unlimited,
+
+                quantity:
+                    stock.quantity
+            })
+        );
 
 
     return {
-        newStock: {
-            length:
-                materialAvailability.stockLength,
+        stockLength:
+            materialAvailability.stockLength,
 
-            unlimited:
-                materialAvailability.unlimitedStock,
-
-            quantity:
-                materialAvailability.stockQuantity
-        },
+        newStock: newStock,
 
         remnants: remnants
     };
@@ -548,7 +678,6 @@ function calculateMaterialUsage(
         Array.isArray(plan) ||
         !Array.isArray(plan.bars)
     ) {
-
         throw new Error(
             "Sahaussuunnitelman pitää sisältää tankojen taulukko."
         );
@@ -558,78 +687,149 @@ function calculateMaterialUsage(
     if (
         materialInventory === null ||
         typeof materialInventory !== "object" ||
-        Array.isArray(materialInventory) ||
-        materialInventory.newStock === undefined ||
-        !Array.isArray(materialInventory.remnants)
+        Array.isArray(materialInventory)
     ) {
-
         throw new Error(
             "Materiaalivaraston tiedot ovat virheelliset."
         );
     }
 
 
-    const newStock =
-        materialInventory.newStock;
+    validateMaterialAvailability(
+        materialInventory
+    );
 
 
-    validateMaterialAvailability({
-        stockLength: newStock.length,
-        unlimitedStock: newStock.unlimited,
-        stockQuantity: newStock.quantity,
-        remnants: materialInventory.remnants
-    });
+    const stockByProfileType = new Map(
+        materialInventory.newStock.map(
+            stock => [
+                stock.profileType,
+                stock
+            ]
+        )
+    );
 
 
     const availableRemnants = new Map();
     const usedRemnants = new Map();
+    const newStockUsedByProfileType = new Map();
 
 
     for (const remnant of materialInventory.remnants) {
 
         const lengthUnits =
-            millimetersToDpUnits(remnant.length);
+            millimetersToDpUnits(
+                remnant.length
+            );
+
+        const key =
+            remnant.profileType +
+            ":" +
+            lengthUnits;
 
         availableRemnants.set(
-            lengthUnits,
+            key,
             remnant.quantity
         );
     }
 
 
-    let newStockUsed = 0;
-
-
     for (const bar of plan.bars) {
+
+        const profileType =
+            bar.profileType;
+
+        if (
+            typeof profileType !== "string" ||
+            PROFILE_TYPES[profileType] === undefined
+        ) {
+            throw new Error(
+                "Sahaussuunnitelman tangon profiilityyppi on virheellinen."
+            );
+        }
+
 
         const source =
             bar.source ?? "new";
 
         const sourceLength =
-            bar.sourceLength ?? newStock.length;
+            bar.sourceLength ??
+            materialInventory.stockLength;
+
+
+        if (
+            !Number.isFinite(sourceLength) ||
+            sourceLength <= 0
+        ) {
+            throw new Error(
+                "Materiaalikappaleen lähtöpituuden pitää olla suurempi kuin 0."
+            );
+        }
+
+
+        if (!hasSupportedMillimeterPrecision(sourceLength)) {
+            throw new Error(
+                "Materiaalikappaleen lähtöpituudessa saa olla enintään 0,1 mm tarkkuus."
+            );
+        }
 
 
         if (source === "new") {
 
             if (
                 millimetersToDpUnits(sourceLength) !==
-                millimetersToDpUnits(newStock.length)
+                millimetersToDpUnits(
+                    materialInventory.stockLength
+                )
             ) {
-
                 throw new Error(
                     "Uuden tangon lähtöpituus ei vastaa varaston raakatangon pituutta."
                 );
             }
 
 
-            newStockUsed++;
+            const stock =
+                stockByProfileType.get(
+                    profileType
+                );
+
+            if (stock === undefined) {
+                throw new Error(
+                    "Profiilityypille ei löydy uusien tankojen saatavuustietoa."
+                );
+            }
+
+
+            const usedQuantity =
+                (
+                    newStockUsedByProfileType.get(
+                        profileType
+                    ) ?? 0
+                ) + 1;
+
+
+            if (
+                !stock.unlimited &&
+                usedQuantity > stock.quantity
+            ) {
+                throw new Error(
+                    "Suunnitelma käyttää enemmän " +
+                    PROFILE_TYPES[profileType].label +
+                    "-raakalistoja kuin varastossa on."
+                );
+            }
+
+
+            newStockUsedByProfileType.set(
+                profileType,
+                usedQuantity
+            );
 
             continue;
         }
 
 
         if (source !== "remnant") {
-
             throw new Error(
                 "Materiaalilähteen pitää olla new tai remnant."
             );
@@ -637,19 +837,32 @@ function calculateMaterialUsage(
 
 
         const lengthUnits =
-            millimetersToDpUnits(sourceLength);
+            millimetersToDpUnits(
+                sourceLength
+            );
+
+        const key =
+            profileType +
+            ":" +
+            lengthUnits;
 
         const availableQuantity =
-            availableRemnants.get(lengthUnits) ?? 0;
+            availableRemnants.get(key) ?? 0;
 
         const usedQuantity =
-            (usedRemnants.get(lengthUnits) ?? 0) + 1;
+            (
+                usedRemnants.get(key) ?? 0
+            ) + 1;
 
 
-        if (usedQuantity > availableQuantity) {
-
+        if (
+            usedQuantity >
+            availableQuantity
+        ) {
             throw new Error(
                 "Suunnitelma käyttää enemmän " +
+                PROFILE_TYPES[profileType].label +
+                " " +
                 sourceLength +
                 " mm jäännöksiä kuin varastossa on."
             );
@@ -657,40 +870,80 @@ function calculateMaterialUsage(
 
 
         usedRemnants.set(
-            lengthUnits,
+            key,
             usedQuantity
         );
     }
 
 
-    if (
-        !newStock.unlimited &&
-        newStockUsed > newStock.quantity
-    ) {
+    const newStockUsage =
+        materialInventory.newStock.map(
+            stock => {
 
-        throw new Error(
-            "Suunnitelma käyttää enemmän uusia tankoja kuin varastossa on."
+                const usedQuantity =
+                    newStockUsedByProfileType.get(
+                        stock.profileType
+                    ) ?? 0;
+
+                return {
+                    profileType:
+                        stock.profileType,
+
+                    unlimited:
+                        stock.unlimited,
+
+                    availableQuantity:
+                        stock.quantity,
+
+                    usedQuantity:
+                        usedQuantity,
+
+                    remainingQuantity:
+                        stock.unlimited
+                            ? null
+                            : stock.quantity -
+                                usedQuantity
+                };
+            }
         );
-    }
 
 
     const remnantUsage =
-        materialInventory.remnants.map(remnant => {
+        materialInventory.remnants.map(
+            remnant => {
 
-            const lengthUnits =
-                millimetersToDpUnits(remnant.length);
+                const lengthUnits =
+                    millimetersToDpUnits(
+                        remnant.length
+                    );
 
-            const usedQuantity =
-                usedRemnants.get(lengthUnits) ?? 0;
+                const key =
+                    remnant.profileType +
+                    ":" +
+                    lengthUnits;
 
-            return {
-                length: remnant.length,
-                availableQuantity: remnant.quantity,
-                usedQuantity: usedQuantity,
-                remainingQuantity:
-                    remnant.quantity - usedQuantity
-            };
-        });
+                const usedQuantity =
+                    usedRemnants.get(key) ?? 0;
+
+                return {
+                    profileType:
+                        remnant.profileType,
+
+                    length:
+                        remnant.length,
+
+                    availableQuantity:
+                        remnant.quantity,
+
+                    usedQuantity:
+                        usedQuantity,
+
+                    remainingQuantity:
+                        remnant.quantity -
+                        usedQuantity
+                };
+            }
+        );
 
 
     const unusedRemnants =
@@ -700,22 +953,26 @@ function calculateMaterialUsage(
                     remnant.remainingQuantity > 0
             )
             .map(remnant => ({
-                length: remnant.length,
-                quantity: remnant.remainingQuantity
+                profileType:
+                    remnant.profileType,
+
+                length:
+                    remnant.length,
+
+                quantity:
+                    remnant.remainingQuantity
             }));
 
 
     return {
-        newStockUsed: newStockUsed,
+        newStockUsage:
+            newStockUsage,
 
-        newStockRemainingQuantity:
-            newStock.unlimited
-                ? null
-                : newStock.quantity - newStockUsed,
+        remnantUsage:
+            remnantUsage,
 
-        remnantUsage: remnantUsage,
-
-        unusedRemnants: unusedRemnants
+        unusedRemnants:
+            unusedRemnants
     };
 }
 
@@ -4275,8 +4532,6 @@ const WORK_STATE_SCHEMA_VERSION = 3;
 const WORK_STATE_ENGINE_VERSION = "material-v0.2";
 
 const DEFAULT_STOCK_LENGTH = "6000";
-const DEFAULT_STOCK_QUANTITY = "1";
-const DEFAULT_UNLIMITED_STOCK = true;
 const DEFAULT_KERF = "3";
 
 const completedBarIds = new Set();
@@ -4411,8 +4666,6 @@ function isValidStoredWorkState(state) {
         typeof state.savedAt !== "string" ||
         !Number.isFinite(Date.parse(state.savedAt)) ||
         !isStoredInputValue(state.stockLength) ||
-        !isStoredInputValue(state.stockQuantity) ||
-        typeof state.unlimitedStock !== "boolean" ||
         !isStoredInputValue(state.kerf) ||
         !isValidStoredStockProfileRows(
             state.stockProfileRows
@@ -4516,12 +4769,6 @@ function createWorkStateSnapshot() {
         stockLength:
             document.getElementById("stockLength").value,
 
-        stockQuantity:
-            document.getElementById("stockQuantity").value,
-
-        unlimitedStock:
-            document.getElementById("unlimitedStock").checked,
-
         kerf:
             document.getElementById("kerf").value,
 
@@ -4567,16 +4814,8 @@ function resetWorkToDefaults() {
     document.getElementById("stockLength").value =
         DEFAULT_STOCK_LENGTH;
 
-    document.getElementById("stockQuantity").value =
-        DEFAULT_STOCK_QUANTITY;
-
-    document.getElementById("unlimitedStock").checked =
-        DEFAULT_UNLIMITED_STOCK;
-
     document.getElementById("kerf").value =
         DEFAULT_KERF;
-
-    updateStockQuantityAvailability();
 
     createDefaultStockProfileRows();
 
@@ -4657,16 +4896,9 @@ function restoreSavedWorkState() {
     document.getElementById("stockLength").value =
         String(state.stockLength);
 
-    document.getElementById("stockQuantity").value =
-        String(state.stockQuantity);
-
-    document.getElementById("unlimitedStock").checked =
-        state.unlimitedStock;
-
     document.getElementById("kerf").value =
         String(state.kerf);
 
-    updateStockQuantityAvailability();
 
     const stockProfileList =
         document.getElementById("stockProfileList");
@@ -5192,7 +5424,6 @@ function initializeWorkPersistence() {
         if (
             event.target.matches(
                 "#stockLength, " +
-                "#stockQuantity, " +
                 "#kerf, " +
                 ".stock-profile-quantity, " +
                 ".remnant-length, " +
@@ -5210,7 +5441,6 @@ function initializeWorkPersistence() {
 
         if (
             event.target.matches(
-                "#unlimitedStock, " +
                 ".stock-profile-unlimited-checkbox, " +
                 ".remnant-profile-type, " +
                 ".cut-profile-type"

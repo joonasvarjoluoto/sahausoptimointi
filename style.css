@@ -99,23 +99,6 @@ h2 {
     color: #495865;
 }
 
-
-.stock-unlimited-toggle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 16px;
-    color: #2c3a47;
-    font-weight: 700;
-}
-
-
-.stock-unlimited-toggle input {
-    width: 20px;
-    height: 20px;
-    margin: 0;
-}
-
 .stock-profile-availability {
     margin-top: 20px;
 }
@@ -136,9 +119,7 @@ h2 {
 .stock-profile-row {
     display: grid;
     grid-template-columns:
-        minmax(0, 1fr)
-        100px
-        auto;
+        minmax(0, 1fr) 100px auto;
     align-items: center;
     gap: 10px;
     padding: 10px;
@@ -544,7 +525,7 @@ input[type="number"]:disabled {
 
 
     .stock-fields {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
 
@@ -589,8 +570,7 @@ input[type="number"]:disabled {
     }
 
 
-    .form-field,
-    .stock-unlimited-toggle {
+    .form-field {
         color: #d8e0e7;
     }
 
@@ -619,7 +599,7 @@ input[type="number"]:disabled {
         border-color: #3b4650;
     }
 
-        .stock-profile-row {
+    .stock-profile-row {
         border-color: #3b4650;
         background: #161d23;
     }
