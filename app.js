@@ -2790,6 +2790,9 @@ function scoreCompleteMaterialTransitionPlan(
     const reusableRemnantHandlingPenalty =
         settings.reusableRemnantHandlingPenalty ?? 20;
 
+    const newStockRemnantCreationPenalty =
+        settings.newStockRemnantCreationPenalty ?? 0;
+
     const freeScrapLength =
         settings.freeScrapLength ?? 200;
 
@@ -2802,6 +2805,7 @@ function scoreCompleteMaterialTransitionPlan(
     let kerfRecoveredValueEquivalent = 0;
 
     let remnantHandlingPenaltyEquivalent = 0;
+    let newStockRemnantCreationPenaltyEquivalent = 0;
     let largeScrapPenaltyEquivalent = 0;
 
 
@@ -2902,6 +2906,13 @@ function scoreCompleteMaterialTransitionPlan(
             remnantHandlingPenaltyEquivalent +=
                 reusableRemnantHandlingPenalty;
 
+
+            if (source === "new") {
+
+                newStockRemnantCreationPenaltyEquivalent +=
+                    newStockRemnantCreationPenalty;
+            }
+
         } else {
 
             recoveredRemnantValueEquivalent +=
@@ -2924,6 +2935,7 @@ function scoreCompleteMaterialTransitionPlan(
         recoveredRemnantValueEquivalent -
         kerfRecoveredValueEquivalent +
         remnantHandlingPenaltyEquivalent +
+        newStockRemnantCreationPenaltyEquivalent +
         largeScrapPenaltyEquivalent;
 
 
@@ -2936,6 +2948,9 @@ function scoreCompleteMaterialTransitionPlan(
 
         kerfRecoveredValueEquivalent:
             kerfRecoveredValueEquivalent,
+
+        newStockRemnantCreationPenaltyEquivalent:
+            newStockRemnantCreationPenaltyEquivalent,
 
         remnantHandlingPenaltyEquivalent:
             remnantHandlingPenaltyEquivalent,
@@ -5480,10 +5495,11 @@ const PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS = Object.freeze({
         fullValueLength: 4500,
         curvePower: 2,
         minimumValueFactor: 0.1,
-        maximumValueFactor: 0.95,
+        maximumValueFactor: 0.87,
         scrapValueFactor: 0.1,
         kerfRecoveryFactor: 0,
         reusableRemnantHandlingPenalty: 20,
+        newStockRemnantCreationPenalty: 50,
         freeScrapLength: 200,
         largeScrapPenaltyFactor: 1.7
     })
@@ -7704,4 +7720,225 @@ function runProfileInventoryShortageTest() {
 
 if (typeof document !== "undefined") {
     initializeWorkPersistence();
+}
+
+
+function loadDevelopmentTestCase(
+    cuts,
+    remnants = []
+) {
+
+    document.getElementById("stockLength").value =
+        "6000";
+
+    document.getElementById("kerf").value =
+        "3";
+
+
+    document
+        .getElementById("stockProfileList")
+        .replaceChildren(
+            ...Object.keys(PROFILE_TYPES).map(
+                profileType =>
+                    createStockProfileRow(
+                        profileType,
+                        "1",
+                        true
+                    )
+            )
+        );
+
+
+    document
+        .getElementById("cutList")
+        .replaceChildren(
+            ...cuts.map(cut =>
+                createCutRow(
+                    cut.length,
+                    cut.quantity,
+                    cut.profileType
+                )
+            )
+        );
+
+
+    document
+        .getElementById("remnantList")
+        .replaceChildren(
+            ...remnants.map(remnant =>
+                createRemnantRow(
+                    remnant.length,
+                    remnant.quantity,
+                    remnant.profileType
+                )
+            )
+        );
+
+
+    handleOrderInputChange();
+}
+
+
+function loadTestA() {
+
+    loadDevelopmentTestCase(
+        [
+            { profileType: "uProfile", length: 2180, quantity: 2 },
+            { profileType: "uProfile", length: 2240, quantity: 3 },
+            { profileType: "uProfile", length: 2310, quantity: 2 },
+
+            { profileType: "verticalProfile", length: 2180, quantity: 4 },
+            { profileType: "verticalProfile", length: 2240, quantity: 6 },
+            { profileType: "verticalProfile", length: 2310, quantity: 4 },
+
+            { profileType: "horizontalProfile", length: 760, quantity: 4 },
+            { profileType: "horizontalProfile", length: 820, quantity: 6 },
+            { profileType: "horizontalProfile", length: 910, quantity: 4 },
+
+            { profileType: "topRail", length: 2460, quantity: 1 },
+            { profileType: "topRail", length: 3290, quantity: 1 },
+            { profileType: "topRail", length: 3870, quantity: 1 },
+
+            { profileType: "bottomRail", length: 2460, quantity: 1 },
+            { profileType: "bottomRail", length: 3290, quantity: 1 },
+            { profileType: "bottomRail", length: 3870, quantity: 1 }
+        ]
+    );
+}
+
+
+function loadTestAWithRemnants() {
+
+    loadDevelopmentTestCase(
+        [
+            { profileType: "uProfile", length: 2180, quantity: 2 },
+            { profileType: "uProfile", length: 2240, quantity: 3 },
+            { profileType: "uProfile", length: 2310, quantity: 2 },
+
+            { profileType: "verticalProfile", length: 2180, quantity: 4 },
+            { profileType: "verticalProfile", length: 2240, quantity: 6 },
+            { profileType: "verticalProfile", length: 2310, quantity: 4 },
+
+            { profileType: "horizontalProfile", length: 760, quantity: 4 },
+            { profileType: "horizontalProfile", length: 820, quantity: 6 },
+            { profileType: "horizontalProfile", length: 910, quantity: 4 },
+
+            { profileType: "topRail", length: 2460, quantity: 1 },
+            { profileType: "topRail", length: 3290, quantity: 1 },
+            { profileType: "topRail", length: 3870, quantity: 1 },
+
+            { profileType: "bottomRail", length: 2460, quantity: 1 },
+            { profileType: "bottomRail", length: 3290, quantity: 1 },
+            { profileType: "bottomRail", length: 3870, quantity: 1 }
+        ],
+
+        [
+            { profileType: "uProfile", length: 2350, quantity: 1 },
+            { profileType: "uProfile", length: 4550, quantity: 1 },
+
+            { profileType: "verticalProfile", length: 2300, quantity: 2 },
+            { profileType: "verticalProfile", length: 4700, quantity: 1 },
+
+            { profileType: "horizontalProfile", length: 1700, quantity: 2 },
+            { profileType: "horizontalProfile", length: 2750, quantity: 1 },
+
+            { profileType: "topRail", length: 3400, quantity: 1 },
+            { profileType: "topRail", length: 4100, quantity: 1 },
+
+            { profileType: "bottomRail", length: 3350, quantity: 1 },
+            { profileType: "bottomRail", length: 4000, quantity: 1 }
+        ]
+    );
+}
+
+
+function loadTestD1() {
+
+    loadDevelopmentTestCase(
+        [
+            {
+                profileType: "verticalProfile",
+                length: 2200,
+                quantity: 2
+            }
+        ],
+
+        [
+            {
+                profileType: "verticalProfile",
+                length: 3900,
+                quantity: 1
+            }
+        ]
+    );
+}
+
+function runCurrentOrderSummaryTest() {
+
+    const materialInventory =
+        createMaterialInventory(
+            getMaterialAvailabilityFromForm()
+        );
+
+    const cuts =
+        getCutsFromForm();
+
+    const kerf =
+        Number(
+            document.getElementById("kerf").value
+        );
+
+
+    const testScoreSettings = {
+        ...PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+            .scoreSettings
+    };
+
+
+    const optimization =
+        optimizeOrderByProfileTypeWithInventory(
+            cuts,
+            materialInventory,
+            kerf,
+            {
+                ...PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS,
+
+                beamWidth: 200,
+
+                scoreSettings:
+                    testScoreSettings
+            }
+        );
+
+
+    console.table([
+        {
+            totalBars:
+                optimization.barCount,
+
+            newBars:
+                optimization.bars.filter(
+                    bar => bar.source === "new"
+                ).length,
+
+            remnantBars:
+                optimization.bars.filter(
+                    bar => bar.source === "remnant"
+                ).length,
+
+            reusableGeneratedRemnants:
+                optimization.bars.filter(
+                    bar =>
+                        bar.source === "new" &&
+                        bar.remaining > 0 &&
+                        evaluateRemnantDisposition(
+                            bar.remaining,
+                            testScoreSettings
+                        ).disposition === "reusable"
+                ).length
+        }
+    ]);
+
+
+    return optimization;
 }
