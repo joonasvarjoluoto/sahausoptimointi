@@ -5621,6 +5621,126 @@ function optimizeOrderByProfileType(
     };
 }
 
+
+function optimizeOrderByProfileTypeWithInventory(
+    cuts,
+    materialInventory,
+    kerf,
+    options = {}
+) {
+
+    validateMaterialAvailability(
+        materialInventory
+    );
+
+
+    const profileResults = [];
+
+
+    for (const profileType of Object.keys(PROFILE_TYPES)) {
+
+        const profileCuts =
+            cuts.filter(
+                cut =>
+                    cut.profileType === profileType
+            );
+
+
+        if (profileCuts.length === 0) {
+            continue;
+        }
+
+
+        const groupedCuts =
+            mergeGroupedCuts(
+                profileCuts
+            );
+
+
+        const materialSources =
+            getMaterialSourcesForProfile(
+                materialInventory,
+                profileType
+            );
+
+
+        const optimization =
+            optimizeOrderInventoryBeamDP(
+                groupedCuts,
+                materialSources,
+                kerf,
+                options
+            );
+
+
+        profileResults.push({
+            profileType:
+                profileType,
+
+            materialSources:
+                materialSources,
+
+            optimization:
+                optimization
+        });
+    }
+
+
+    const bars =
+        profileResults.flatMap(
+            result =>
+                result.optimization.bars.map(
+                    bar => ({
+                        ...bar,
+
+                        profileType:
+                            result.profileType
+                    })
+                )
+        );
+
+
+    const remainingItems =
+        profileResults.flatMap(
+            result =>
+                result.optimization
+                    .remainingItems.map(
+                        item => ({
+                            profileType:
+                                result.profileType,
+
+                            length:
+                                item.length,
+
+                            quantity:
+                                item.quantity
+                        })
+                    )
+        );
+
+
+    return {
+        complete:
+            profileResults.every(
+                result =>
+                    result.optimization.complete
+            ),
+
+        bars:
+            bars,
+
+        remainingItems:
+            remainingItems,
+
+        barCount:
+            bars.length,
+
+        profileResults:
+            profileResults
+    };
+}
+
+
 function getRemnantStatus(
     remaining,
     scoreSettings
@@ -7334,6 +7454,214 @@ function runInventoryBeamAvailabilityTest() {
 }
 
 
+function runProfileInventoryOptimizationTest() {
+
+    const materialAvailability = {
+        stockLength: 6000,
+
+        newStock: [
+            {
+                profileType: "uProfile",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "verticalProfile",
+                unlimited: false,
+                quantity: 0
+            },
+            {
+                profileType: "horizontalProfile",
+                unlimited: false,
+                quantity: 1
+            },
+            {
+                profileType: "topRail",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "bottomRail",
+                unlimited: true,
+                quantity: null
+            }
+        ],
+
+        remnants: [
+            {
+                profileType: "verticalProfile",
+                length: 2800,
+                quantity: 1
+            }
+        ]
+    };
+
+
+    const inventory =
+        createMaterialInventory(
+            materialAvailability
+        );
+
+
+    const cuts = [
+        {
+            profileType: "verticalProfile",
+            length: 2700,
+            quantity: 1
+        },
+        {
+            profileType: "horizontalProfile",
+            length: 3300,
+            quantity: 1
+        }
+    ];
+
+
+    const result =
+        optimizeOrderByProfileTypeWithInventory(
+            cuts,
+            inventory,
+            3,
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+        );
+
+
+    console.log(
+        "PROFIILIKOHTAINEN VARASTO-OPTIMOINTI:",
+        result
+    );
+
+
+    console.table(
+        result.bars.map(bar => ({
+            profileType:
+                bar.profileType,
+
+            source:
+                bar.source,
+
+            sourceLength:
+                bar.sourceLength,
+
+            cuts:
+                bar.pattern
+                    .map(item =>
+                        item.length +
+                        " × " +
+                        item.quantity
+                    )
+                    .join(", ")
+        }))
+    );
+
+
+    return result;
+}
+
+
+function runProfileInventoryShortageTest() {
+
+    const materialAvailability = {
+        stockLength: 6000,
+
+        newStock: [
+            {
+                profileType: "uProfile",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "verticalProfile",
+                unlimited: false,
+                quantity: 0
+            },
+            {
+                profileType: "horizontalProfile",
+                unlimited: false,
+                quantity: 1
+            },
+            {
+                profileType: "topRail",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "bottomRail",
+                unlimited: true,
+                quantity: null
+            }
+        ],
+
+        remnants: []
+    };
+
+
+    const inventory =
+        createMaterialInventory(
+            materialAvailability
+        );
+
+
+    const cuts = [
+        {
+            profileType: "verticalProfile",
+            length: 2700,
+            quantity: 1
+        },
+        {
+            profileType: "horizontalProfile",
+            length: 3300,
+            quantity: 1
+        }
+    ];
+
+
+    const result =
+        optimizeOrderByProfileTypeWithInventory(
+            cuts,
+            inventory,
+            3,
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+        );
+
+
+    console.log(
+        "PROFIILIKOHTAINEN MATERIAALIPULA:",
+        result
+    );
+
+
+    console.table(
+        result.bars.map(bar => ({
+            profileType:
+                bar.profileType,
+
+            source:
+                bar.source,
+
+            sourceLength:
+                bar.sourceLength,
+
+            cuts:
+                bar.pattern
+                    .map(item =>
+                        item.length +
+                        " × " +
+                        item.quantity
+                    )
+                    .join(", ")
+        }))
+    );
+
+
+    console.log(
+        "Sahaamatta jääneet:",
+        result.remainingItems
+    );
+
+
+    return result;
+}
 
 
 
