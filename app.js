@@ -6437,6 +6437,18 @@ function renderCuttingPlan(plan) {
                 </div>
                 <dl class="bar-metrics">
                     <div>
+                        <dt>Materiaali:</dt>
+                        <dd>
+                            ${bar.source === "remnant"
+                ? "Jäännös"
+                : "Uusi tanko"
+            }
+                            ·
+                            ${formatMillimeters(bar.sourceLength)}
+                        </dd>
+                    </div>
+
+                    <div>
                         <dt>Jäännös:</dt>
                         <dd>${formatMillimeters(bar.remaining)}</dd>
                     </div>
@@ -6502,7 +6514,16 @@ function renderOptimizationFailure(
 
         for (const item of remainingItems) {
 
+            const profileLabel =
+                PROFILE_TYPES[item.profileType]?.label;
+
+
             result +=
+                (
+                    profileLabel !== undefined
+                        ? profileLabel + " · "
+                        : ""
+                ) +
                 formatMillimeters(item.length) +
                 " × " +
                 item.quantity +
