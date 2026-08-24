@@ -5833,7 +5833,7 @@ function getRemnantStatusLabel(remnantStatus) {
 
 const WORK_STORAGE_KEY = "sahausoptimointi.currentWork";
 const WORK_STATE_SCHEMA_VERSION = 3;
-const WORK_STATE_ENGINE_VERSION = "material-v0.2";
+const WORK_STATE_ENGINE_VERSION = "material-v0.3";
 
 const DEFAULT_STOCK_LENGTH = "6000";
 const DEFAULT_KERF = "3";
@@ -5931,11 +5931,21 @@ function isValidStoredPlan(plan) {
         "scrap"
     ]);
 
+    const validSources = new Set([
+        "new",
+        "remnant"
+    ]);
+
 
     return plan.bars.every((bar, index) =>
         isPlainObject(bar) &&
         bar.id === "bar-" + (index + 1) &&
         bar.number === index + 1 &&
+        typeof bar.profileType === "string" &&
+        PROFILE_TYPES[bar.profileType] !== undefined &&
+        validSources.has(bar.source) &&
+        Number.isFinite(bar.sourceLength) &&
+        bar.sourceLength > 0 &&
         Array.isArray(bar.groupedCuts) &&
         bar.groupedCuts.length > 0 &&
         bar.groupedCuts.every(cut =>
@@ -6528,6 +6538,8 @@ async function calculate() {
     const cuts =
         getCutsFromForm();
 
+    const materialAvailability =
+        getMaterialAvailabilityFromForm();
 
     const validationErrors = [];
 
@@ -6662,10 +6674,16 @@ async function calculate() {
 
     try {
 
+        const materialInventory =
+            createMaterialInventory(
+                materialAvailability
+            );
+
+
         const optimization =
-            optimizeOrderByProfileType(
+            optimizeOrderByProfileTypeWithInventory(
                 cuts,
-                stockLength,
+                materialInventory,
                 kerf,
                 PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
             );
@@ -6687,11 +6705,9 @@ async function calculate() {
             console.log(
                 PROFILE_TYPES[
                     profileResult.profileType
-                ].label
-            );
-
-            logCostBreakdown(
-                profileResult.optimization.materialScore
+                ].label,
+                profileResult.optimization
+                    .materialTransitionScore
             );
         }
 
