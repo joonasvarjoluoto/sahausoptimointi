@@ -7873,7 +7873,7 @@ function loadTestD1() {
     );
 }
 
-function runCurrentOrderSummaryTest() {
+function runCurrentOrderSummaryTest(showOutput = true) {
 
     const materialInventory =
         createMaterialInventory(
@@ -7903,42 +7903,197 @@ function runCurrentOrderSummaryTest() {
             {
                 ...PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS,
 
-                beamWidth: 200,
-
                 scoreSettings:
                     testScoreSettings
             }
         );
 
 
-    console.table([
-        {
-            totalBars:
-                optimization.barCount,
+    if (showOutput) {
 
-            newBars:
-                optimization.bars.filter(
-                    bar => bar.source === "new"
-                ).length,
+        console.table([
+            {
+                totalBars:
+                    optimization.barCount,
 
-            remnantBars:
-                optimization.bars.filter(
-                    bar => bar.source === "remnant"
-                ).length,
+                newBars:
+                    optimization.bars.filter(
+                        bar => bar.source === "new"
+                    ).length,
 
-            reusableGeneratedRemnants:
-                optimization.bars.filter(
-                    bar =>
-                        bar.source === "new" &&
-                        bar.remaining > 0 &&
-                        evaluateRemnantDisposition(
-                            bar.remaining,
-                            testScoreSettings
-                        ).disposition === "reusable"
-                ).length
-        }
-    ]);
+                remnantBars:
+                    optimization.bars.filter(
+                        bar => bar.source === "remnant"
+                    ).length,
+
+                reusableGeneratedRemnants:
+                    optimization.bars.filter(
+                        bar =>
+                            bar.source === "new" &&
+                            bar.remaining > 0 &&
+                            evaluateRemnantDisposition(
+                                bar.remaining,
+                                testScoreSettings
+                            ).disposition === "reusable"
+                    ).length
+            }
+        ]);
+    }
 
 
     return optimization;
+}
+
+function runAllRegressionTests() {
+
+    const tests = [
+        {
+            name: "Testi A ilman jäännöksiä",
+            load: loadTestA,
+
+            expected: {
+                totalBars: 17,
+                newBars: 17,
+                remnantBars: 0,
+                reusableGeneratedRemnants: 13
+            }
+        },
+
+        {
+            name: "Testi A jäännöksillä",
+            load: loadTestAWithRemnants,
+
+            expected: {
+                totalBars: 22,
+                newBars: 10,
+                remnantBars: 12,
+                reusableGeneratedRemnants: 13
+            }
+        },
+
+        {
+            name: "Testi D1",
+            load: loadTestD1,
+
+            expected: {
+                totalBars: 1,
+                newBars: 1,
+                remnantBars: 0,
+                reusableGeneratedRemnants: 0
+            }
+        }
+    ];
+
+
+    const results = [];
+
+
+    for (const test of tests) {
+
+        try {
+
+            test.load();
+
+
+            const optimization =
+                runCurrentOrderSummaryTest(false);
+
+
+            const actual = {
+                totalBars:
+                    optimization.barCount,
+
+                newBars:
+                    optimization.bars.filter(
+                        bar => bar.source === "new"
+                    ).length,
+
+                remnantBars:
+                    optimization.bars.filter(
+                        bar => bar.source === "remnant"
+                    ).length,
+
+                reusableGeneratedRemnants:
+                    optimization.bars.filter(
+                        bar =>
+                            bar.source === "new" &&
+                            bar.remaining > 0 &&
+                            evaluateRemnantDisposition(
+                                bar.remaining,
+                                PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+                                    .scoreSettings
+                            ).disposition === "reusable"
+                    ).length
+            };
+
+
+            const passed =
+                optimization.complete === true &&
+                actual.totalBars ===
+                test.expected.totalBars &&
+                actual.newBars ===
+                test.expected.newBars &&
+                actual.remnantBars ===
+                test.expected.remnantBars &&
+                actual.reusableGeneratedRemnants ===
+                test.expected.reusableGeneratedRemnants;
+
+
+            results.push({
+                test: test.name,
+
+                result:
+                    passed
+                        ? "PASS"
+                        : "FAIL",
+
+                complete:
+                    optimization.complete,
+
+                totalBars:
+                    actual.totalBars,
+
+                expectedTotalBars:
+                    test.expected.totalBars,
+
+                newBars:
+                    actual.newBars,
+
+                expectedNewBars:
+                    test.expected.newBars,
+
+                remnantBars:
+                    actual.remnantBars,
+
+                expectedRemnantBars:
+                    test.expected.remnantBars
+            });
+
+        } catch (error) {
+
+            results.push({
+                test: test.name,
+                result: "ERROR",
+                error: error.message
+            });
+        }
+    }
+
+
+    console.table(results);
+
+
+    const passedCount =
+        results.filter(
+            result =>
+                result.result === "PASS"
+        ).length;
+
+
+    console.log(
+        `Regressiotestit: ${passedCount}/${results.length} läpäisty`
+    );
+
+
+    return results;
 }
