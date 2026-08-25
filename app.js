@@ -7873,6 +7873,54 @@ function loadTestD1() {
     );
 }
 
+
+function loadTestProfileIsolation() {
+
+    loadDevelopmentTestCase(
+        [
+            {
+                profileType: "verticalProfile",
+                length: 2500,
+                quantity: 1
+            }
+        ],
+
+        [
+            {
+                profileType: "horizontalProfile",
+                length: 2500,
+                quantity: 1
+            }
+        ]
+    );
+
+
+    const verticalStockRow =
+        document.querySelector(
+            '.stock-profile-row[data-profile-type="verticalProfile"]'
+        );
+
+    const unlimitedCheckbox =
+        verticalStockRow.querySelector(
+            ".stock-profile-unlimited-checkbox"
+        );
+
+    const quantityInput =
+        verticalStockRow.querySelector(
+            ".stock-profile-quantity"
+        );
+
+
+    unlimitedCheckbox.checked = false;
+
+    quantityInput.disabled = false;
+    quantityInput.value = "0";
+
+
+    handleOrderInputChange();
+}
+
+
 function runCurrentOrderSummaryTest(showOutput = true) {
 
     const materialInventory =
@@ -7952,6 +8000,7 @@ function runAllRegressionTests() {
             load: loadTestA,
 
             expected: {
+                complete: true,
                 totalBars: 17,
                 newBars: 17,
                 remnantBars: 0,
@@ -7964,6 +8013,7 @@ function runAllRegressionTests() {
             load: loadTestAWithRemnants,
 
             expected: {
+                complete: true,
                 totalBars: 22,
                 newBars: 10,
                 remnantBars: 12,
@@ -7976,11 +8026,25 @@ function runAllRegressionTests() {
             load: loadTestD1,
 
             expected: {
+                complete: true,
                 totalBars: 1,
                 newBars: 1,
                 remnantBars: 0,
                 reusableGeneratedRemnants: 1,
                 newBarRemaining: 1594
+            }
+        },
+
+        {
+            name: "Profiilityyppien eristys",
+            load: loadTestProfileIsolation,
+
+            expected: {
+                complete: false,
+                totalBars: 0,
+                newBars: 0,
+                remnantBars: 0,
+                reusableGeneratedRemnants: 0
             }
         }
     ];
@@ -8034,7 +8098,8 @@ function runAllRegressionTests() {
 
 
             const passed =
-                optimization.complete === true &&
+                optimization.complete ===
+                test.expected.complete &&
                 actual.totalBars ===
                 test.expected.totalBars &&
                 actual.newBars ===
@@ -8075,9 +8140,6 @@ function runAllRegressionTests() {
 
                 remnantBars:
                     actual.remnantBars,
-
-                expectedRemnantBars:
-                    test.expected.remnantBars,
 
                 expectedRemnantBars:
                     test.expected.remnantBars,
