@@ -2,7 +2,7 @@
 
 ## Projektin tarkoitus
 
-Tämä on oppimisprojekti, jossa rakennetaan selaimessa toimivaa sahausoptimointia 6000 mm:n alumiiniprofiileille. Tavoite ei ole vain minimoida sahahukkaa, vaan muodostaa tuotannon kannalta järkevä kokonaisratkaisu, joka huomioi uuden materiaalin käytön, olemassa olevat jäännökset, syntyvien jäännösten arvon, materiaalivaraston pirstaloitumisen ja myöhemmin myös työajan sekä sahausjärjestyksen.
+Tämä on oppimisprojekti, jossa rakennetaan selaimessa toimivaa sahausoptimointia 6000 mm:n alumiiniprofiileille. Tavoite ei ole vain minimoida sahahukkaa, vaan muodostaa tuotannon kannalta järkevä kokonaisratkaisu, joka huomioi uuden materiaalin käytön, olemassa olevat jäännökset, syntyvien jäännösten arvon, materiaalivaraston pirstaloitumisen ja myöhemmin myös työajan sekä sahausjärjestyksen. Pidä kustannuskomponentit erillisinä ja mahdollisuuksien mukaan euroiksi muunnettavina; yksi läpinäkymätön kokonaispiste ei saa hävittää perusteluja.
 
 6000 mm on projektin tavallinen ja käyttöliittymän oletusarvoinen uuden raakatangon pituus. Pidä laskenta silti nykyisen `stockLength`-syötteen mukaisesti yleiskäyttöisenä, ellei tehtävässä erikseen päätetä lukita pituutta.
 
@@ -10,21 +10,51 @@ Projektissa oppiminen on yhtä tärkeä tavoite kuin toimiva lopputulos. Ratkais
 
 ## Fyysinen tuotantomalli
 
-Projektissa on tällä hetkellä viisi fyysisesti erillistä profiilityyppiä:
+Projektissa on tällä hetkellä kuusi fyysisesti erillistä perusprofiilityyppiä:
 
 - `uProfile` = U-profiili, mittarooli `doorHeight`
 - `verticalProfile` = Pystyprofiili, mittarooli `doorHeight`
 - `horizontalProfile` = Vaakaprofiili, mittarooli `doorWidth`
 - `topRail` = Yläkisko, mittarooli `openingWidth`
 - `bottomRail` = Alakisko, mittarooli `openingWidth`
+- `responseProfile` = Vasteprofiili; lisää se aina oikeana profiilityyppinä suunnitteluun, vaikka sen tarkka mittarooli tai kappalesäännöt täsmennetään tarvittaessa erikseen
 
-Eri profiilityypit eivät ole keskenään vaihtokelpoisia. Optimizeri ei saa koskaan käyttää esimerkiksi Vaakaprofiilin uutta tankoa tai jäännöstä Pystyprofiilin kappaleeseen.
+Eri profiilityypit eivät ole keskenään materiaalina vaihtokelpoisia. Optimizeri ei saa koskaan käyttää esimerkiksi Vaakaprofiilin uutta tankoa tai jäännöstä Pystyprofiilin kappaleeseen.
 
-Uudet tangot ovat tällä hetkellä kaikissa profiilityypeissä saman `stockLength`-pituuden mukaisia, käytännössä yleensä 6000 mm. Uuden materiaalin saatavuus annetaan profiilityypeittäin joko rajattomana tai äärellisenä kappalemääränä.
+Materiaalin identiteetti ei saa lukittua pelkkään `profileType`-kenttään. Nykyinen vähimmäismalli on `profileType + color`, ja mallin pitää sallia tulevat lisäattribuutit ilman tietomallin uusiksi kirjoittamista, esimerkiksi:
 
-Jäännös kuuluu aina tietylle profiilityypille. Jäännökset ryhmitellään käytännössä avaimella `(profileType, length)`.
+```js
+{
+    profileType: "verticalProfile",
+    color: "black",
+    attributes: {}
+}
+```
+
+Käytä tällaista material variant -avainta aina, kun materiaalin vaihtokelpoisuutta tai varastoa arvioidaan. `color` ei silti ole sahausjärjestyksessä välttämättä kova rajoite, vaan yleensä pehmeä tuotantopreferenssi.
+
+Uudet tangot ovat tällä hetkellä kaikissa perusprofiilityypeissä saman `stockLength`-pituuden mukaisia, käytännössä aina 6000 mm. Toisessa päässä on noin 8 mm ripustusreikä, ja tangot asetetaan sahalle niin, että ehjä pää on vasemmalla stopparia vasten ja reiällinen, huonompi pää jää oikealle. Älä kovakoodaa tästä kiinteää hukkaa: tulevassa mallissa käyttökelpoinen pituus ja päävara voivat olla esimerkiksi `usableLength`- ja `endAllowance`-kenttiä. Pidä laskenta silti nykyisen `stockLength`-syötteen mukaisesti yleiskäyttöisenä, ellei tehtävässä erikseen päätetä lukita pituutta.
+
+Jäännös kuuluu aina tiettyyn materiaalivarianttiin. Jäännökset voidaan pitää varastossa ryhmiteltyinä, käytännössä esimerkiksi avaimella `(materialVariant, length, quantity)`; pysyviä yksilö-ID:itä ei tarvita tässä vaiheessa. Optimointisimulaatio saa kuitenkin luoda anonyymejä, väliaikaisia bar/source-instansseja, koska niiden pituudet erkanevat sahausten myötä.
 
 Sahausvaran oletusarvo on 3 mm. `cutPiece()` on sahausvaran nykyinen keskitetty sääntö. Älä muuta huomaamatta sitä, milloin terän leveys vähennetään. Nykyisessä mallissa terän leveys syntyy vain, kun sahaus oikeasti vaatii terän leveyden verran materiaalia; täydelliseen loppusovitukseen liittyvä semantiikka on toteutettu `cutPiece()`-funktion kautta ja sitä pitää käsitellä yhtenä projektin ydinsääntönä.
+
+## Tulevan tuotantomallin arkkitehtuuriperiaatteet
+
+Tilaus ei ole optimizerille jakamaton yksikkö. Tilaus koostuu kappaleista, joita saa pilkkoa ja yhdistellä muiden tilausten kappaleiden kanssa profiilityypeittäin tai myöhemmin turvallisuussääntöjen sallimalla tavalla. Säilytä silti jokaisessa tuotetussa kappaleessa `orderId` ja `openingId`, jotta kappaleet voidaan niputtaa, merkitä asiakkaalle ja palauttaa oikeaan aukkoon.
+
+Erota kaksi näkymää selvästi:
+
+- **Materiaalinäkymä:** uusi tanko, jäännös ja niiden tilasiirtymät ovat `bar`/`source`-objekteja. Tämä näkymä kertoo, mistä materiaali tuli ja mitä jäännöksiä jäi.
+- **Tuotantonäkymä:** yksi `cut operation` on yksi sahausliike tietyllä katkaisumitalla ja joukolla juuri siinä liikkeessä päällekkäin olevia lähteitä. Se kertoo työn järjestyksen ja samanaikaisen sahaamisen.
+
+Sahausnippu ei ole pysyvä objekti. Yhdessä sahausliikkeessä voi olla useita uusia tankoja ja/tai jäännöksiä, myös eri väreissä. Sama nippu voi saada useita leikkauksia, ja sen lähteitä voi lisätä tai poistaa leikkausten välillä. Älä siis mallinna yhtä muuttumatonta batchia alusta loppuun.
+
+Nykyinen turvallinen oletus on, että yhdessä sahausliikkeessä sahataan yhtä profiilityyppiä. Tuleva yhteensopivuus pitää kuitenkin mallintaa muokattavana turvallisuussääntönä, ei kovakoodattuna identtisyysvertailuna: esimerkiksi tietty profiilityyppi voi myöhemmin olla sallittu toisen kanssa. `maxStackSize` on profiilityyppikohtainen ja muokattava ominaisuus; käytännön tyypillinen maksimi on usein 4 tai 6, mutta arvo ei ole globaali vakio.
+
+Väriyhtenäisyys on tuotannossa hyödyllinen pehmeä preferenssi: samanväriset työt on yleensä mukava saada valmiiksi, niputtaa aukkoittain, merkitä ja siirtää pois työalueelta. Se ei kuitenkaan saa estää materiaalin kannalta selvästi parempaa tai turvallista ratkaisua ilman erillistä asetusta. Myöhempi WIP-/työaluekriteeri voi rangaista tarpeettomasta keskeneräisestä tavarasta ja suosia yhden työvaiheen valmistamista, niputtamista ja varastoon siirtämistä kerrallaan.
+
+Rolling-horizon-uudelleenoptimointi on sallittu: suunnitelmaa voidaan päivittää, kun osa tilauksista on sahattu, varasto muuttuu tai seuraavat 5–10 tilausta tarkentuvat. Järjestelmän ei tarvitse lukita koko tulevaa tuotantoa yhdellä peruuttamattomalla ajolla.
 
 ## Nykyinen rakenne
 
@@ -59,7 +89,7 @@ Nykyinen korkean tason polku on:
 -> `adaptMaterialOptimizationForUi()`
 -> `renderCuttingPlan()`
 
-`optimizeOrderByProfileTypeWithInventory()` käsittelee jokaisen profiilityypin erillään ja yhdistää tulokset vasta lopuksi. Tämä on tarkoituksellista, koska profiilityypit ovat fyysisesti eri materiaalia.
+`optimizeOrderByProfileTypeWithInventory()` käsittelee jokaisen profiilityypin erillään ja yhdistää tulokset vasta lopuksi. Tämä on nykyisen single-order-optimizerin tarkoituksellinen materiaalirajaus, ei lopullinen tuotantoarkkitehtuuri. Tulevassa multi-order-optimizerissa 5–10 tilausta voidaan järjestää ja pilkkoa materiaalinäkökulmasta yhteisesti, samalla kun `orderId` ja `openingId` säilyvät jäljitettävyyttä varten.
 
 `optimizeOrderInventoryBeamDP()` kantaa tilassa sekä jäljellä olevia tilauskappaleita että jäljellä olevia materiaalilähteitä. Tilan avain huomioi myös äärellisten lähteiden jäljellä olevat määrät, jotta kaksi samaa leikkaustilannetta mutta eri varastotilannetta eivät yhdisty virheellisesti.
 
@@ -73,7 +103,7 @@ Näitä legacy-polkuja ei ole kytketty aktiiviseen käyttöliittymään eikä ni
 
 ## Materiaalivarasto
 
-Käyttöliittymässä uusi materiaali annetaan profiilityypeittäin muodossa, joka vastaa tätä rakennetta:
+Käyttöliittymässä uusi materiaali annetaan nykyisin profiilityypeittäin muodossa, joka vastaa tätä rakennetta:
 
 ```js
 {
@@ -95,7 +125,7 @@ Jäännös on esimerkiksi:
 }
 ```
 
-`createMaterialInventory()` yhdistää saman profiilityypin ja saman pituuden jäännökset yhdeksi ryhmäksi.
+`createMaterialInventory()` yhdistää nykyisessä mallissa saman profiilityypin ja saman pituuden jäännökset yhdeksi ryhmäksi. Kun väri ja lisäattribuutit tulevat käyttöön, ryhmittelyavain laajennetaan material variantiksi; väriä ei saa hävittää varastosiirtymässä.
 
 `getMaterialSourcesForProfile()` palauttaa vain valitun profiilityypin yhteensopivat jäännökset ja mahdollisen uuden materiaalin. Nollamääräistä äärellistä uutta materiaalia ei saa lisätä lähteeksi.
 
@@ -109,8 +139,8 @@ Noudata seuraavaa tärkeysjärjestystä, ellei käyttäjä muuta sitä tehtävä
 2. **Materiaalitalous:** minimoi uuden materiaalin todellinen kustannus huomioiden olemassa olevien jäännösten käyttö, syntyvien jäännösten arvo, sahahukka ja jäännösvaraston pirstaloituminen. Älä minimoi pelkkää käsiteltyjen materiaalikappaleiden määrää materiaalikustannuksen kustannuksella.
 3. **Olemassa olevien jäännösten järkevä käyttö:** käytä olemassa olevia jäännöksiä ennen uuden tangon avaamista, kun niiden käyttö on kokonaisuuden kannalta järkevää. Tämä ei ole absoluuttinen greedy-sääntö; huono jäännös voidaan jättää käyttämättä, jos sen käyttäminen johtaisi huonompaan kokonaisratkaisuun.
 4. **Varaston muoto:** yksi koskematon 6000 mm tanko ei ole samanarvoinen kuin useampi lyhyempi jäännös, vaikka materiaalipituuksien summa olisi lähes sama. Jäännösten lukumäärällä, pituusjakaumalla ja myöhemmin profiilityypillä, iällä sekä varastomäärällä on merkitystä.
-5. **Työaika ja käsittely:** stopparin siirrot, batch-sahaus, käsiteltävien tankojen määrä ja tuotantojärjestys ovat tärkeitä, mutta materiaalikustannus on tällä hetkellä ensisijainen optimointikriteeri.
-6. **Deterministisyys ja selitettävyys:** sama syöte ja samat asetukset tuottavat saman tuloksen. Tasatilanteissa suosi vakaata ja helposti perusteltavaa valintaa.
+5. **Tuotantotehokkuus:** stopparin siirrot ja samanaikainen sahaus ovat tärkeimmät tulevat tuotantokriteerit. Batch-/stack-sahaus, käsiteltävien tankojen määrä, värivaihdot, WIP ja tuotantojärjestys tulevat niiden jälkeen. Materiaalikustannus on tällä hetkellä ensisijainen aktiivinen optimointikriteeri.
+6. **Deterministisyys ja selitettävyys:** sama syöte ja samat asetukset tuottavat saman tuloksen. Tasatilanteissa suosi vakaata ja helposti perusteltavaa valintaa. Tuloksen pitää pystyä erittelemään uuden materiaalin, hukan, jäännösarvon, jäännösten käsittelyn ja tulevien tuotantokriteerien vaikutukset.
 
 Käyttäjän tuotannon karkea kustannusvertailu on, että noin 1 metri hukkaprofiilia vastaa suuruusluokaltaan noin puolen tunnin palkkaa. Käytä tätä vain suuntaa-antavana kalibrointiperiaatteena, älä kovakoodattuna talouslakina ilman erillistä päätöstä.
 
@@ -177,17 +207,19 @@ Osittaista ratkaisua ei saa esittää valmiina sahaussuunnitelmana.
 
 ## Kehityssuunta
 
-Kehitä nykyistä prototyyppiä pienissä, erikseen testattavissa vaiheissa. Lähimmät tärkeät suunnat ovat:
+Kehitä nykyistä prototyyppiä pienissä, erikseen testattavissa vaiheissa. Seuraava askel ennen isompaa algoritmilaajennusta on arkkitehtuurikatselmus: tarkista nykyisen single-order-optimizerin vastuut, materiaalitietomallin laajennuspolku ja rajapinta tuleviin tuotanto-operaatioihin. Lähimmät tärkeät suunnat ovat:
 
 1. Jatka inventory-aware optimizerin ja pisteytyksen kalibrointia realistisilla sekä tarkoituksella hankalilla regressioilla.
 2. Paranna testattavuutta niin, että samoja tilauksia ei tarvitse syöttää käsin uudelleen.
 3. Lisää myöhemmin käyttöliittymään useiden nimettyjen töiden/testitilausten tallennus ja lataus. Nykyinen `currentWork`-localStorage tukee vain yhtä aktiivista työtilaa.
 4. Rakenna myöhemmin systemaattinen testipankki ja automaattinen laatumittaus.
-5. Lisää vasta tämän jälkeen uusia tuotantojärjestyksen, stopparin siirtojen tai monen tilauksen yhteisoptimoinnin sääntöjä.
-6. Kuvasta luettava sahauslista on realistinen myöhempi välivaihe ennen suoraa integraatiota yrityksen järjestelmään. Se ei ole nykyinen prioriteetti; optimizerin pitää ensin olla luotettava.
-7. Lopullinen tavoite voi olla tilaustietojen hakeminen suoraan yrityksen järjestelmästä ilman paperin tai kuvan välivaihetta, jos integraatiomahdollisuus myöhemmin saadaan.
+5. Laajenna single-order-optimizer myöhemmin palauttamaan yksi ainoa voittaja -ratkaisun sijasta pieni top-K/Pareto-joukko aidosti erilaisia materiaalivaraston tilasiirtymiä, esimerkiksi kolme vaihtoehtoa. Erota vaihtoehdot oikeasti toisistaan, älä näytä lähes identtisiä järjestysvariantteja.
+6. Lisää vasta tämän jälkeen tuotantojärjestyksen, stopparin siirtojen, samanaikaisten sahausoperaatioiden tai monen tilauksen yhteisoptimoinnin sääntöjä. Multi-order-haku katsoo aluksi tyypillisesti 5–10 tilausta; myöhemmin siihen voidaan lisätä kiireellisyys, deadline, asentajien tarpeet ja materiaalin niukkuus.
+7. Kalibroi myöhemmin jäännösten terminal inventory value sekä kysyntä- ja tuotantohistorian avulla. Kausivaihtelu voi vaikuttaa siihen, kuinka arvokas tietty jäännös on tulevaa käyttöä varten.
+8. Kuvasta luettava sahauslista on realistinen myöhempi välivaihe ennen suoraa integraatiota yrityksen järjestelmään. Se ei ole nykyinen prioriteetti; optimizerin pitää ensin olla luotettava.
+9. Lopullinen tavoite voi olla tilaustietojen hakeminen suoraan Easoftista tai muusta yrityksen järjestelmästä ilman paperin tai kuvan välivaihetta, jos integraatiomahdollisuus myöhemmin saadaan.
 
-Pidä käyttöliittymä ja optimointilogiikka mahdollisuuksien mukaan erillään. Laskentafunktioiden tulisi ottaa arvot parametreina ja palauttaa dataa; DOM:n lukeminen ja HTML-tuloksen muodostaminen kuuluvat käyttöliittymäkerrokseen. Tee tätä erottelua vain tehtävän kannalta tarpeellisina, pieninä refaktorointeina.
+Pidä käyttöliittymä ja optimointilogiikka mahdollisuuksien mukaan erillään. Laskentafunktioiden tulisi ottaa arvot parametreina ja palauttaa dataa; DOM:n lukeminen ja HTML-tuloksen muodostaminen kuuluvat käyttöliittymäkerrokseen. Easoft-integraatio on tuleva adapteri: core-optimointilogiikka ei saa riippua käyttöliittymästä, Easoftista tai niiden tietomuodoista. Tee tätä erottelua vain tehtävän kannalta tarpeellisina, pieninä refaktorointeina.
 
 ## Nykyiset dev-testit
 
@@ -252,7 +284,7 @@ Tämä regressio suojaa erityisesti siltä virheeltä, jossa optimizeri avaa kak
 Testaa laskentalogiikkaa pienillä käsin tarkistettavilla tapauksilla sekä realistisilla moniprofiilitöillä. Tarkista jokaisesta tuloksesta vähintään:
 
 - kaikki pyydetyt kappaleet esiintyvät täsmälleen oikean määrän;
-- kappaleen `profileType` vastaa käytetyn lähteen profiilityyppiä;
+- kappaleen `profileType` vastaa käytetyn lähteen profiilityyppiä ja tulevassa mallissa koko material variant on yhteensopiva;
 - uusia tankoja tai jäännöksiä ei käytetä enempää kuin varastossa on;
 - yhden lähdekappaleen kappaleet, sahahukka ja jäännös eivät ylitä lähdepituutta;
 - mahdoton kappale ei päädy kelvolliseen valmiiseen sahaussuunnitelmaan;
@@ -272,7 +304,7 @@ Pelkkä itse keksittyjen rajatapauksien kokoelma ei riitä lopulliseksi laadunva
 1. **Kiinteät regressiot:** käsin valitut tunnetut tapaukset kuten Testi A ja D1.
 2. **Seedattu RNG / fuzz testing:** generoi suuri määrä satunnaisia tilauksia, varastoja, profiilityyppejä ja jäännöksiä. Käytä toistettavaa seed-arvoa, jotta löytynyt ongelmatapaus voidaan generoida uudelleen.
 3. **Kohdistetut vaikeat generaattorit:** painota mittoja lähelle kapasiteetti- ja kerf-rajoja, lähes sopivia jäännöksiä, niukkaa varastoa ja useita lähes samanarvoisia ratkaisuja. Pelkkä tasainen satunnaisjakauma tuottaa liikaa helppoja tapauksia.
-4. **Property-testit:** varmista yleiset invariantit riippumatta siitä, mikä optimum on. Esimerkiksi profiilityyppi ei saa vaihtua, materiaalimäärää ei saa ylittää, rivijärjestyksen muuttamisen ei pitäisi huonontaa ratkaisun laatua perusteettomasti ja lisämateriaalin lisääminen ei saa tehdä aiemmin mahdollisesta tilauksesta mahdotonta.
+4. **Property-testit:** varmista yleiset invariantit riippumatta siitä, mikä optimum on. Esimerkiksi materiaalivariantti ei saa vaihtua virheellisesti, materiaalimäärää ei saa ylittää, `orderId`/`openingId` säilyvät, rivijärjestyksen muuttamisen ei pitäisi huonontaa ratkaisun laatua perusteettomasti ja lisämateriaalin lisääminen ei saa tehdä aiemmin mahdollisesta tilauksesta mahdotonta.
 5. **Täsmäratkaisija / oracle pienille tapauksille:** rakenna myöhemmin hidas mutta varma vertailuratkaisija esimerkiksi exhaustive searchilla, MILP:llä tai CP-SAT:lla. Käytä sitä tuhansien pienten satunnaistapausten optimumin todentamiseen.
 6. **Laatumittarit:** raportoi esimerkiksi kuinka usein heuristiikka löytää täsmälleen optimumin, keskimääräinen poikkeama optimumista, 95./99. prosenttipiste ja pahin havaittu tapaus.
 7. **Oikeat tuotantotilaukset:** vertaa myöhemmin historiallisia töitä optimizerin tuloksiin ja, kun mahdollista, täsmäratkaisun alarajaan tai todistettuun optimumiin.
@@ -285,7 +317,7 @@ Projektissa voidaan myöhemmin hyödyntää automaattista parametrien viritystä
 
 Mahdollisia menetelmiä ovat esimerkiksi grid/random search, Bayesian optimization ja evoluutioalgoritmit. Parametreja ei saa kuitenkaan virittää vain yhteen tai muutamaan käsin valittuun tapaukseen; tarvitsemme laajan testijoukon ja selkeän tavoitefunktion.
 
-Jos myöhemmin kertyy oikeaa tuotantohistoriaa, koneoppimista voidaan käyttää esimerkiksi arvioimaan todennäköisyyttä, että tietyn profiilityypin ja pituisen jäännöksen voi oikeasti käyttää tulevissa tilauksissa. Tällainen malli voisi myöhemmin täydentää käsin määriteltyä jäännösarvokäyrää.
+Jos myöhemmin kertyy oikeaa tuotantohistoriaa, koneoppimista voidaan käyttää esimerkiksi arvioimaan todennäköisyyttä, että tietyn material variantin ja pituisen jäännöksen voi oikeasti käyttää tulevissa tilauksissa. Tällainen malli voisi myöhemmin täydentää käsin määriteltyä jäännösarvokäyrää sekä huomioida kausivaihtelun.
 
 ## Kuvasta luettava sahauslista ja myöhempi integraatio
 
@@ -299,7 +331,7 @@ Kuvasta luettava sahauslista on mahdollinen myöhempi ominaisuus. Käyttöpolku 
 
 Älä lähetä API-avainta selaimen `app.js`:ssä. Jos ulkoista vision-API:a joskus käytetään, salainen avain kuuluu backendille. GitHub Pages ei itsessään aja tällaista backend-koodia.
 
-Kuvantulkinta on tällä hetkellä roadmap-ominaisuus, ei nykyisen optimizerikehityksen prioriteetti. Lopullisesti tilausdata olisi parempi hakea suoraan yrityksen järjestelmästä, jos rajapinta tai muu integraatiotapa saadaan myöhemmin käyttöön.
+Kuvantulkinta on tällä hetkellä roadmap-ominaisuus, ei nykyisen optimizerikehityksen prioriteetti. Lopullisesti tilausdata olisi parempi hakea suoraan Easoftista tai muusta yrityksen järjestelmästä adapterin kautta, jos rajapinta tai muu integraatiotapa saadaan myöhemmin käyttöön. Core ei saa riippua integraatiosta.
 
 ## Codexin ja ChatGPT:n työskentelytapa
 
