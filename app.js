@@ -7967,7 +7967,7 @@ function runAllRegressionTests() {
                 totalBars: 22,
                 newBars: 10,
                 remnantBars: 12,
-                reusableGeneratedRemnants: 13
+                reusableGeneratedRemnants: 9
             }
         },
 
@@ -7979,7 +7979,8 @@ function runAllRegressionTests() {
                 totalBars: 1,
                 newBars: 1,
                 remnantBars: 0,
-                reusableGeneratedRemnants: 0
+                reusableGeneratedRemnants: 1,
+                newBarRemaining: 1594
             }
         }
     ];
@@ -8023,7 +8024,12 @@ function runAllRegressionTests() {
                                 PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
                                     .scoreSettings
                             ).disposition === "reusable"
-                    ).length
+                    ).length,
+                newBarRemaining:
+                    optimization.bars.length === 1 &&
+                        optimization.bars[0].source === "new"
+                        ? optimization.bars[0].remaining
+                        : null
             };
 
 
@@ -8036,7 +8042,12 @@ function runAllRegressionTests() {
                 actual.remnantBars ===
                 test.expected.remnantBars &&
                 actual.reusableGeneratedRemnants ===
-                test.expected.reusableGeneratedRemnants;
+                test.expected.reusableGeneratedRemnants &&
+                (
+                    test.expected.newBarRemaining === undefined ||
+                    actual.newBarRemaining ===
+                    test.expected.newBarRemaining
+                );
 
 
             results.push({
@@ -8066,7 +8077,22 @@ function runAllRegressionTests() {
                     actual.remnantBars,
 
                 expectedRemnantBars:
-                    test.expected.remnantBars
+                    test.expected.remnantBars,
+
+                expectedRemnantBars:
+                    test.expected.remnantBars,
+
+                reusableGeneratedRemnants:
+                    actual.reusableGeneratedRemnants,
+
+                expectedReusableGeneratedRemnants:
+                    test.expected.reusableGeneratedRemnants,
+
+                newBarRemaining:
+                    actual.newBarRemaining,
+
+                expectedNewBarRemaining:
+                    test.expected.newBarRemaining ?? "-"
             });
 
         } catch (error) {
