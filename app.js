@@ -9,6 +9,11 @@ const PROFILE_TYPES = Object.freeze({
         dimensionRole: "doorHeight"
     }),
 
+    closingProfile: Object.freeze({
+        label: "Vasteprofiili",
+        dimensionRole: "doorHeight"
+    }),
+
     horizontalProfile: Object.freeze({
         label: "Vaakaprofiili",
         dimensionRole: "doorWidth"
@@ -1478,9 +1483,9 @@ function runCutPieceBoundaryTests() {
         const passed =
             result.possible === true &&
             result.remaining ===
-                testCase.expectedRemaining &&
+            testCase.expectedRemaining &&
             result.waste ===
-                testCase.expectedWaste;
+            testCase.expectedWaste;
 
 
         return {
@@ -5752,6 +5757,29 @@ function mergeGroupedCuts(cuts) {
     );
 }
 
+
+function validateCutProfileTypes(cuts) {
+
+    for (const cut of cuts) {
+
+        if (
+            typeof cut.profileType !== "string" ||
+            PROFILE_TYPES[cut.profileType] === undefined
+        ) {
+
+            throw new Error(
+                "Tuntematon profiilityyppi: " +
+                String(cut.profileType) +
+                "."
+            );
+        }
+    }
+
+
+    return true;
+}
+
+
 function optimizeOrderByProfileType(
     cuts,
     stockLength,
@@ -5870,6 +5898,10 @@ function optimizeOrderByProfileTypeWithInventory(
         materialInventory
     );
 
+    validateCutProfileTypes(
+        cuts
+    );
+
 
     const profileResults = [];
 
@@ -5975,6 +6007,150 @@ function optimizeOrderByProfileTypeWithInventory(
         profileResults:
             profileResults
     };
+}
+
+
+function runUnknownProfileRegressionTest() {
+
+    const cuts = [
+        {
+            profileType: "unsupportedProfile",
+            length: 2000,
+            quantity: 1
+        }
+    ];
+
+
+    const materialInventory = {
+        stockLength: 6000,
+
+        newStock:
+            Object.keys(PROFILE_TYPES).map(
+                profileType => ({
+                    profileType: profileType,
+                    unlimited: true,
+                    quantity: null
+                })
+            ),
+
+        remnants: []
+    };
+
+
+    let errorMessage = null;
+
+
+    try {
+
+        optimizeOrderByProfileTypeWithInventory(
+            cuts,
+            materialInventory,
+            3,
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+        );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const passed =
+        typeof errorMessage === "string" &&
+        errorMessage.includes(
+            "Tuntematon profiilityyppi"
+        );
+
+
+    console.table([
+        {
+            test: "Tuntematon profiilityyppi hylätään",
+            result: passed ? "PASS" : "FAIL",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runClosingProfileRegressionTest() {
+
+    const cuts = [
+        {
+            profileType: "closingProfile",
+            length: 2000,
+            quantity: 1
+        }
+    ];
+
+
+    const materialInventory = {
+        stockLength: 6000,
+
+        newStock:
+            Object.keys(PROFILE_TYPES).map(
+                profileType => ({
+                    profileType: profileType,
+                    unlimited: true,
+                    quantity: null
+                })
+            ),
+
+        remnants: []
+    };
+
+
+    let optimization = null;
+    let errorMessage = null;
+
+
+    try {
+
+        optimization =
+            optimizeOrderByProfileTypeWithInventory(
+                cuts,
+                materialInventory,
+                3,
+                PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+            );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const passed =
+        optimization !== null &&
+        optimization.complete === true &&
+        optimization.bars.length === 1 &&
+        optimization.bars[0].profileType ===
+            "closingProfile" &&
+        optimization.remainingItems.length === 0;
+
+
+    console.table([
+        {
+            test: "Vasteprofiili optimoidaan",
+            result: passed ? "PASS" : "FAIL",
+            bars:
+                optimization?.bars.length ?? "-",
+            profile:
+                optimization?.bars[0]?.profileType ?? "-",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
 }
 
 
