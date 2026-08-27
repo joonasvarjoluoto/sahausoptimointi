@@ -1369,31 +1369,252 @@ function calculatePostOrderMaterialInventory(
 
 function cutPiece(remaining, piece, kerf) {
 
-    const excess = remaining - piece;
+    // Sahausfysiikka lasketaan samoissa 0,1 mm:n
+    // kokonaislukuyksiköissä kuin DP-haku.
+    const remainingUnits =
+        millimetersToDpUnits(remaining);
 
-    if (excess < 0) {
+    const pieceUnits =
+        millimetersToDpUnits(piece);
+
+    const kerfUnits =
+        millimetersToDpUnits(kerf);
+
+    const excessUnits =
+        remainingUnits -
+        pieceUnits;
+
+
+    if (excessUnits < 0) {
 
         return {
             possible: false,
-            remaining: remaining,
+            remaining: remainingUnits /
+                DP_DIMENSION_SCALE,
             waste: 0
         };
     }
 
-    if (excess >= kerf) {
+
+    if (excessUnits >= kerfUnits) {
 
         return {
             possible: true,
-            remaining: excess - kerf,
-            waste: kerf
+            remaining:
+                (
+                    excessUnits -
+                    kerfUnits
+                ) /
+                DP_DIMENSION_SCALE,
+            waste:
+                kerfUnits /
+                DP_DIMENSION_SCALE
         };
     }
+
 
     return {
         possible: true,
         remaining: 0,
-        waste: excess
+        waste:
+            excessUnits /
+            DP_DIMENSION_SCALE
     };
+}
+
+
+function runCutPieceBoundaryTests() {
+
+    // Lukitaan kerfin ympärillä olevat fyysiset rajatapaukset.
+    const testCases = [
+        {
+            remaining: 2000,
+            piece: 2000,
+            kerf: 3,
+            expectedRemaining: 0,
+            expectedWaste: 0
+        },
+        {
+            remaining: 2001,
+            piece: 2000,
+            kerf: 3,
+            expectedRemaining: 0,
+            expectedWaste: 1
+        },
+        {
+            remaining: 2002,
+            piece: 2000,
+            kerf: 3,
+            expectedRemaining: 0,
+            expectedWaste: 2
+        },
+        {
+            remaining: 2003,
+            piece: 2000,
+            kerf: 3,
+            expectedRemaining: 0,
+            expectedWaste: 3
+        },
+        {
+            remaining: 2004,
+            piece: 2000,
+            kerf: 3,
+            expectedRemaining: 1,
+            expectedWaste: 3
+        }
+    ];
+
+
+    const results = testCases.map(testCase => {
+
+        const result =
+            cutPiece(
+                testCase.remaining,
+                testCase.piece,
+                testCase.kerf
+            );
+
+
+        const passed =
+            result.possible === true &&
+            result.remaining ===
+                testCase.expectedRemaining &&
+            result.waste ===
+                testCase.expectedWaste;
+
+
+        return {
+            source: testCase.remaining,
+            piece: testCase.piece,
+            result: passed ? "PASS" : "FAIL",
+            remaining: result.remaining,
+            expectedRemaining:
+                testCase.expectedRemaining,
+            waste: result.waste,
+            expectedWaste:
+                testCase.expectedWaste
+        };
+    });
+
+
+    console.table(results);
+
+
+    const passedCount =
+        results.filter(
+            result =>
+                result.result === "PASS"
+        ).length;
+
+
+    console.log(
+        `cutPiece-raja-arvot: ${passedCount}/${results.length} läpäisty`
+    );
+
+
+    return results;
+}
+
+
+function runDecimalExactFitRegressionTest() {
+
+    const testCases = [
+        {
+            name: "1901,1 ensin",
+            items: [
+                {
+                    length: 1901.1,
+                    quantity: 1
+                },
+                {
+                    length: 4095.9,
+                    quantity: 1
+                }
+            ]
+        },
+        {
+            name: "4095,9 ensin",
+            items: [
+                {
+                    length: 4095.9,
+                    quantity: 1
+                },
+                {
+                    length: 1901.1,
+                    quantity: 1
+                }
+            ]
+        }
+    ];
+
+
+    const results = [];
+
+
+    for (const testCase of testCases) {
+
+        let optimization = null;
+        let errorMessage = null;
+
+
+        try {
+
+            optimization =
+                optimizeOrderInventoryBeamDP(
+                    testCase.items,
+                    [
+                        {
+                            source: "new",
+                            profileType: "verticalProfile",
+                            sourceLength: 6000,
+                            unlimited: false,
+                            quantity: 1
+                        }
+                    ],
+                    3,
+                    PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+                );
+
+        } catch (error) {
+
+            errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : String(error);
+        }
+
+
+        const passed =
+            optimization !== null &&
+            optimization.complete === true &&
+            optimization.bars.length === 1 &&
+            optimization.remainingItems.length === 0 &&
+            millimetersToDpUnits(
+                optimization.bars[0].remaining
+            ) === 0 &&
+            millimetersToDpUnits(
+                optimization.bars[0].waste
+            ) === 30;
+
+
+        results.push({
+            test: testCase.name,
+            result: passed ? "PASS" : "FAIL",
+            bars:
+                optimization?.bars.length ?? "-",
+            remaining:
+                optimization?.bars[0]?.remaining ?? "-",
+            waste:
+                optimization?.bars[0]?.waste ?? "-",
+            error: errorMessage ?? "-"
+        });
+    }
+
+
+    console.table(results);
+
+
+    return results;
 }
 
 
@@ -5876,30 +6097,31 @@ function verifyOptimizationBarBalances(
 
     for (const bar of optimization.bars) {
 
-        let cutLengthTotal = 0;
+        let cutLengthUnits = 0;
 
 
         for (const item of bar.pattern) {
 
-            cutLengthTotal +=
-                item.length * item.quantity;
+            cutLengthUnits +=
+                millimetersToDpUnits(
+                    item.length
+                ) *
+                item.quantity;
         }
 
 
-        const accountedLength =
-            cutLengthTotal +
-            bar.waste +
-            bar.remaining;
-
+        const accountedLengthUnits =
+            cutLengthUnits +
+            millimetersToDpUnits(
+                bar.waste
+            ) +
+            millimetersToDpUnits(
+                bar.remaining
+            );
 
         const sourceLengthUnits =
             millimetersToDpUnits(
                 bar.sourceLength
-            );
-
-        const accountedLengthUnits =
-            millimetersToDpUnits(
-                accountedLength
             );
 
 
@@ -5913,7 +6135,10 @@ function verifyOptimizationBarBalances(
                 "lähde " +
                 bar.sourceLength +
                 " mm, tilitetty " +
-                accountedLength +
+                (
+                    accountedLengthUnits /
+                    DP_DIMENSION_SCALE
+                ) +
                 " mm."
             );
         }
