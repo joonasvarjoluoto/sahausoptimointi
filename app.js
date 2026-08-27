@@ -6099,6 +6099,119 @@ function verifyOptimizationSourceUsage(
 }
 
 
+function verifyOptimizationResult(
+    cuts,
+    materialInventory,
+    optimization
+) {
+
+    // Tarkistetaan optimizerin tulos riippumattomasti
+    // ennen kuin käyttöliittymä hyväksyy sen.
+    verifyOptimizationDemandAccounting(
+        cuts,
+        optimization
+    );
+
+    verifyOptimizationBarBalances(
+        optimization
+    );
+
+    verifyOptimizationSourceUsage(
+        materialInventory,
+        optimization
+    );
+
+
+    return true;
+}
+
+
+function runOptimizationResultVerifierTest() {
+
+    const cuts = [
+        {
+            profileType: "verticalProfile",
+            length: 2000,
+            quantity: 1
+        }
+    ];
+
+
+    const materialInventory = {
+        stockLength: 6000,
+
+        newStock: [
+            {
+                profileType: "verticalProfile",
+                unlimited: true,
+                quantity: null
+            }
+        ],
+
+        remnants: []
+    };
+
+
+    const validOptimization = {
+        complete: true,
+
+        bars: [
+            {
+                source: "new",
+                profileType: "verticalProfile",
+                sourceLength: 6000,
+
+                pattern: [
+                    {
+                        length: 2000,
+                        quantity: 1
+                    }
+                ],
+
+                waste: 3,
+                remaining: 3997
+            }
+        ],
+
+        remainingItems: []
+    };
+
+
+    let passed = false;
+    let errorMessage = null;
+
+
+    try {
+
+        passed =
+            verifyOptimizationResult(
+                cuts,
+                materialInventory,
+                validOptimization
+            ) === true;
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    console.table([
+        {
+            test: "Kelvollinen optimizer-tulos hyväksytään",
+            result: passed ? "PASS" : "FAIL",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
 function runSourceUsageVerifierTest() {
 
     const materialInventory = {
@@ -6328,15 +6441,6 @@ function runDemandAccountingVerifierTest() {
         verifyOptimizationDemandAccounting(
             cuts,
             deliberatelyBrokenOptimization
-        );
-
-        verifyOptimizationBarBalances(
-            optimization
-        );
-
-        verifyOptimizationSourceUsage(
-            materialInventory,
-            optimization
         );
 
     } catch (error) {
@@ -7335,8 +7439,10 @@ async function calculate() {
                 kerf,
                 PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
             );
-        verifyOptimizationDemandAccounting(
+
+        verifyOptimizationResult(
             cuts,
+            materialInventory,
             optimization
         );
 
