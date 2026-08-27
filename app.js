@@ -432,17 +432,10 @@ function validateMaterialAvailability(
     const expectedProfileTypes =
         Object.keys(PROFILE_TYPES);
 
-    if (
-        newStock.length !==
-        expectedProfileTypes.length
-    ) {
-        throw new Error(
-            "Uusien tankojen saatavuustiedot ovat puutteelliset."
-        );
-    }
-
 
     const seenProfileTypes = new Set();
+
+    const seenVariants = new Set();
 
 
     for (const stock of newStock) {
@@ -457,11 +450,26 @@ function validateMaterialAvailability(
         }
 
 
-        if (seenProfileTypes.has(stock.profileType)) {
+        const normalizedColor =
+            stock.color ?? null;
+
+        const variantKey =
+            stock.profileType +
+            ":" +
+            JSON.stringify(normalizedColor);
+
+
+        if (seenVariants.has(variantKey)) {
             throw new Error(
-                "Sama profiilityyppi esiintyy uusien tankojen saatavuudessa useammin kuin kerran."
+                "Sama profiilityypin ja värin yhdistelmä esiintyy uusien tankojen saatavuudessa useammin kuin kerran."
             );
         }
+
+        seenVariants.add(variantKey);
+
+        seenProfileTypes.add(
+            stock.profileType
+        );
 
         seenProfileTypes.add(stock.profileType);
 
@@ -591,31 +599,43 @@ function createMaterialInventory(
     );
 
 
-    const remnantsByProfileAndLength =
+    const remnantsByVariantAndLength =
         new Map();
 
 
     for (const remnant of materialAvailability.remnants) {
 
+        const color =
+            remnant.color ?? null;
+
         const lengthUnits =
-            millimetersToDpUnits(remnant.length);
+            millimetersToDpUnits(
+                remnant.length
+            );
 
         const key =
             remnant.profileType +
             ":" +
+            JSON.stringify(color) +
+            ":" +
             lengthUnits;
 
         const existing =
-            remnantsByProfileAndLength.get(key);
+            remnantsByVariantAndLength.get(
+                key
+            );
 
 
         if (existing === undefined) {
 
-            remnantsByProfileAndLength.set(
+            remnantsByVariantAndLength.set(
                 key,
                 {
                     profileType:
                         remnant.profileType,
+
+                    color:
+                        color,
 
                     length:
                         remnant.length,
@@ -635,7 +655,7 @@ function createMaterialInventory(
 
 
     const remnants =
-        [...remnantsByProfileAndLength.values()]
+        [...remnantsByVariantAndLength.values()]
             .sort((first, second) => {
 
                 if (
@@ -647,7 +667,27 @@ function createMaterialInventory(
                     );
                 }
 
-                return second.length - first.length;
+
+                const firstColor =
+                    JSON.stringify(
+                        first.color ?? null
+                    );
+
+                const secondColor =
+                    JSON.stringify(
+                        second.color ?? null
+                    );
+
+
+                if (firstColor !== secondColor) {
+                    return firstColor.localeCompare(
+                        secondColor
+                    );
+                }
+
+
+                return second.length -
+                    first.length;
             });
 
 
@@ -656,6 +696,9 @@ function createMaterialInventory(
             stock => ({
                 profileType:
                     stock.profileType,
+
+                color:
+                    stock.color ?? null,
 
                 unlimited:
                     stock.unlimited,
@@ -670,15 +713,19 @@ function createMaterialInventory(
         stockLength:
             materialAvailability.stockLength,
 
-        newStock: newStock,
+        newStock:
+            newStock,
 
-        remnants: remnants
+        remnants:
+            remnants
     };
 }
 
+
 function getMaterialSourcesForProfile(
     materialInventory,
-    profileType
+    profileType,
+    color = null
 ) {
 
     validateMaterialAvailability(
@@ -696,6 +743,9 @@ function getMaterialSourcesForProfile(
     }
 
 
+    const normalizedColor =
+        color ?? null;
+
     const sources = [];
 
 
@@ -703,7 +753,9 @@ function getMaterialSourcesForProfile(
 
         if (
             remnant.profileType !==
-            profileType
+            profileType ||
+            (remnant.color ?? null) !==
+            normalizedColor
         ) {
             continue;
         }
@@ -715,6 +767,9 @@ function getMaterialSourcesForProfile(
 
             profileType:
                 profileType,
+
+            color:
+                normalizedColor,
 
             sourceLength:
                 remnant.length,
@@ -731,20 +786,18 @@ function getMaterialSourcesForProfile(
     const newStock =
         materialInventory.newStock.find(
             stock =>
-                stock.profileType === profileType
+                stock.profileType === profileType &&
+                (stock.color ?? null) ===
+                normalizedColor
         );
-
-
-    if (newStock === undefined) {
-        throw new Error(
-            "Profiilityypille ei löydy uusien tankojen saatavuustietoa."
-        );
-    }
 
 
     if (
-        newStock.unlimited ||
-        newStock.quantity > 0
+        newStock !== undefined &&
+        (
+            newStock.unlimited ||
+            newStock.quantity > 0
+        )
     ) {
 
         sources.push({
@@ -753,6 +806,9 @@ function getMaterialSourcesForProfile(
 
             profileType:
                 profileType,
+
+            color:
+                normalizedColor,
 
             sourceLength:
                 materialInventory.stockLength,
@@ -828,6 +884,9 @@ function findMaterialSourceCandidates(
                 profileType:
                     materialSource.profileType,
 
+                color:
+                    materialSource.color ?? null,
+
                 sourceLength:
                     materialSource.sourceLength,
 
@@ -859,6 +918,8 @@ function consumeMaterialSource(
         nextSources.findIndex(source =>
             source.source === candidate.source &&
             source.profileType === candidate.profileType &&
+            (source.color ?? null) ===
+            (candidate.color ?? null) &&
             source.sourceLength === candidate.sourceLength
         );
 
@@ -921,35 +982,75 @@ function calculateMaterialUsage(
     );
 
 
-    const stockByProfileType = new Map(
-        materialInventory.newStock.map(
-            stock => [
-                stock.profileType,
-                stock
-            ]
-        )
-    );
+    function getVariantKey(
+        profileType,
+        color
+    ) {
+
+        return (
+            profileType +
+            ":" +
+            JSON.stringify(
+                color ?? null
+            )
+        );
+    }
+
+
+    function getRemnantKey(
+        profileType,
+        color,
+        length
+    ) {
+
+        return (
+            getVariantKey(
+                profileType,
+                color
+            ) +
+            ":" +
+            millimetersToDpUnits(
+                length
+            )
+        );
+    }
+
+
+    const stockByVariant =
+        new Map(
+            materialInventory.newStock.map(
+                stock => [
+                    getVariantKey(
+                        stock.profileType,
+                        stock.color
+                    ),
+                    stock
+                ]
+            )
+        );
 
 
     const availableRemnants = new Map();
     const usedRemnants = new Map();
-    const newStockUsedByProfileType = new Map();
+    const newStockUsedByVariant = new Map();
 
 
     for (const remnant of materialInventory.remnants) {
 
-        const lengthUnits =
-            millimetersToDpUnits(
+        const key =
+            getRemnantKey(
+                remnant.profileType,
+                remnant.color,
                 remnant.length
             );
 
-        const key =
-            remnant.profileType +
-            ":" +
-            lengthUnits;
 
         availableRemnants.set(
             key,
+            (
+                availableRemnants.get(key) ??
+                0
+            ) +
             remnant.quantity
         );
     }
@@ -959,6 +1060,10 @@ function calculateMaterialUsage(
 
         const profileType =
             bar.profileType;
+
+        const color =
+            bar.color ?? null;
+
 
         if (
             typeof profileType !== "string" ||
@@ -1009,22 +1114,29 @@ function calculateMaterialUsage(
             }
 
 
-            const stock =
-                stockByProfileType.get(
-                    profileType
+            const variantKey =
+                getVariantKey(
+                    profileType,
+                    color
                 );
+
+            const stock =
+                stockByVariant.get(
+                    variantKey
+                );
+
 
             if (stock === undefined) {
                 throw new Error(
-                    "Profiilityypille ei löydy uusien tankojen saatavuustietoa."
+                    "Profiilityypille ja värille ei löydy uusien tankojen saatavuustietoa."
                 );
             }
 
 
             const usedQuantity =
                 (
-                    newStockUsedByProfileType.get(
-                        profileType
+                    newStockUsedByVariant.get(
+                        variantKey
                     ) ?? 0
                 ) + 1;
 
@@ -1034,15 +1146,15 @@ function calculateMaterialUsage(
                 usedQuantity > stock.quantity
             ) {
                 throw new Error(
-                    "Suunnitelma käyttää enemmän " +
-                    PROFILE_TYPES[profileType].label +
-                    "-raakalistoja kuin varastossa on."
+                    "Suunnitelma käyttää enemmän materiaalia kuin varastossa on: " +
+                    variantKey +
+                    "."
                 );
             }
 
 
-            newStockUsedByProfileType.set(
-                profileType,
+            newStockUsedByVariant.set(
+                variantKey,
                 usedQuantity
             );
 
@@ -1057,22 +1169,21 @@ function calculateMaterialUsage(
         }
 
 
-        const lengthUnits =
-            millimetersToDpUnits(
+        const key =
+            getRemnantKey(
+                profileType,
+                color,
                 sourceLength
             );
 
-        const key =
-            profileType +
-            ":" +
-            lengthUnits;
-
         const availableQuantity =
-            availableRemnants.get(key) ?? 0;
+            availableRemnants.get(key) ??
+            0;
 
         const usedQuantity =
             (
-                usedRemnants.get(key) ?? 0
+                usedRemnants.get(key) ??
+                0
             ) + 1;
 
 
@@ -1081,11 +1192,9 @@ function calculateMaterialUsage(
             availableQuantity
         ) {
             throw new Error(
-                "Suunnitelma käyttää enemmän " +
-                PROFILE_TYPES[profileType].label +
-                " " +
-                sourceLength +
-                " mm jäännöksiä kuin varastossa on."
+                "Suunnitelma käyttää jäännöstä yli saatavilla olevan määrän: " +
+                key +
+                "."
             );
         }
 
@@ -1101,14 +1210,24 @@ function calculateMaterialUsage(
         materialInventory.newStock.map(
             stock => {
 
+                const variantKey =
+                    getVariantKey(
+                        stock.profileType,
+                        stock.color
+                    );
+
                 const usedQuantity =
-                    newStockUsedByProfileType.get(
-                        stock.profileType
+                    newStockUsedByVariant.get(
+                        variantKey
                     ) ?? 0;
+
 
                 return {
                     profileType:
                         stock.profileType,
+
+                    color:
+                        stock.color ?? null,
 
                     unlimited:
                         stock.unlimited,
@@ -1133,22 +1252,24 @@ function calculateMaterialUsage(
         materialInventory.remnants.map(
             remnant => {
 
-                const lengthUnits =
-                    millimetersToDpUnits(
+                const key =
+                    getRemnantKey(
+                        remnant.profileType,
+                        remnant.color,
                         remnant.length
                     );
 
-                const key =
-                    remnant.profileType +
-                    ":" +
-                    lengthUnits;
-
                 const usedQuantity =
-                    usedRemnants.get(key) ?? 0;
+                    usedRemnants.get(key) ??
+                    0;
+
 
                 return {
                     profileType:
                         remnant.profileType,
+
+                    color:
+                        remnant.color ?? null,
 
                     length:
                         remnant.length,
@@ -1176,6 +1297,9 @@ function calculateMaterialUsage(
             .map(remnant => ({
                 profileType:
                     remnant.profileType,
+
+                color:
+                    remnant.color,
 
                 length:
                     remnant.length,
@@ -1210,15 +1334,19 @@ function calculatePostOrderMaterialInventory(
         );
 
 
-    const remnantsByProfileAndLength =
+    const remnantsByVariantAndLength =
         new Map();
 
 
     function addRemnant(
         profileType,
+        color,
         length,
         quantity
     ) {
+
+        const normalizedColor =
+            color ?? null;
 
         const lengthUnits =
             millimetersToDpUnits(length);
@@ -1226,19 +1354,24 @@ function calculatePostOrderMaterialInventory(
         const key =
             profileType +
             ":" +
+            JSON.stringify(normalizedColor) +
+            ":" +
             lengthUnits;
 
         const existing =
-            remnantsByProfileAndLength.get(key);
+            remnantsByVariantAndLength.get(key);
 
 
         if (existing === undefined) {
 
-            remnantsByProfileAndLength.set(
+            remnantsByVariantAndLength.set(
                 key,
                 {
                     profileType:
                         profileType,
+
+                    color:
+                        normalizedColor,
 
                     length:
                         length,
@@ -1260,6 +1393,7 @@ function calculatePostOrderMaterialInventory(
 
         addRemnant(
             remnant.profileType,
+            remnant.color,
             remnant.length,
             remnant.quantity
         );
@@ -1284,11 +1418,18 @@ function calculatePostOrderMaterialInventory(
             );
 
 
+        const color =
+            bar.color ?? null;
+
+
         if (evaluation.disposition === "reusable") {
 
             generatedRemnants.push({
                 profileType:
                     bar.profileType,
+
+                color:
+                    color,
 
                 length:
                     bar.remaining,
@@ -1299,6 +1440,7 @@ function calculatePostOrderMaterialInventory(
 
             addRemnant(
                 bar.profileType,
+                color,
                 bar.remaining,
                 1
             );
@@ -1308,6 +1450,9 @@ function calculatePostOrderMaterialInventory(
             scrapRemnants.push({
                 profileType:
                     bar.profileType,
+
+                color:
+                    color,
 
                 length:
                     bar.remaining,
@@ -1320,7 +1465,7 @@ function calculatePostOrderMaterialInventory(
 
 
     const remnants =
-        [...remnantsByProfileAndLength.values()]
+        [...remnantsByVariantAndLength.values()]
             .sort((first, second) => {
 
                 if (
@@ -1332,6 +1477,25 @@ function calculatePostOrderMaterialInventory(
                     );
                 }
 
+
+                const firstColor =
+                    JSON.stringify(
+                        first.color ?? null
+                    );
+
+                const secondColor =
+                    JSON.stringify(
+                        second.color ?? null
+                    );
+
+
+                if (firstColor !== secondColor) {
+                    return firstColor.localeCompare(
+                        secondColor
+                    );
+                }
+
+
                 return second.length -
                     first.length;
             });
@@ -1342,6 +1506,9 @@ function calculatePostOrderMaterialInventory(
             stock => ({
                 profileType:
                     stock.profileType,
+
+                color:
+                    stock.color ?? null,
 
                 unlimited:
                     stock.unlimited,
@@ -1371,6 +1538,7 @@ function calculatePostOrderMaterialInventory(
             scrapRemnants
     };
 }
+
 
 function cutPiece(remaining, piece, kerf) {
 
@@ -4820,6 +4988,7 @@ function optimizeOrderInventoryBeamDP(
 
             source: bar.source,
             profileType: bar.profileType,
+            color: bar.color ?? null,
             sourceLength: bar.sourceLength
         }));
     }
@@ -5191,6 +5360,9 @@ function optimizeOrderInventoryBeamDP(
 
                         profileType:
                             candidate.profileType,
+
+                        color:
+                            candidate.color ?? null,
 
                         sourceLength:
                             candidate.sourceLength
@@ -5780,12 +5952,21 @@ function validateCutProfileTypes(cuts) {
 }
 
 
-function optimizeOrderByProfileType(
+function optimizeOrderByProfileTypeWithInventory(
     cuts,
-    stockLength,
+    materialInventory,
     kerf,
     options = {}
 ) {
+
+    validateMaterialAvailability(
+        materialInventory
+    );
+
+    validateCutProfileTypes(
+        cuts
+    );
+
 
     const profileResults = [];
 
@@ -5804,26 +5985,76 @@ function optimizeOrderByProfileType(
         }
 
 
-        const groupedCuts =
-            mergeGroupedCuts(profileCuts);
+        const cutsByColor =
+            new Map();
 
 
-        const optimization =
-            optimizeOrderMaterialBeamDP(
-                groupedCuts,
-                stockLength,
-                kerf,
-                options
-            );
+        for (const cut of profileCuts) {
+
+            const color =
+                cut.color ?? null;
+
+            const key =
+                color === null
+                    ? ""
+                    : color;
+
+            if (!cutsByColor.has(key)) {
+                cutsByColor.set(
+                    key,
+                    {
+                        color: color,
+                        cuts: []
+                    }
+                );
+            }
+
+            cutsByColor
+                .get(key)
+                .cuts
+                .push(cut);
+        }
 
 
-        profileResults.push({
-            profileType:
-                profileType,
+        for (const variant of cutsByColor.values()) {
 
-            optimization:
-                optimization
-        });
+            const groupedCuts =
+                mergeGroupedCuts(
+                    variant.cuts
+                );
+
+
+            const materialSources =
+                getMaterialSourcesForProfile(
+                    materialInventory,
+                    profileType,
+                    variant.color
+                );
+
+
+            const optimization =
+                optimizeOrderInventoryBeamDP(
+                    groupedCuts,
+                    materialSources,
+                    kerf,
+                    options
+                );
+
+
+            profileResults.push({
+                profileType:
+                    profileType,
+
+                color:
+                    variant.color,
+
+                materialSources:
+                    materialSources,
+
+                optimization:
+                    optimization
+            });
+        }
     }
 
 
@@ -5837,11 +6068,8 @@ function optimizeOrderByProfileType(
                         profileType:
                             result.profileType,
 
-                        source:
-                            "new",
-
-                        sourceLength:
-                            stockLength
+                        color:
+                            result.color
                     })
                 )
         );
@@ -5850,18 +6078,22 @@ function optimizeOrderByProfileType(
     const remainingItems =
         profileResults.flatMap(
             result =>
-                result.optimization.remainingItems.map(
-                    item => ({
-                        profileType:
-                            result.profileType,
+                result.optimization
+                    .remainingItems.map(
+                        item => ({
+                            profileType:
+                                result.profileType,
 
-                        length:
-                            item.length,
+                            color:
+                                result.color,
 
-                        quantity:
-                            item.quantity
-                    })
-                )
+                            length:
+                                item.length,
+
+                            quantity:
+                                item.quantity
+                        })
+                    )
         );
 
 
@@ -5920,38 +6152,78 @@ function optimizeOrderByProfileTypeWithInventory(
         }
 
 
-        const groupedCuts =
-            mergeGroupedCuts(
-                profileCuts
-            );
+        const cutsByColor =
+            new Map();
 
 
-        const materialSources =
-            getMaterialSourcesForProfile(
-                materialInventory,
-                profileType
-            );
+        for (const cut of profileCuts) {
+
+            const color =
+                cut.color ?? null;
+
+            const key =
+                color === null
+                    ? ""
+                    : color;
+
+            if (!cutsByColor.has(key)) {
+
+                cutsByColor.set(
+                    key,
+                    {
+                        color: color,
+                        cuts: []
+                    }
+                );
+            }
 
 
-        const optimization =
-            optimizeOrderInventoryBeamDP(
-                groupedCuts,
-                materialSources,
-                kerf,
-                options
-            );
+            cutsByColor
+                .get(key)
+                .cuts
+                .push(cut);
+        }
 
 
-        profileResults.push({
-            profileType:
-                profileType,
+        for (const variant of cutsByColor.values()) {
 
-            materialSources:
-                materialSources,
+            const groupedCuts =
+                mergeGroupedCuts(
+                    variant.cuts
+                );
 
-            optimization:
-                optimization
-        });
+
+            const materialSources =
+                getMaterialSourcesForProfile(
+                    materialInventory,
+                    profileType,
+                    variant.color
+                );
+
+
+            const optimization =
+                optimizeOrderInventoryBeamDP(
+                    groupedCuts,
+                    materialSources,
+                    kerf,
+                    options
+                );
+
+
+            profileResults.push({
+                profileType:
+                    profileType,
+
+                color:
+                    variant.color,
+
+                materialSources:
+                    materialSources,
+
+                optimization:
+                    optimization
+            });
+        }
     }
 
 
@@ -5963,7 +6235,10 @@ function optimizeOrderByProfileTypeWithInventory(
                         ...bar,
 
                         profileType:
-                            result.profileType
+                            result.profileType,
+
+                        color:
+                            result.color
                     })
                 )
         );
@@ -5977,6 +6252,9 @@ function optimizeOrderByProfileTypeWithInventory(
                         item => ({
                             profileType:
                                 result.profileType,
+
+                            color:
+                                result.color,
 
                             length:
                                 item.length,
@@ -6133,7 +6411,7 @@ function runClosingProfileRegressionTest() {
         optimization.complete === true &&
         optimization.bars.length === 1 &&
         optimization.bars[0].profileType ===
-            "closingProfile" &&
+        "closingProfile" &&
         optimization.remainingItems.length === 0;
 
 
@@ -6154,6 +6432,745 @@ function runClosingProfileRegressionTest() {
 }
 
 
+function runMaterialVariantIsolationRegressionTest() {
+
+    const cuts = [
+        {
+            profileType: "verticalProfile",
+            color: "black",
+            length: 2000,
+            quantity: 1
+        }
+    ];
+
+
+    const materialInventory = {
+        stockLength: 6000,
+
+        newStock:
+            Object.keys(PROFILE_TYPES).map(
+                profileType => ({
+                    profileType: profileType,
+                    color: "white",
+                    unlimited: true,
+                    quantity: null
+                })
+            ),
+
+        remnants: []
+    };
+
+
+    let optimization = null;
+    let errorMessage = null;
+
+
+    try {
+
+        optimization =
+            optimizeOrderByProfileTypeWithInventory(
+                cuts,
+                materialInventory,
+                3,
+                PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+            );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const wrongVariantWasUsed =
+        optimization !== null &&
+        optimization.complete === true &&
+        optimization.bars.length > 0;
+
+
+    const passed =
+        !wrongVariantWasUsed;
+
+
+    console.table([
+        {
+            test: "Eri väristä materiaalia ei käytetä",
+            result: passed ? "PASS" : "FAIL",
+            requestedColor: "black",
+            availableColor: "white",
+            complete:
+                optimization?.complete ?? "-",
+            bars:
+                optimization?.bars.length ?? "-",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runMixedMaterialVariantRegressionTest() {
+
+    const cuts = [
+        {
+            profileType: "verticalProfile",
+            color: "black",
+            length: 2000,
+            quantity: 1
+        },
+        {
+            profileType: "verticalProfile",
+            color: "white",
+            length: 2000,
+            quantity: 1
+        }
+    ];
+
+
+    const materialInventory = {
+        stockLength: 6000,
+
+        newStock:
+            Object.keys(PROFILE_TYPES).map(
+                profileType => ({
+                    profileType: profileType,
+
+                    color:
+                        profileType === "verticalProfile"
+                            ? "black"
+                            : null,
+
+                    unlimited: true,
+                    quantity: null
+                })
+            ),
+
+        remnants: [
+            {
+                profileType: "verticalProfile",
+                color: "white",
+                length: 2500,
+                quantity: 1
+            }
+        ]
+    };
+
+
+    let optimization = null;
+    let errorMessage = null;
+
+
+    try {
+
+        optimization =
+            optimizeOrderByProfileTypeWithInventory(
+                cuts,
+                materialInventory,
+                3,
+                PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+            );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const blackBar =
+        optimization?.bars.find(
+            bar =>
+                bar.color === "black"
+        );
+
+    const whiteBar =
+        optimization?.bars.find(
+            bar =>
+                bar.color === "white"
+        );
+
+
+    const passed =
+        optimization !== null &&
+        optimization.complete === true &&
+        optimization.bars.length === 2 &&
+        blackBar?.source === "new" &&
+        whiteBar?.source === "remnant" &&
+        blackBar.profileType === "verticalProfile" &&
+        whiteBar.profileType === "verticalProfile" &&
+        optimization.remainingItems.length === 0;
+
+
+    console.table([
+        {
+            test: "Eri värit pysyvät erillisinä materiaalivirtoina",
+            result: passed ? "PASS" : "FAIL",
+            complete:
+                optimization?.complete ?? "-",
+            bars:
+                optimization?.bars.length ?? "-",
+            blackSource:
+                blackBar?.source ?? "-",
+            whiteSource:
+                whiteBar?.source ?? "-",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runDemandAccountingColorRegressionTest() {
+
+    const cuts = [
+        {
+            profileType: "verticalProfile",
+            color: "black",
+            length: 2000,
+            quantity: 1
+        },
+        {
+            profileType: "verticalProfile",
+            color: "white",
+            length: 3000,
+            quantity: 1
+        }
+    ];
+
+
+    const optimization = {
+        complete: true,
+
+        bars: [
+            {
+                profileType: "verticalProfile",
+                color: "white",
+
+                pattern: [
+                    {
+                        length: 2000,
+                        quantity: 1
+                    }
+                ]
+            },
+            {
+                profileType: "verticalProfile",
+                color: "black",
+
+                pattern: [
+                    {
+                        length: 3000,
+                        quantity: 1
+                    }
+                ]
+            }
+        ],
+
+        remainingItems: []
+    };
+
+
+    let errorMessage = null;
+
+
+    try {
+
+        verifyOptimizationDemandAccounting(
+            cuts,
+            optimization
+        );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const passed =
+        typeof errorMessage === "string";
+
+
+    console.table([
+        {
+            test: "Kappaletase erottaa värit",
+            result: passed ? "PASS" : "FAIL",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runSourceUsageColorRegressionTest() {
+
+    const materialInventory = {
+        stockLength: 6000,
+
+        newStock: [],
+
+        remnants: [
+            {
+                profileType: "verticalProfile",
+                color: "white",
+                length: 2500,
+                quantity: 1
+            }
+        ]
+    };
+
+
+    const optimization = {
+        bars: [
+            {
+                source: "remnant",
+                profileType: "verticalProfile",
+                color: "black",
+                sourceLength: 2500
+            }
+        ]
+    };
+
+
+    let errorMessage = null;
+
+
+    try {
+
+        verifyOptimizationSourceUsage(
+            materialInventory,
+            optimization
+        );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const passed =
+        typeof errorMessage === "string";
+
+
+    console.table([
+        {
+            test: "Materiaalilähde erottaa jäännöksen värin",
+            result: passed ? "PASS" : "FAIL",
+            availableColor: "white",
+            usedColor: "black",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runPostOrderInventoryColorRegressionTest() {
+
+    const materialInventory = {
+        stockLength: 6000,
+
+        newStock:
+            Object.keys(PROFILE_TYPES).map(
+                profileType => ({
+                    profileType: profileType,
+                    color: null,
+                    unlimited: false,
+                    quantity: 0
+                })
+            ),
+
+        remnants: [
+            {
+                profileType: "verticalProfile",
+                color: "black",
+                length: 3000,
+                quantity: 1
+            },
+            {
+                profileType: "verticalProfile",
+                color: "white",
+                length: 3000,
+                quantity: 1
+            }
+        ]
+    };
+
+
+    const plan = {
+        bars: [
+            {
+                source: "remnant",
+                profileType: "verticalProfile",
+                color: "black",
+                sourceLength: 3000,
+                remaining: 1497,
+                waste: 3
+            }
+        ]
+    };
+
+
+    let postOrderInventory = null;
+    let errorMessage = null;
+
+
+    try {
+
+        postOrderInventory =
+            calculatePostOrderMaterialInventory(
+                plan,
+                materialInventory,
+                PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+                    .scoreSettings
+            );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const whiteUnusedRemnant =
+        postOrderInventory?.remnants.find(
+            remnant =>
+                remnant.profileType ===
+                "verticalProfile" &&
+                remnant.color === "white" &&
+                remnant.length === 3000 &&
+                remnant.quantity === 1
+        );
+
+
+    const blackGeneratedRemnant =
+        postOrderInventory?.remnants.find(
+            remnant =>
+                remnant.profileType ===
+                "verticalProfile" &&
+                remnant.color === "black" &&
+                remnant.length === 1497 &&
+                remnant.quantity === 1
+        );
+
+
+    const passed =
+        postOrderInventory !== null &&
+        whiteUnusedRemnant !== undefined &&
+        blackGeneratedRemnant !== undefined;
+
+
+    console.table([
+        {
+            test:
+                "Tilauksen jälkeinen varasto säilyttää värit",
+            result:
+                passed ? "PASS" : "FAIL",
+            white3000:
+                whiteUnusedRemnant !== undefined,
+            black1497:
+                blackGeneratedRemnant !== undefined,
+            error:
+                errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runCreateMaterialInventoryColorRegressionTest() {
+
+    const materialAvailability = {
+        stockLength: 6000,
+
+        newStock:
+            Object.keys(PROFILE_TYPES).map(
+                profileType => ({
+                    profileType: profileType,
+
+                    color:
+                        profileType === "verticalProfile"
+                            ? "black"
+                            : null,
+
+                    unlimited: true,
+                    quantity: null
+                })
+            ),
+
+        remnants: [
+            {
+                profileType: "verticalProfile",
+                color: "black",
+                length: 3000,
+                quantity: 1
+            },
+            {
+                profileType: "verticalProfile",
+                color: "white",
+                length: 3000,
+                quantity: 1
+            }
+        ]
+    };
+
+
+    let inventory = null;
+    let errorMessage = null;
+
+
+    try {
+
+        inventory =
+            createMaterialInventory(
+                materialAvailability
+            );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const verticalStock =
+        inventory?.newStock.find(
+            stock =>
+                stock.profileType ===
+                "verticalProfile"
+        );
+
+
+    const blackRemnant =
+        inventory?.remnants.find(
+            remnant =>
+                remnant.profileType ===
+                "verticalProfile" &&
+                remnant.color === "black" &&
+                remnant.length === 3000 &&
+                remnant.quantity === 1
+        );
+
+
+    const whiteRemnant =
+        inventory?.remnants.find(
+            remnant =>
+                remnant.profileType ===
+                "verticalProfile" &&
+                remnant.color === "white" &&
+                remnant.length === 3000 &&
+                remnant.quantity === 1
+        );
+
+
+    const passed =
+        inventory !== null &&
+        verticalStock?.color === "black" &&
+        blackRemnant !== undefined &&
+        whiteRemnant !== undefined;
+
+
+    console.table([
+        {
+            test:
+                "Materiaalivaraston luonti säilyttää värit",
+            result:
+                passed ? "PASS" : "FAIL",
+            stockColor:
+                verticalStock?.color ?? "-",
+            blackRemnant:
+                blackRemnant !== undefined,
+            whiteRemnant:
+                whiteRemnant !== undefined,
+            error:
+                errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runMultipleNewStockColorValidationRegressionTest() {
+
+    const materialAvailability = {
+        stockLength: 6000,
+
+        newStock: [
+            {
+                profileType: "verticalProfile",
+                color: "black",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "verticalProfile",
+                color: "white",
+                unlimited: true,
+                quantity: null
+            },
+
+            ...Object.keys(PROFILE_TYPES)
+                .filter(
+                    profileType =>
+                        profileType !==
+                        "verticalProfile"
+                )
+                .map(
+                    profileType => ({
+                        profileType: profileType,
+                        color: null,
+                        unlimited: true,
+                        quantity: null
+                    })
+                )
+        ],
+
+        remnants: []
+    };
+
+
+    let errorMessage = null;
+
+
+    try {
+
+        validateMaterialAvailability(
+            materialAvailability
+        );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const passed =
+        errorMessage === null;
+
+
+    console.table([
+        {
+            test:
+                "Uutta materiaalia voi olla useaa väriä samasta profiilista",
+            result:
+                passed ? "PASS" : "FAIL",
+            stockRows:
+                materialAvailability.newStock.length,
+            error:
+                errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runDuplicateNewStockVariantValidationRegressionTest() {
+
+    const materialAvailability = {
+        stockLength: 6000,
+
+        newStock: [
+            {
+                profileType: "verticalProfile",
+                color: "black",
+                unlimited: true,
+                quantity: null
+            },
+            {
+                profileType: "verticalProfile",
+                color: "black",
+                unlimited: false,
+                quantity: 3
+            },
+
+            ...Object.keys(PROFILE_TYPES)
+                .filter(
+                    profileType =>
+                        profileType !==
+                        "verticalProfile"
+                )
+                .map(
+                    profileType => ({
+                        profileType: profileType,
+                        color: null,
+                        unlimited: true,
+                        quantity: null
+                    })
+                )
+        ],
+
+        remnants: []
+    };
+
+
+    let errorMessage = null;
+
+
+    try {
+
+        validateMaterialAvailability(
+            materialAvailability
+        );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const passed =
+        typeof errorMessage === "string";
+
+
+    console.table([
+        {
+            test:
+                "Sama uuden materiaalin variantti ei saa esiintyä kahdesti",
+            result:
+                passed ? "PASS" : "FAIL",
+            error:
+                errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
 function verifyOptimizationDemandAccounting(
     cuts,
     optimization
@@ -6166,6 +7183,7 @@ function verifyOptimizationDemandAccounting(
     function addQuantity(
         targetMap,
         profileType,
+        color,
         length,
         quantity
     ) {
@@ -6173,8 +7191,13 @@ function verifyOptimizationDemandAccounting(
         const lengthUnits =
             millimetersToDpUnits(length);
 
+        const normalizedColor =
+            color ?? null;
+
         const key =
             profileType +
+            ":" +
+            JSON.stringify(normalizedColor) +
             ":" +
             lengthUnits;
 
@@ -6191,6 +7214,7 @@ function verifyOptimizationDemandAccounting(
         addQuantity(
             requestedQuantities,
             cut.profileType,
+            cut.color,
             cut.length,
             cut.quantity
         );
@@ -6204,6 +7228,7 @@ function verifyOptimizationDemandAccounting(
             addQuantity(
                 accountedQuantities,
                 bar.profileType,
+                bar.color,
                 item.length,
                 item.quantity
             );
@@ -6216,6 +7241,7 @@ function verifyOptimizationDemandAccounting(
         addQuantity(
             accountedQuantities,
             item.profileType,
+            item.color,
             item.length,
             item.quantity
         );
@@ -6330,14 +7356,53 @@ function verifyOptimizationSourceUsage(
     optimization
 ) {
 
-    const newStockByProfile = new Map(
-        materialInventory.newStock.map(
-            stock => [
-                stock.profileType,
-                stock
-            ]
-        )
-    );
+    function getVariantKey(
+        profileType,
+        color
+    ) {
+
+        return (
+            profileType +
+            ":" +
+            JSON.stringify(
+                color ?? null
+            )
+        );
+    }
+
+
+    function getRemnantKey(
+        profileType,
+        color,
+        length
+    ) {
+
+        return (
+            getVariantKey(
+                profileType,
+                color
+            ) +
+            ":" +
+            millimetersToDpUnits(
+                length
+            )
+        );
+    }
+
+
+    const newStockByVariant =
+        new Map(
+            materialInventory.newStock.map(
+                stock => [
+                    getVariantKey(
+                        stock.profileType,
+                        stock.color
+                    ),
+                    stock
+                ]
+            )
+        );
+
 
     const availableRemnants = new Map();
 
@@ -6345,14 +7410,18 @@ function verifyOptimizationSourceUsage(
     for (const remnant of materialInventory.remnants) {
 
         const key =
-            remnant.profileType +
-            ":" +
-            millimetersToDpUnits(
+            getRemnantKey(
+                remnant.profileType,
+                remnant.color,
                 remnant.length
             );
 
         availableRemnants.set(
             key,
+            (
+                availableRemnants.get(key) ??
+                0
+            ) +
             remnant.quantity
         );
     }
@@ -6364,11 +7433,18 @@ function verifyOptimizationSourceUsage(
 
     for (const bar of optimization.bars) {
 
+        const variantKey =
+            getVariantKey(
+                bar.profileType,
+                bar.color
+            );
+
+
         if (bar.source === "new") {
 
             const stock =
-                newStockByProfile.get(
-                    bar.profileType
+                newStockByVariant.get(
+                    variantKey
                 );
 
 
@@ -6376,7 +7452,7 @@ function verifyOptimizationSourceUsage(
 
                 throw new Error(
                     "Optimizer käytti uutta materiaalia, jota ei ole varastossa: " +
-                    bar.profileType +
+                    variantKey +
                     "."
                 );
             }
@@ -6398,10 +7474,10 @@ function verifyOptimizationSourceUsage(
 
 
             usedNewStock.set(
-                bar.profileType,
+                variantKey,
                 (
                     usedNewStock.get(
-                        bar.profileType
+                        variantKey
                     ) ?? 0
                 ) + 1
             );
@@ -6413,9 +7489,9 @@ function verifyOptimizationSourceUsage(
         if (bar.source === "remnant") {
 
             const key =
-                bar.profileType +
-                ":" +
-                millimetersToDpUnits(
+                getRemnantKey(
+                    bar.profileType,
+                    bar.color,
                     bar.sourceLength
                 );
 
@@ -6440,13 +7516,13 @@ function verifyOptimizationSourceUsage(
 
 
     for (
-        const [profileType, usedQuantity]
+        const [variantKey, usedQuantity]
         of usedNewStock
     ) {
 
         const stock =
-            newStockByProfile.get(
-                profileType
+            newStockByVariant.get(
+                variantKey
             );
 
 
@@ -6457,7 +7533,7 @@ function verifyOptimizationSourceUsage(
 
             throw new Error(
                 "Optimizer käytti uutta materiaalia yli saatavilla olevan määrän: " +
-                profileType +
+                variantKey +
                 " · käytetty " +
                 usedQuantity +
                 ", saatavilla " +
