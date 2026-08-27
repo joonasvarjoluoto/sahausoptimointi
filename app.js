@@ -5757,6 +5757,617 @@ function optimizeOrderByProfileTypeWithInventory(
 }
 
 
+function verifyOptimizationDemandAccounting(
+    cuts,
+    optimization
+) {
+
+    const requestedQuantities = new Map();
+    const accountedQuantities = new Map();
+
+
+    function addQuantity(
+        targetMap,
+        profileType,
+        length,
+        quantity
+    ) {
+
+        const lengthUnits =
+            millimetersToDpUnits(length);
+
+        const key =
+            profileType +
+            ":" +
+            lengthUnits;
+
+        targetMap.set(
+            key,
+            (targetMap.get(key) ?? 0) +
+            quantity
+        );
+    }
+
+
+    for (const cut of cuts) {
+
+        addQuantity(
+            requestedQuantities,
+            cut.profileType,
+            cut.length,
+            cut.quantity
+        );
+    }
+
+
+    for (const bar of optimization.bars) {
+
+        for (const item of bar.pattern) {
+
+            addQuantity(
+                accountedQuantities,
+                bar.profileType,
+                item.length,
+                item.quantity
+            );
+        }
+    }
+
+
+    for (const item of optimization.remainingItems) {
+
+        addQuantity(
+            accountedQuantities,
+            item.profileType,
+            item.length,
+            item.quantity
+        );
+    }
+
+
+    const allKeys = new Set([
+        ...requestedQuantities.keys(),
+        ...accountedQuantities.keys()
+    ]);
+
+
+    for (const key of allKeys) {
+
+        const requested =
+            requestedQuantities.get(key) ?? 0;
+
+        const accounted =
+            accountedQuantities.get(key) ?? 0;
+
+
+        if (requested !== accounted) {
+
+            throw new Error(
+                "Optimizerin kappaletase ei täsmää: " +
+                key +
+                " · pyydetty " +
+                requested +
+                ", tilitetty " +
+                accounted +
+                "."
+            );
+        }
+    }
+
+
+    if (
+        optimization.complete &&
+        optimization.remainingItems.length > 0
+    ) {
+
+        throw new Error(
+            "Optimizer ilmoitti suunnitelman valmiiksi, vaikka käsittelemättömiä kappaleita jäi."
+        );
+    }
+
+
+    return true;
+}
+
+
+function verifyOptimizationBarBalances(
+    optimization
+) {
+
+    for (const bar of optimization.bars) {
+
+        let cutLengthTotal = 0;
+
+
+        for (const item of bar.pattern) {
+
+            cutLengthTotal +=
+                item.length * item.quantity;
+        }
+
+
+        const accountedLength =
+            cutLengthTotal +
+            bar.waste +
+            bar.remaining;
+
+
+        const sourceLengthUnits =
+            millimetersToDpUnits(
+                bar.sourceLength
+            );
+
+        const accountedLengthUnits =
+            millimetersToDpUnits(
+                accountedLength
+            );
+
+
+        if (
+            sourceLengthUnits !==
+            accountedLengthUnits
+        ) {
+
+            throw new Error(
+                "Optimizerin materiaalitase ei täsmää: " +
+                "lähde " +
+                bar.sourceLength +
+                " mm, tilitetty " +
+                accountedLength +
+                " mm."
+            );
+        }
+    }
+
+
+    return true;
+}
+
+
+function verifyOptimizationSourceUsage(
+    materialInventory,
+    optimization
+) {
+
+    const newStockByProfile = new Map(
+        materialInventory.newStock.map(
+            stock => [
+                stock.profileType,
+                stock
+            ]
+        )
+    );
+
+    const availableRemnants = new Map();
+
+
+    for (const remnant of materialInventory.remnants) {
+
+        const key =
+            remnant.profileType +
+            ":" +
+            millimetersToDpUnits(
+                remnant.length
+            );
+
+        availableRemnants.set(
+            key,
+            remnant.quantity
+        );
+    }
+
+
+    const usedNewStock = new Map();
+    const usedRemnants = new Map();
+
+
+    for (const bar of optimization.bars) {
+
+        if (bar.source === "new") {
+
+            const stock =
+                newStockByProfile.get(
+                    bar.profileType
+                );
+
+
+            if (stock === undefined) {
+
+                throw new Error(
+                    "Optimizer käytti uutta materiaalia, jota ei ole varastossa: " +
+                    bar.profileType +
+                    "."
+                );
+            }
+
+
+            if (
+                millimetersToDpUnits(
+                    bar.sourceLength
+                ) !==
+                millimetersToDpUnits(
+                    materialInventory.stockLength
+                )
+            ) {
+
+                throw new Error(
+                    "Optimizerin uuden tangon lähdepituus ei vastaa varaston raakatangon pituutta."
+                );
+            }
+
+
+            usedNewStock.set(
+                bar.profileType,
+                (
+                    usedNewStock.get(
+                        bar.profileType
+                    ) ?? 0
+                ) + 1
+            );
+
+            continue;
+        }
+
+
+        if (bar.source === "remnant") {
+
+            const key =
+                bar.profileType +
+                ":" +
+                millimetersToDpUnits(
+                    bar.sourceLength
+                );
+
+            usedRemnants.set(
+                key,
+                (
+                    usedRemnants.get(key) ??
+                    0
+                ) + 1
+            );
+
+            continue;
+        }
+
+
+        throw new Error(
+            "Optimizerin materiaalilähde on tuntematon: " +
+            String(bar.source) +
+            "."
+        );
+    }
+
+
+    for (
+        const [profileType, usedQuantity]
+        of usedNewStock
+    ) {
+
+        const stock =
+            newStockByProfile.get(
+                profileType
+            );
+
+
+        if (
+            !stock.unlimited &&
+            usedQuantity > stock.quantity
+        ) {
+
+            throw new Error(
+                "Optimizer käytti uutta materiaalia yli saatavilla olevan määrän: " +
+                profileType +
+                " · käytetty " +
+                usedQuantity +
+                ", saatavilla " +
+                stock.quantity +
+                "."
+            );
+        }
+    }
+
+
+    for (
+        const [key, usedQuantity]
+        of usedRemnants
+    ) {
+
+        const availableQuantity =
+            availableRemnants.get(key) ??
+            0;
+
+
+        if (
+            usedQuantity >
+            availableQuantity
+        ) {
+
+            throw new Error(
+                "Optimizer käytti jäännöstä yli saatavilla olevan määrän: " +
+                key +
+                " · käytetty " +
+                usedQuantity +
+                ", saatavilla " +
+                availableQuantity +
+                "."
+            );
+        }
+    }
+
+
+    return true;
+}
+
+
+function runSourceUsageVerifierTest() {
+
+    const materialInventory = {
+        stockLength: 6000,
+
+        newStock: [
+            {
+                profileType: "verticalProfile",
+                unlimited: false,
+                quantity: 1
+            }
+        ],
+
+        remnants: []
+    };
+
+
+    const deliberatelyBrokenOptimization = {
+        bars: [
+            {
+                source: "new",
+                profileType: "verticalProfile",
+                sourceLength: 6000
+            },
+            {
+                source: "new",
+                profileType: "verticalProfile",
+                sourceLength: 6000
+            }
+        ]
+    };
+
+
+    let errorMessage = null;
+
+
+    try {
+
+        verifyOptimizationSourceUsage(
+            materialInventory,
+            deliberatelyBrokenOptimization
+        );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const passed =
+        typeof errorMessage === "string" &&
+        errorMessage.includes(
+            "yli saatavilla olevan määrän"
+        );
+
+
+    console.table([
+        {
+            test: "Äärellisen materiaalin ylitys havaitaan",
+            result: passed ? "PASS" : "FAIL",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runRemnantUsageVerifierTest() {
+
+    const materialInventory = {
+        stockLength: 6000,
+
+        newStock: [],
+
+        remnants: [
+            {
+                profileType: "verticalProfile",
+                length: 2500,
+                quantity: 1
+            }
+        ]
+    };
+
+
+    const deliberatelyBrokenOptimization = {
+        bars: [
+            {
+                source: "remnant",
+                profileType: "verticalProfile",
+                sourceLength: 2500
+            },
+            {
+                source: "remnant",
+                profileType: "verticalProfile",
+                sourceLength: 2500
+            }
+        ]
+    };
+
+
+    let errorMessage = null;
+
+
+    try {
+
+        verifyOptimizationSourceUsage(
+            materialInventory,
+            deliberatelyBrokenOptimization
+        );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const passed =
+        typeof errorMessage === "string" &&
+        errorMessage.includes(
+            "Optimizer käytti jäännöstä yli saatavilla olevan määrän"
+        );
+
+
+    console.table([
+        {
+            test: "Jäännöksen määrän ylitys havaitaan",
+            result: passed ? "PASS" : "FAIL",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runBarBalanceVerifierTest() {
+
+    const deliberatelyBrokenOptimization = {
+        bars: [
+            {
+                sourceLength: 6000,
+
+                pattern: [
+                    {
+                        length: 2000,
+                        quantity: 2
+                    }
+                ],
+
+                waste: 6,
+                remaining: 1990
+            }
+        ]
+    };
+
+
+    let errorMessage = null;
+
+
+    try {
+
+        verifyOptimizationBarBalances(
+            deliberatelyBrokenOptimization
+        );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const passed =
+        typeof errorMessage === "string" &&
+        errorMessage.includes(
+            "Optimizerin materiaalitase ei täsmää"
+        );
+
+
+    console.table([
+        {
+            test: "Virheellinen materiaalitase havaitaan",
+            result: passed ? "PASS" : "FAIL",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runDemandAccountingVerifierTest() {
+
+    const cuts = [
+        {
+            profileType: "responseProfile",
+            length: 2000,
+            quantity: 1
+        }
+    ];
+
+
+    const deliberatelyBrokenOptimization = {
+        complete: true,
+        bars: [],
+        remainingItems: []
+    };
+
+
+    let errorMessage = null;
+
+
+    try {
+
+        verifyOptimizationDemandAccounting(
+            cuts,
+            deliberatelyBrokenOptimization
+        );
+
+        verifyOptimizationBarBalances(
+            optimization
+        );
+
+        verifyOptimizationSourceUsage(
+            materialInventory,
+            optimization
+        );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const passed =
+        typeof errorMessage === "string" &&
+        errorMessage.includes(
+            "Optimizerin kappaletase ei täsmää"
+        );
+
+
+    console.table([
+        {
+            test: "Kappalehävikki havaitaan",
+            result: passed ? "PASS" : "FAIL",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
 function getRemnantStatus(
     remaining,
     scoreSettings
@@ -6724,7 +7335,10 @@ async function calculate() {
                 kerf,
                 PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
             );
-
+        verifyOptimizationDemandAccounting(
+            cuts,
+            optimization
+        );
 
         if (!optimization.complete) {
 
