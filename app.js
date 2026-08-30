@@ -7337,6 +7337,169 @@ function runStoredDuplicateNewStockVariantRegressionTest() {
 }
 
 
+function runStoredWorkStateColorRegressionTest() {
+
+    const stockProfileRows =
+        Object.keys(PROFILE_TYPES).map(
+            profileType => ({
+                profileType: profileType,
+
+                color:
+                    profileType === "verticalProfile"
+                        ? "silver"
+                        : null,
+
+                quantity: "1",
+                unlimited: true
+            })
+        );
+
+
+    const state = {
+        schemaVersion: WORK_STATE_SCHEMA_VERSION,
+        engineVersion: WORK_STATE_ENGINE_VERSION,
+        savedAt: "2026-08-30T12:00:00.000Z",
+        stockLength: "6000",
+        kerf: "3",
+        stockProfileRows: stockProfileRows,
+        remnantRows: [
+            {
+                profileType: "verticalProfile",
+                color: "white",
+                length: "2600",
+                quantity: "1"
+            }
+        ],
+        inputRows: [
+            {
+                profileType: "verticalProfile",
+                color: "black",
+                length: "2200",
+                quantity: "1"
+            }
+        ],
+        generatedPlan: {
+            complete: true,
+            bars: [
+                {
+                    id: "bar-1",
+                    number: 1,
+                    profileType: "verticalProfile",
+                    color: "black",
+                    source: "new",
+                    sourceLength: 6000,
+                    groupedCuts: [
+                        {
+                            length: 2200,
+                            quantity: 1
+                        }
+                    ],
+                    remaining: 3797,
+                    waste: 3,
+                    remnantStatus: "reusable"
+                }
+            ],
+            remainingItems: []
+        },
+        completedBarIds: []
+    };
+
+
+    const legacyState = {
+        ...state,
+        stockProfileRows:
+            state.stockProfileRows.map(
+                ({ color, ...row }) => row
+            ),
+        remnantRows:
+            state.remnantRows.map(
+                ({ color, ...row }) => row
+            ),
+        inputRows:
+            state.inputRows.map(
+                ({ color, ...row }) => row
+            ),
+        generatedPlan: {
+            ...state.generatedPlan,
+            bars: state.generatedPlan.bars.map(
+                ({ color, ...bar }) => bar
+            )
+        }
+    };
+
+
+    const invalidColorStates = [
+        {
+            ...state,
+            inputRows: [
+                {
+                    ...state.inputRows[0],
+                    color: 1
+                }
+            ]
+        },
+        {
+            ...state,
+            stockProfileRows: [
+                {
+                    ...state.stockProfileRows[0],
+                    color: false
+                },
+                ...state.stockProfileRows.slice(1)
+            ]
+        },
+        {
+            ...state,
+            generatedPlan: {
+                ...state.generatedPlan,
+                bars: [
+                    {
+                        ...state.generatedPlan.bars[0],
+                        color: 1
+                    }
+                ]
+            }
+        }
+    ];
+
+
+    const passed =
+        isValidStoredWorkState(state) &&
+        isValidStoredWorkState(legacyState) &&
+        normalizeStoredColor("") === null &&
+        normalizeStoredColor("   ") === null &&
+        invalidColorStates.every(
+            invalidState =>
+                !isValidStoredWorkState(invalidState)
+        );
+
+
+    console.table([
+        {
+            test:
+                "Tallennettu työ säilyttää värit ja hyväksyy vanhat värittömät rivit",
+            result:
+                passed ? "PASS" : "FAIL",
+            coloredState:
+                isValidStoredWorkState(state),
+            legacyState:
+                isValidStoredWorkState(legacyState),
+            emptyColorNormalizesToNull:
+                normalizeStoredColor("") === null &&
+                normalizeStoredColor("   ") === null,
+            invalidColorsRejected:
+                invalidColorStates.every(
+                    invalidState =>
+                        !isValidStoredWorkState(invalidState)
+                )
+        }
+    ]);
+
+
+    return passed;
+}
+
+
 function verifyOptimizationDemandAccounting(
     cuts,
     optimization
@@ -8230,6 +8393,30 @@ function isStoredInputValue(value) {
 }
 
 
+function isValidStoredColor(color) {
+
+    return color === undefined ||
+        color === null ||
+        typeof color === "string";
+}
+
+
+function normalizeStoredColor(color) {
+
+    if (typeof color !== "string") {
+        return null;
+    }
+
+
+    const normalizedColor = color.trim();
+
+
+    return normalizedColor === ""
+        ? null
+        : normalizedColor;
+}
+
+
 function isValidStoredInputRows(inputRows) {
 
     return Array.isArray(inputRows) &&
@@ -8239,7 +8426,8 @@ function isValidStoredInputRows(inputRows) {
             typeof row.profileType === "string" &&
             PROFILE_TYPES[row.profileType] !== undefined &&
             isStoredInputValue(row.length) &&
-            isStoredInputValue(row.quantity)
+            isStoredInputValue(row.quantity) &&
+            isValidStoredColor(row.color)
         );
 }
 
@@ -8266,14 +8454,15 @@ function isValidStoredStockProfileRows(
             typeof row.profileType !== "string" ||
             PROFILE_TYPES[row.profileType] === undefined ||
             !isStoredInputValue(row.quantity) ||
-            typeof row.unlimited !== "boolean"
+            typeof row.unlimited !== "boolean" ||
+            !isValidStoredColor(row.color)
         ) {
             return false;
         }
 
 
         const normalizedColor =
-            row.color ?? null;
+            normalizeStoredColor(row.color);
 
         const variantKey =
             row.profileType +
@@ -8337,6 +8526,7 @@ function isValidStoredPlan(plan) {
         bar.number === index + 1 &&
         typeof bar.profileType === "string" &&
         PROFILE_TYPES[bar.profileType] !== undefined &&
+        isValidStoredColor(bar.color) &&
         validSources.has(bar.source) &&
         Number.isFinite(bar.sourceLength) &&
         bar.sourceLength > 0 &&
@@ -8417,6 +8607,11 @@ function getInputRowsForStorage() {
             profileType:
                 row.querySelector(".cut-profile-type").value,
 
+            color:
+                normalizeStoredColor(
+                    row.querySelector(".cut-color").value
+                ),
+
             length:
                 row.querySelector(".cut-length").value,
 
@@ -8433,6 +8628,11 @@ function getRemnantRowsForStorage() {
         row => ({
             profileType:
                 row.querySelector(".remnant-profile-type").value,
+
+            color:
+                normalizeStoredColor(
+                    row.querySelector(".remnant-color").value
+                ),
 
             length:
                 row.querySelector(".remnant-length").value,
@@ -8453,6 +8653,13 @@ function getStockProfileRowsForStorage() {
 
         profileType:
             row.dataset.profileType,
+
+        color:
+            normalizeStoredColor(
+                row.querySelector(
+                    ".stock-profile-color"
+                ).value
+            ),
 
         quantity:
             row.querySelector(
@@ -8617,7 +8824,8 @@ function restoreSavedWorkState() {
                 createStockProfileRow(
                     row.profileType,
                     row.quantity,
-                    row.unlimited
+                    row.unlimited,
+                    normalizeStoredColor(row.color)
                 )
         )
     );
@@ -8635,7 +8843,8 @@ function restoreSavedWorkState() {
             createRemnantRow(
                 remnantRow.length,
                 remnantRow.quantity,
-                remnantRow.profileType
+                remnantRow.profileType,
+                normalizeStoredColor(remnantRow.color)
             )
         );
     }
@@ -8652,7 +8861,8 @@ function restoreSavedWorkState() {
             createCutRow(
                 inputRow.length,
                 inputRow.quantity,
-                inputRow.profileType
+                inputRow.profileType,
+                normalizeStoredColor(inputRow.color)
             )
         );
     }
@@ -9179,9 +9389,12 @@ function initializeWorkPersistence() {
             event.target.matches(
                 "#stockLength, " +
                 "#kerf, " +
+                ".stock-profile-color, " +
                 ".stock-profile-quantity, " +
+                ".remnant-color, " +
                 ".remnant-length, " +
                 ".remnant-quantity, " +
+                ".cut-color, " +
                 ".cut-length, " +
                 ".cut-quantity"
             )
