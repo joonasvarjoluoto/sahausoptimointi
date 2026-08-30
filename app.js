@@ -52,7 +52,8 @@ function createProfileTypeOptions(
 function createStockProfileRow(
     profileType,
     quantity = "1",
-    unlimited = true
+    unlimited = true,
+    color = ""
 ) {
 
     const settings = PROFILE_TYPES[profileType];
@@ -73,6 +74,13 @@ function createStockProfileRow(
         <span class="stock-profile-name">
             ${settings.label}
         </span>
+
+        <input
+        class="stock-profile-color"
+            type="text"
+            placeholder="Väri"
+            aria-label="${settings.label}, väri"
+        >
 
         <input
             class="stock-profile-quantity"
@@ -99,6 +107,7 @@ function createStockProfileRow(
 
     quantityInput.value = String(quantity);
     quantityInput.disabled = unlimited;
+    row.querySelector(".stock-profile-color").value = String(color ?? "");
 
     return row;
 }
@@ -138,7 +147,8 @@ function updateStockProfileQuantityAvailability(
 function createCutRow(
     length = "",
     quantity = "1",
-    profileType = "verticalProfile"
+    profileType = "verticalProfile",
+    color = ""
 ) {
 
     const row = document.createElement("div");
@@ -151,6 +161,15 @@ function createCutRow(
             <select class="cut-profile-type">
                 ${createProfileTypeOptions(profileType)}
             </select>
+        </label>
+
+        <label class="form-field">
+            <span>Väri</span>
+            <input
+                class="cut-color"
+                type="text"
+                placeholder="Väri"
+            >
         </label>
 
         <label class="form-field">
@@ -186,14 +205,15 @@ function createCutRow(
 
     row.querySelector(".cut-length").value = String(length);
     row.querySelector(".cut-quantity").value = String(quantity);
-
+    row.querySelector(".cut-color").value = String(color ?? "");
     return row;
 }
 
 function createRemnantRow(
     length = "",
     quantity = "1",
-    profileType = "verticalProfile"
+    profileType = "verticalProfile",
+    color = ""
 ) {
 
     const row = document.createElement("div");
@@ -206,6 +226,15 @@ function createRemnantRow(
             <select class="remnant-profile-type">
                 ${createProfileTypeOptions(profileType)}
             </select>
+        </label>
+
+        <label class="form-field">
+            <span>Väri</span>
+            <input
+                class="remnant-color"
+                type="text"
+                placeholder="Väri"
+            >
         </label>
 
         <label class="form-field">
@@ -245,6 +274,8 @@ function createRemnantRow(
     row.querySelector(".remnant-quantity").value =
         String(quantity);
 
+    row.querySelector(".remnant-color").value =
+        String(color ?? "");
     return row;
 }
 
@@ -301,15 +332,23 @@ function getCutsFromForm() {
     const quantityInputs =
         document.querySelectorAll(".cut-quantity");
 
+    const colorInputs =
+        document.querySelectorAll(".cut-color");
+
     const cuts = [];
 
     for (let i = 0; i < lengthInputs.length; i++) {
 
         const length = Number(lengthInputs[i].value);
         const quantity = Number(quantityInputs[i].value);
+        const color = colorInputs[i].value.trim();
 
         cuts.push({
             profileType: profileTypeInputs[i].value,
+            color:
+                color === ""
+                    ? null
+                    : color,
             length: length,
             quantity: quantity
         });
@@ -336,6 +375,11 @@ function getMaterialAvailabilityFromForm() {
         const profileType =
             row.dataset.profileType;
 
+        const color =
+            row.querySelector(
+                ".stock-profile-color"
+            ).value.trim();
+
         const unlimited =
             row.querySelector(
                 ".stock-profile-unlimited-checkbox"
@@ -352,6 +396,10 @@ function getMaterialAvailabilityFromForm() {
 
         newStock.push({
             profileType: profileType,
+            color:
+                color === ""
+                    ? null
+                    : color,
             unlimited: unlimited,
             quantity: quantity
         });
@@ -369,6 +417,11 @@ function getMaterialAvailabilityFromForm() {
                 ".remnant-profile-type"
             ).value;
 
+        const color =
+            row.querySelector(
+                ".remnant-color"
+            ).value.trim();
+
         const length =
             Number(
                 row.querySelector(".remnant-length").value
@@ -381,6 +434,10 @@ function getMaterialAvailabilityFromForm() {
 
         remnants.push({
             profileType: profileType,
+            color:
+                color === ""
+                    ? null
+                    : color,
             length: length,
             quantity: quantity
         });
@@ -471,7 +528,6 @@ function validateMaterialAvailability(
             stock.profileType
         );
 
-        seenProfileTypes.add(stock.profileType);
 
 
         if (typeof stock.unlimited !== "boolean") {
@@ -7171,6 +7227,116 @@ function runDuplicateNewStockVariantValidationRegressionTest() {
 }
 
 
+function runStoredNewStockColorValidationRegressionTest() {
+
+    const stockProfileRows = [
+        {
+            profileType: "verticalProfile",
+            color: "black",
+            quantity: "1",
+            unlimited: true
+        },
+        {
+            profileType: "verticalProfile",
+            color: "white",
+            quantity: "1",
+            unlimited: true
+        },
+
+        ...Object.keys(PROFILE_TYPES)
+            .filter(
+                profileType =>
+                    profileType !==
+                    "verticalProfile"
+            )
+            .map(
+                profileType => ({
+                    profileType: profileType,
+                    color: null,
+                    quantity: "1",
+                    unlimited: true
+                })
+            )
+    ];
+
+
+    const passed =
+        isValidStoredStockProfileRows(
+            stockProfileRows
+        );
+
+
+    console.table([
+        {
+            test:
+                "Tallennettu varasto hyväksyy useita värejä samasta profiilista",
+            result:
+                passed ? "PASS" : "FAIL",
+            rows:
+                stockProfileRows.length
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runStoredDuplicateNewStockVariantRegressionTest() {
+
+    const stockProfileRows = [
+        {
+            profileType: "verticalProfile",
+            color: "black",
+            quantity: "1",
+            unlimited: true
+        },
+        {
+            profileType: "verticalProfile",
+            color: "black",
+            quantity: "3",
+            unlimited: false
+        },
+
+        ...Object.keys(PROFILE_TYPES)
+            .filter(
+                profileType =>
+                    profileType !==
+                    "verticalProfile"
+            )
+            .map(
+                profileType => ({
+                    profileType: profileType,
+                    color: null,
+                    quantity: "1",
+                    unlimited: true
+                })
+            )
+    ];
+
+
+    const passed =
+        !isValidStoredStockProfileRows(
+            stockProfileRows
+        );
+
+
+    console.table([
+        {
+            test:
+                "Tallennettu varasto hylkää saman materiaalivariantin kahdesti",
+            result:
+                passed ? "PASS" : "FAIL",
+            rows:
+                stockProfileRows.length
+        }
+    ]);
+
+
+    return passed;
+}
+
+
 function verifyOptimizationDemandAccounting(
     cuts,
     optimization
@@ -8081,43 +8247,63 @@ function isValidStoredStockProfileRows(
     stockProfileRows
 ) {
 
-    if (
-        !Array.isArray(stockProfileRows) ||
-        stockProfileRows.length !==
-        Object.keys(PROFILE_TYPES).length
-    ) {
+    if (!Array.isArray(stockProfileRows)) {
         return false;
     }
 
 
-    const profileTypes =
-        stockProfileRows.map(
-            row => row.profileType
-        );
+    const seenProfileTypes =
+        new Set();
+
+    const seenVariants =
+        new Set();
 
 
-    if (
-        stockProfileRows.some(row =>
+    for (const row of stockProfileRows) {
+
+        if (
             !isPlainObject(row) ||
             typeof row.profileType !== "string" ||
             PROFILE_TYPES[row.profileType] === undefined ||
             !isStoredInputValue(row.quantity) ||
             typeof row.unlimited !== "boolean"
-        )
-    ) {
-        return false;
+        ) {
+            return false;
+        }
+
+
+        const normalizedColor =
+            row.color ?? null;
+
+        const variantKey =
+            row.profileType +
+            ":" +
+            JSON.stringify(normalizedColor);
+
+
+        if (seenVariants.has(variantKey)) {
+            return false;
+        }
+
+
+        seenVariants.add(
+            variantKey
+        );
+
+        seenProfileTypes.add(
+            row.profileType
+        );
     }
 
 
-    return (
-        new Set(profileTypes).size ===
-        profileTypes.length
-    ) &&
-        Object.keys(PROFILE_TYPES).every(
-            profileType =>
-                profileTypes.includes(profileType)
-        );
+    return Object.keys(PROFILE_TYPES).every(
+        profileType =>
+            seenProfileTypes.has(
+                profileType
+            )
+    );
 }
+
 
 function isValidStoredPlan(plan) {
 
