@@ -4973,6 +4973,508 @@ function optimizeOrderMaterialBeamDP(
 }
 
 
+function findExactFiniteInventoryFeasibilityPlan(
+    items,
+    materialSources,
+    kerf,
+    options = {}
+) {
+
+    const maxPieces =
+        options.maxPieces ?? 24;
+
+    const maxSources =
+        options.maxSources ?? 16;
+
+    const maxStates =
+        options.maxStates ?? 100000;
+
+
+    if (
+        !Number.isInteger(maxPieces) ||
+        maxPieces < 0 ||
+        !Number.isInteger(maxSources) ||
+        maxSources < 0 ||
+        !Number.isInteger(maxStates) ||
+        maxStates <= 0
+    ) {
+        throw new Error(
+            "Tarkan toteutettavuushaun rajojen pitää olla kelvollisia kokonaislukuja."
+        );
+    }
+
+
+    const stats = {
+        attempted: false,
+        status: "not-applicable",
+        pieceCount: 0,
+        sourceCount: 0,
+        statesExpanded: 0,
+        placementsTried: 0,
+        memoHits: 0
+    };
+
+
+    if (
+        materialSources.some(
+            source => source.unlimited
+        )
+    ) {
+        stats.status = "unlimited-source";
+
+        return {
+            plan: null,
+            stats: stats
+        };
+    }
+
+
+    const pieceCount =
+        items.reduce(
+            (total, item) =>
+                total + item.quantity,
+            0
+        );
+
+    const sourceCount =
+        materialSources.reduce(
+            (total, source) =>
+                total + source.quantity,
+            0
+        );
+
+
+    stats.pieceCount = pieceCount;
+    stats.sourceCount = sourceCount;
+
+
+    if (pieceCount > maxPieces) {
+        stats.status = "piece-limit";
+
+        return {
+            plan: null,
+            stats: stats
+        };
+    }
+
+
+    if (sourceCount > maxSources) {
+        stats.status = "source-limit";
+
+        return {
+            plan: null,
+            stats: stats
+        };
+    }
+
+
+    stats.attempted = true;
+
+
+    // Lähteen yksi ylimääräinen kerf-yksikkö tekee
+    // pituus + kerf -pakkaamisesta cutPiece()-säännön mukaisen:
+    // viimeinen kappale ei tarvitse perään täyttä kerfiä.
+    const kerfUnits =
+        millimetersToDpUnits(kerf);
+
+    const pieces = [];
+
+
+    for (
+        let itemIndex = 0;
+        itemIndex < items.length;
+        itemIndex++
+    ) {
+
+        const item = items[itemIndex];
+
+        const pieceSizeUnits =
+            millimetersToDpUnits(
+                item.length
+            ) + kerfUnits;
+
+
+        for (
+            let quantity = 0;
+            quantity < item.quantity;
+            quantity++
+        ) {
+            pieces.push({
+                itemIndex: itemIndex,
+                length: item.length,
+                sizeUnits: pieceSizeUnits
+            });
+        }
+    }
+
+
+    pieces.sort((first, second) =>
+        second.sizeUnits - first.sizeUnits ||
+        first.itemIndex - second.itemIndex
+    );
+
+
+    const sourceInstances = [];
+
+
+    for (
+        let sourceIndex = 0;
+        sourceIndex < materialSources.length;
+        sourceIndex++
+    ) {
+
+        const source =
+            materialSources[sourceIndex];
+
+        const capacityUnits =
+            millimetersToDpUnits(
+                source.sourceLength
+            ) + kerfUnits;
+
+
+        for (
+            let quantity = 0;
+            quantity < source.quantity;
+            quantity++
+        ) {
+            sourceInstances.push({
+                sourceIndex: sourceIndex,
+                instanceIndex:
+                    sourceInstances.length,
+                remainingCapacityUnits:
+                    capacityUnits,
+                assignedPieces: []
+            });
+        }
+    }
+
+
+    const totalPieceSizeUnits =
+        pieces.reduce(
+            (total, piece) =>
+                total + piece.sizeUnits,
+            0
+        );
+
+    const totalSourceCapacityUnits =
+        sourceInstances.reduce(
+            (total, source) =>
+                total +
+                source.remainingCapacityUnits,
+            0
+        );
+
+
+    if (
+        totalPieceSizeUnits >
+        totalSourceCapacityUnits ||
+        pieces.some(piece =>
+            sourceInstances.every(source =>
+                source.remainingCapacityUnits <
+                piece.sizeUnits
+            )
+        )
+    ) {
+        stats.status = "infeasible";
+
+        return {
+            plan: null,
+            stats: stats
+        };
+    }
+
+
+    const failedStates = new Set();
+    let stateLimitReached = false;
+
+
+    function getStateKey(pieceIndex) {
+
+        const capacitiesBySource =
+            materialSources.map(() => []);
+
+
+        for (const source of sourceInstances) {
+            capacitiesBySource[
+                source.sourceIndex
+            ].push(
+                source.remainingCapacityUnits
+            );
+        }
+
+
+        return pieceIndex + "//" +
+            capacitiesBySource
+                .map(capacities =>
+                    capacities
+                        .sort(
+                            (first, second) =>
+                                first - second
+                        )
+                        .join(",")
+                )
+                .join("|");
+    }
+
+
+    function search(pieceIndex) {
+
+        if (pieceIndex === pieces.length) {
+            return true;
+        }
+
+
+        const key =
+            getStateKey(pieceIndex);
+
+
+        if (failedStates.has(key)) {
+            stats.memoHits++;
+            return false;
+        }
+
+
+        if (
+            stats.statesExpanded >=
+            maxStates
+        ) {
+            stateLimitReached = true;
+            return false;
+        }
+
+
+        stats.statesExpanded++;
+
+
+        const piece = pieces[pieceIndex];
+
+        const candidates =
+            sourceInstances
+                .filter(source =>
+                    source.remainingCapacityUnits >=
+                    piece.sizeUnits
+                )
+                .sort((first, second) =>
+                    (
+                        first.remainingCapacityUnits -
+                        piece.sizeUnits
+                    ) -
+                    (
+                        second.remainingCapacityUnits -
+                        piece.sizeUnits
+                    ) ||
+                    first.sourceIndex -
+                    second.sourceIndex ||
+                    first.instanceIndex -
+                    second.instanceIndex
+                );
+
+        const triedEquivalentSources =
+            new Set();
+
+
+        for (const source of candidates) {
+
+            const equivalentSourceKey =
+                source.sourceIndex + ":" +
+                source.remainingCapacityUnits;
+
+
+            if (
+                triedEquivalentSources.has(
+                    equivalentSourceKey
+                )
+            ) {
+                continue;
+            }
+
+
+            triedEquivalentSources.add(
+                equivalentSourceKey
+            );
+
+            stats.placementsTried++;
+
+            source.remainingCapacityUnits -=
+                piece.sizeUnits;
+
+            source.assignedPieces.push(
+                piece
+            );
+
+
+            if (search(pieceIndex + 1)) {
+                return true;
+            }
+
+
+            source.assignedPieces.pop();
+
+            source.remainingCapacityUnits +=
+                piece.sizeUnits;
+
+
+            if (stateLimitReached) {
+                return false;
+            }
+        }
+
+
+        failedStates.add(key);
+
+        return false;
+    }
+
+
+    const complete = search(0);
+
+
+    if (!complete) {
+        stats.status = stateLimitReached
+            ? "state-limit"
+            : "infeasible";
+
+        return {
+            plan: null,
+            stats: stats
+        };
+    }
+
+
+    const remainingMaterialSources =
+        materialSources.map(source => ({
+            ...source
+        }));
+
+    const bars = [];
+
+
+    for (const sourceInstance of sourceInstances) {
+
+        if (
+            sourceInstance.assignedPieces.length ===
+            0
+        ) {
+            continue;
+        }
+
+
+        const source =
+            materialSources[
+            sourceInstance.sourceIndex
+            ];
+
+        const quantitiesByLength =
+            new Map();
+
+
+        for (
+            const piece of
+            sourceInstance.assignedPieces
+        ) {
+            quantitiesByLength.set(
+                piece.length,
+                (
+                    quantitiesByLength.get(
+                        piece.length
+                    ) ?? 0
+                ) + 1
+            );
+        }
+
+
+        const pattern = [];
+
+
+        for (const item of items) {
+
+            const quantity =
+                quantitiesByLength.get(
+                    item.length
+                ) ?? 0;
+
+
+            if (quantity === 0) {
+                continue;
+            }
+
+
+            pattern.push({
+                length: item.length,
+                quantity: quantity
+            });
+
+            quantitiesByLength.delete(
+                item.length
+            );
+        }
+
+
+        let remaining =
+            source.sourceLength;
+
+        let waste = 0;
+
+
+        for (const patternItem of pattern) {
+
+            for (
+                let quantity = 0;
+                quantity < patternItem.quantity;
+                quantity++
+            ) {
+
+                const cut =
+                    cutPiece(
+                        remaining,
+                        patternItem.length,
+                        kerf
+                    );
+
+
+                if (!cut.possible) {
+                    throw new Error(
+                        "Tarkan toteutettavuushaun sahausjako oli virheellinen."
+                    );
+                }
+
+
+                remaining = cut.remaining;
+                waste += cut.waste;
+            }
+        }
+
+
+        bars.push({
+            pattern: pattern,
+            remaining: remaining,
+            waste: waste,
+            source: source.source,
+            profileType: source.profileType,
+            color: source.color ?? null,
+            sourceLength: source.sourceLength
+        });
+
+        remainingMaterialSources[
+            sourceInstance.sourceIndex
+        ].quantity--;
+    }
+
+
+    stats.status = "feasible";
+
+
+    return {
+        plan: {
+            bars: bars,
+            remainingMaterialSources:
+                remainingMaterialSources
+        },
+        stats: stats
+    };
+}
+
+
 function optimizeOrderInventoryBeamDP(
     items,
     materialSources,
@@ -5554,6 +6056,70 @@ function optimizeOrderInventoryBeamDP(
     }
 
 
+    let feasibilityFallbackStats = {
+        attempted: false,
+        status: "not-needed",
+        pieceCount: 0,
+        sourceCount: 0,
+        statesExpanded: 0,
+        placementsTried: 0,
+        memoHits: 0
+    };
+
+
+    if (bestCompleteState === null) {
+
+        // Pisteytysbeam pysyy ensisijaisena hakuna. Tarkka haku
+        // varmistaa vain rajatun äärellisen varaston toteutettavuuden.
+        const feasibilityFallback =
+            findExactFiniteInventoryFeasibilityPlan(
+                items,
+                materialSources,
+                kerf,
+                {
+                    maxPieces:
+                        options.feasibilityFallbackMaxPieces,
+
+                    maxSources:
+                        options.feasibilityFallbackMaxSources,
+
+                    maxStates:
+                        options.feasibilityFallbackMaxStates
+                }
+            );
+
+
+        feasibilityFallbackStats =
+            feasibilityFallback.stats;
+
+
+        if (feasibilityFallback.plan !== null) {
+
+            bestCompleteState =
+                createState(
+                    [],
+                    feasibilityFallback.plan
+                        .remainingMaterialSources,
+                    feasibilityFallback.plan.bars
+                );
+
+            bestCompleteScore =
+                scoreCompleteMaterialTransitionPlan(
+                    {
+                        complete: true,
+                        bars:
+                            bestCompleteState.bars
+                    },
+                    scoreSettings
+                );
+        }
+    }
+
+
+    stats.feasibilityFallback =
+        feasibilityFallbackStats;
+
+
     const resultState =
         bestCompleteState ??
         bestIncompleteState;
@@ -5562,6 +6128,14 @@ function optimizeOrderInventoryBeamDP(
     return {
         complete:
             bestCompleteState !== null,
+
+        feasibilityStatus:
+            bestCompleteState !== null
+                ? "feasible"
+                : feasibilityFallbackStats
+                    .status === "infeasible"
+                    ? "infeasible"
+                    : "unknown",
 
         bars:
             copyBars(
@@ -5944,6 +6518,9 @@ const PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS = Object.freeze({
     patternsPerState: 10,
     candidatePoolSize: 50,
     maxExtraBars: 2,
+    feasibilityFallbackMaxPieces: 24,
+    feasibilityFallbackMaxSources: 16,
+    feasibilityFallbackMaxStates: 100000,
     scoreSettings: Object.freeze({
         minimumLength: 500,
         fullValueLength: 4500,
@@ -6161,6 +6738,21 @@ function optimizeOrderByProfileTypeWithInventory(
                 result =>
                     result.optimization.complete
             ),
+
+        feasibilityStatus:
+            profileResults.every(
+                result =>
+                    result.optimization.complete
+            )
+                ? "feasible"
+                : profileResults.some(
+                    result =>
+                        result.optimization
+                            .feasibilityStatus ===
+                        "infeasible"
+                )
+                    ? "infeasible"
+                    : "unknown",
 
         bars:
             bars,
@@ -8925,7 +9517,7 @@ function renderCuttingPlan(plan) {
         const isCompleted = completedBarIds.has(bar.id);
         const color =
             typeof bar.color === "string" &&
-            bar.color.trim() !== ""
+                bar.color.trim() !== ""
                 ? bar.color
                 : null;
 
@@ -9243,11 +9835,25 @@ async function calculate() {
 
         if (!optimization.complete) {
 
-            renderOptimizationFailure(
-                "Sahaussuunnitelmaa ei voitu muodostaa loppuun.",
-                "Osittaista tulosta ei näytetä valmiina sahaussuunnitelmana.",
-                optimization.remainingItems
-            );
+            if (
+                optimization.feasibilityStatus ===
+                "infeasible"
+            ) {
+
+                renderOptimizationFailure(
+                    "Sahaussuunnitelmaa ei voida muodostaa käytettävissä olevilla materiaaleilla.",
+                    "Materiaalien riittämättömyys varmistettiin.",
+                    optimization.remainingItems
+                );
+
+            } else {
+
+                renderOptimizationFailure(
+                    "Täydellistä sahaussuunnitelmaa ei löytynyt.",
+                    "Nykyinen rajattu haku ei löytänyt täydellistä ratkaisua, mutta materiaalien riittämättömyyttä ei voitu todistaa.",
+                    optimization.remainingItems
+                );
+            }
 
             return;
         }
@@ -10022,6 +10628,251 @@ function runInventoryBeamAvailabilityTest() {
         mixedResult:
             mixedResult
     };
+}
+
+
+function runInventoryBeamFeasibilityRegressionTest() {
+
+    const color = "black";
+
+    const cuts = [
+        {
+            profileType: "verticalProfile",
+            color: color,
+            length: 800,
+            quantity: 1
+        },
+        {
+            profileType: "verticalProfile",
+            color: color,
+            length: 900,
+            quantity: 2
+        },
+        {
+            profileType: "verticalProfile",
+            color: color,
+            length: 1500,
+            quantity: 2
+        },
+        {
+            profileType: "verticalProfile",
+            color: color,
+            length: 1700,
+            quantity: 2
+        }
+    ];
+
+    const materialAvailability = {
+        stockLength: 6000,
+
+        newStock:
+            Object.keys(PROFILE_TYPES).map(
+                profileType => ({
+                    profileType: profileType,
+                    color:
+                        profileType ===
+                            "verticalProfile"
+                            ? color
+                            : null,
+                    unlimited: false,
+                    quantity: 0
+                })
+            ),
+
+        remnants: [
+            {
+                profileType: "verticalProfile",
+                color: color,
+                length: 900,
+                quantity: 2
+            },
+            {
+                profileType: "verticalProfile",
+                color: color,
+                length: 1300,
+                quantity: 1
+            },
+            {
+                profileType: "verticalProfile",
+                color: color,
+                length: 1700,
+                quantity: 2
+            },
+            {
+                profileType: "verticalProfile",
+                color: color,
+                length: 2000,
+                quantity: 2
+            }
+        ]
+    };
+
+    const witness = {
+        complete: true,
+
+        bars: [
+            ...Array.from(
+                { length: 2 },
+                () => ({
+                    source: "remnant",
+                    profileType: "verticalProfile",
+                    color: color,
+                    sourceLength: 900,
+                    pattern: [
+                        {
+                            length: 900,
+                            quantity: 1
+                        }
+                    ],
+                    remaining: 0,
+                    waste: 0
+                })
+            ),
+            {
+                source: "remnant",
+                profileType: "verticalProfile",
+                color: color,
+                sourceLength: 1300,
+                pattern: [
+                    {
+                        length: 800,
+                        quantity: 1
+                    }
+                ],
+                remaining: 497,
+                waste: 3
+            },
+            ...Array.from(
+                { length: 2 },
+                () => ({
+                    source: "remnant",
+                    profileType: "verticalProfile",
+                    color: color,
+                    sourceLength: 1700,
+                    pattern: [
+                        {
+                            length: 1700,
+                            quantity: 1
+                        }
+                    ],
+                    remaining: 0,
+                    waste: 0
+                })
+            ),
+            ...Array.from(
+                { length: 2 },
+                () => ({
+                    source: "remnant",
+                    profileType: "verticalProfile",
+                    color: color,
+                    sourceLength: 2000,
+                    pattern: [
+                        {
+                            length: 1500,
+                            quantity: 1
+                        }
+                    ],
+                    remaining: 497,
+                    waste: 3
+                })
+            )
+        ],
+
+        remainingItems: []
+    };
+
+
+    let witnessValid = false;
+    let optimization = null;
+    let optimizationValid = false;
+    let errorMessage = null;
+
+
+    try {
+
+        const materialInventory =
+            createMaterialInventory(
+                materialAvailability
+            );
+
+
+        witnessValid =
+            verifyOptimizationResult(
+                cuts,
+                materialInventory,
+                witness
+            );
+
+        optimization =
+            optimizeOrderByProfileTypeWithInventory(
+                cuts,
+                materialInventory,
+                3,
+                PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+            );
+
+        optimizationValid =
+            verifyOptimizationResult(
+                cuts,
+                materialInventory,
+                optimization
+            );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const inventoryOptimization =
+        optimization?.profileResults[0]
+            ?.optimization;
+
+    const fallbackStats =
+        inventoryOptimization?.stats
+            ?.feasibilityFallback;
+
+    const passed =
+        witnessValid &&
+        optimizationValid &&
+        optimization?.complete === true &&
+        optimization.feasibilityStatus ===
+        "feasible" &&
+        optimization.remainingItems.length === 0 &&
+        optimization.barCount === 7 &&
+        inventoryOptimization
+            ?.feasibilityStatus === "feasible";
+
+
+    console.table([
+        {
+            test:
+                "Äärellisen varaston toteutettavuus ei saa kadota beam-karsinnassa",
+            result:
+                passed ? "PASS" : "FAIL",
+            witness:
+                witnessValid ? "PASS" : "FAIL",
+            complete:
+                optimization?.complete ?? "-",
+            bars:
+                optimization?.barCount ?? "-",
+            beamStates:
+                inventoryOptimization?.stats
+                    ?.statesExpanded ?? "-",
+            exactStates:
+                fallbackStats?.statesExpanded ?? "-",
+            fallback:
+                fallbackStats?.status ?? "-",
+            error:
+                errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
 }
 
 
