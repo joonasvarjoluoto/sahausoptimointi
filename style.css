@@ -453,6 +453,19 @@ input[type="number"]:disabled {
 }
 
 
+.bar-card-title .bar-color {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 7px;
+    border: 1px solid #8b9aa8;
+    border-radius: 999px;
+    background: #edf2f6;
+    color: #263746;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+
 .bar-cuts {
     display: grid;
     gap: 0;
@@ -791,6 +804,13 @@ input[type="number"]:disabled {
     .new-work-section p,
     .bar-card-title span {
         color: #a7b2bc;
+    }
+
+
+    .bar-card-title .bar-color {
+        border-color: #617282;
+        background: #202b34;
+        color: #d8e5ee;
     }
 
 

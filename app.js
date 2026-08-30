@@ -8308,6 +8308,9 @@ function adaptMaterialOptimizationForUi(
             profileType:
                 bar.profileType,
 
+            color:
+                bar.color ?? null,
+
             source:
                 bar.source,
 
@@ -8329,6 +8332,68 @@ function adaptMaterialOptimizationForUi(
             quantity: item.quantity
         }))
     };
+}
+
+
+function runAdaptedPlanColorRegressionTest() {
+
+    const optimization = {
+        complete: true,
+
+        bars: [
+            "black",
+            "white",
+            null
+        ].map(color => ({
+            source: "new",
+            profileType: "verticalProfile",
+            color: color,
+            sourceLength: 6000,
+            pattern: [
+                {
+                    length: 2200,
+                    quantity: 1
+                }
+            ],
+            remaining: 3797,
+            waste: 3
+        })),
+
+        remainingItems: []
+    };
+
+
+    const plan = adaptMaterialOptimizationForUi(
+        optimization,
+        PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+            .scoreSettings
+    );
+
+
+    const passed =
+        plan.bars[0].color === "black" &&
+        plan.bars[1].color === "white" &&
+        plan.bars[2].color === null &&
+        isValidStoredPlan(plan);
+
+
+    console.table([
+        {
+            test:
+                "UI-suunnitelma säilyttää materiaalivärit",
+            result:
+                passed ? "PASS" : "FAIL",
+            colors:
+                plan.bars.map(bar =>
+                    bar.color ?? "-"
+                ).join(", "),
+            storedPlanValid:
+                isValidStoredPlan(plan)
+        }
+    ]);
+
+
+    return passed;
 }
 
 
@@ -8983,6 +9048,21 @@ function toggleBarCompletion(button) {
 }
 
 
+function escapeHtml(value) {
+
+    return String(value).replace(
+        /[&<>"']/g,
+        character => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "\"": "&quot;",
+            "'": "&#39;"
+        })[character]
+    );
+}
+
+
 function renderCuttingPlan(plan) {
 
     let result = `
@@ -9010,6 +9090,11 @@ function renderCuttingPlan(plan) {
     for (const bar of plan.bars) {
 
         const isCompleted = completedBarIds.has(bar.id);
+        const color =
+            typeof bar.color === "string" &&
+            bar.color.trim() !== ""
+                ? bar.color
+                : null;
 
         result += `
             <article
@@ -9020,6 +9105,10 @@ function renderCuttingPlan(plan) {
                     TANKO ${bar.number}
                     <span>
                         ${PROFILE_TYPES[bar.profileType].label}
+                        ${color === null
+                ? ""
+                : `<span class="bar-color">Väri: ${escapeHtml(color)}</span>`
+            }
                         · ${bar.number}/${plan.bars.length}
                      </span>
                 </h3>
