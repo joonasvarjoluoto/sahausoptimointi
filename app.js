@@ -46,6 +46,17 @@ const MATERIAL_COLORS = Object.freeze([
 ]);
 
 
+function getMaterialVariantKey(
+    profileType,
+    color
+) {
+
+    return profileType +
+        ":" +
+        JSON.stringify(color ?? null);
+}
+
+
 function normalizeMaterialColorForSelect(color) {
 
     if (typeof color !== "string") {
@@ -8632,6 +8643,252 @@ function runMaterialColorUiRegressionTests() {
 }
 
 
+function runWorkFinalizationRegressionTest() {
+
+    const materialAvailability = {
+        stockLength: 6000,
+        newStock: [
+            ...Object.keys(PROFILE_TYPES).map(profileType => ({
+                profileType: profileType,
+                color: "gray",
+                unlimited: true,
+                quantity: null
+            })),
+            {
+                profileType: "verticalProfile",
+                color: "black",
+                unlimited: false,
+                quantity: 2
+            },
+            {
+                profileType: "topRail",
+                color: "white",
+                unlimited: true,
+                quantity: null
+            }
+        ],
+        remnants: [
+            {
+                profileType: "verticalProfile",
+                color: "black",
+                length: 3000,
+                quantity: 1
+            },
+            {
+                profileType: "verticalProfile",
+                color: "gray",
+                length: 3000,
+                quantity: 1
+            }
+        ]
+    };
+
+    const plan = {
+        complete: true,
+        bars: [
+            {
+                id: "bar-1",
+                source: "new",
+                profileType: "verticalProfile",
+                color: "black",
+                sourceLength: 6000,
+                remaining: 1497,
+                waste: 3
+            },
+            {
+                id: "bar-2",
+                source: "remnant",
+                profileType: "verticalProfile",
+                color: "black",
+                sourceLength: 3000,
+                remaining: 200,
+                waste: 3
+            },
+            {
+                id: "bar-3",
+                source: "new",
+                profileType: "topRail",
+                color: "white",
+                sourceLength: 6000,
+                remaining: 0,
+                waste: 0
+            }
+        ],
+        remainingItems: []
+    };
+
+    let postOrderInventory = null;
+    let errorMessage = null;
+
+
+    try {
+
+        postOrderInventory = calculatePostOrderMaterialInventory(
+            plan,
+            createMaterialInventory(materialAvailability),
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings
+        );
+
+    } catch (error) {
+
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const blackVerticalStock =
+        postOrderInventory?.newStock.find(stock =>
+            stock.profileType === "verticalProfile" &&
+            stock.color === "black"
+        );
+
+    const grayVerticalStock =
+        postOrderInventory?.newStock.find(stock =>
+            stock.profileType === "verticalProfile" &&
+            stock.color === "gray"
+        );
+
+    const whiteTopRailStock =
+        postOrderInventory?.newStock.find(stock =>
+            stock.profileType === "topRail" &&
+            stock.color === "white"
+        );
+
+    const grayUnusedRemnant =
+        postOrderInventory?.remnants.find(remnant =>
+            remnant.profileType === "verticalProfile" &&
+            remnant.color === "gray" &&
+            remnant.length === 3000 &&
+            remnant.quantity === 1
+        );
+
+    const blackGeneratedRemnant =
+        postOrderInventory?.remnants.find(remnant =>
+            remnant.profileType === "verticalProfile" &&
+            remnant.color === "black" &&
+            remnant.length === 1497 &&
+            remnant.quantity === 1
+        );
+
+    const blackScrapWasStored =
+        postOrderInventory?.remnants.some(remnant =>
+            remnant.profileType === "verticalProfile" &&
+            remnant.color === "black" &&
+            remnant.length === 200
+        );
+
+    const finalizedStockProfileRows =
+        postOrderInventory === null
+            ? []
+            : createFinalizedStockProfileRows(
+                postOrderInventory,
+                materialAvailability.newStock.map(stock => ({
+                    profileType: stock.profileType,
+                    color: stock.color,
+                    additional:
+                        stock.profileType === "verticalProfile" &&
+                        stock.color === "black" ||
+                        stock.profileType === "topRail" &&
+                        stock.color === "white"
+                }))
+            );
+
+    const finalizedBlackVerticalStockRow =
+        finalizedStockProfileRows.find(row =>
+            row.profileType === "verticalProfile" &&
+            row.color === "black"
+        );
+
+    const persistedState = {
+        schemaVersion: WORK_STATE_SCHEMA_VERSION,
+        engineVersion: WORK_STATE_ENGINE_VERSION,
+        savedAt: "2026-09-01T12:00:00.000Z",
+        stockLength: "6000",
+        kerf: "3",
+        stockProfileRows: (postOrderInventory?.newStock ?? []).map(
+            stock => ({
+                profileType: stock.profileType,
+                color: stock.color,
+                quantity: String(stock.quantity ?? "1"),
+                unlimited: stock.unlimited,
+                additional:
+                    stock.profileType === "verticalProfile" &&
+                    stock.color === "black" ||
+                    stock.profileType === "topRail" &&
+                    stock.color === "white"
+            })
+        ),
+        remnantRows: (postOrderInventory?.remnants ?? []).map(
+            remnant => ({
+                profileType: remnant.profileType,
+                color: remnant.color,
+                length: String(remnant.length),
+                quantity: String(remnant.quantity)
+            })
+        ),
+        inputRows: [
+            {
+                profileType: "verticalProfile",
+                color: "black",
+                length: "2200",
+                quantity: "1"
+            }
+        ],
+        generatedPlan: null,
+        completedBarIds: []
+    };
+
+    const guardPlan = {
+        complete: true,
+        bars: [
+            { id: "bar-1" },
+            { id: "bar-2" }
+        ]
+    };
+
+    const passed =
+        errorMessage === null &&
+        blackVerticalStock?.quantity === 1 &&
+        blackVerticalStock.unlimited === false &&
+        grayVerticalStock?.unlimited === true &&
+        whiteTopRailStock?.unlimited === true &&
+        grayUnusedRemnant !== undefined &&
+        blackGeneratedRemnant !== undefined &&
+        blackScrapWasStored === false &&
+        finalizedBlackVerticalStockRow?.quantity === "1" &&
+        finalizedBlackVerticalStockRow.additional === true &&
+        canFinalizePlan(guardPlan, new Set(["bar-1"])) === false &&
+        canFinalizePlan(
+            guardPlan,
+            new Set(["bar-1", "bar-2"])
+        ) === true &&
+        canFinalizePlan(null, new Set()) === false &&
+        isValidStoredWorkState(persistedState);
+
+
+    console.table([
+        {
+            test: "Työn finalisointi päivittää materiaalivaraston atomisesti",
+            result: passed ? "PASS" : "FAIL",
+            blackStockRemaining: blackVerticalStock?.quantity ?? "-",
+            generatedBlackRemnant:
+                blackGeneratedRemnant !== undefined,
+            finalizedBlackStockQuantity:
+                finalizedBlackVerticalStockRow?.quantity ?? "-",
+            storedScrap: blackScrapWasStored ?? "-",
+            persistenceValid:
+                isValidStoredWorkState(persistedState),
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
 function verifyOptimizationDemandAccounting(
     cuts,
     optimization
@@ -9890,10 +10147,7 @@ function getStockProfileRowsForStorage(
 }
 
 
-function restoreStockProfileRows(
-    stockProfileList,
-    stockProfileRows
-) {
+function createStockProfileGroupsFromRows(stockProfileRows) {
 
     const restoredRowsByProfileType = new Map(
         Object.keys(PROFILE_TYPES).map(profileType => [
@@ -9925,13 +10179,22 @@ function restoreStockProfileRows(
     }
 
 
-    stockProfileList.replaceChildren(
-        ...Object.keys(PROFILE_TYPES).map(profileType =>
-            createStockProfileGroup(
-                profileType,
-                restoredRowsByProfileType.get(profileType)
-            )
+    return Object.keys(PROFILE_TYPES).map(profileType =>
+        createStockProfileGroup(
+            profileType,
+            restoredRowsByProfileType.get(profileType)
         )
+    );
+}
+
+
+function restoreStockProfileRows(
+    stockProfileList,
+    stockProfileRows
+) {
+
+    stockProfileList.replaceChildren(
+        ...createStockProfileGroupsFromRows(stockProfileRows)
     );
 }
 
@@ -10179,6 +10442,186 @@ function updateCompletionProgress() {
 }
 
 
+function canFinalizePlan(
+    plan,
+    completedIds
+) {
+
+    return plan !== null &&
+        plan.complete === true &&
+        plan.bars.length > 0 &&
+        plan.bars.every(bar =>
+            completedIds.has(bar.id)
+        );
+}
+
+
+function isCurrentPlanReadyForFinalization() {
+
+    return canFinalizePlan(
+        currentGeneratedPlan,
+        completedBarIds
+    );
+}
+
+
+function updateFinalizationActionAvailability() {
+
+    const finalizationButton =
+        document.getElementById("finalizeWorkButton");
+
+    if (finalizationButton === null) {
+        return;
+    }
+
+
+    finalizationButton.disabled =
+        !isCurrentPlanReadyForFinalization();
+}
+
+
+function createFinalizedStockProfileRows(
+    postOrderInventory,
+    currentStockProfileRows
+) {
+
+    const currentRowsByVariant = new Map(
+        currentStockProfileRows.map(row => [
+            getMaterialVariantKey(
+                row.profileType,
+                row.color
+            ),
+            row
+        ])
+    );
+
+
+    return postOrderInventory.newStock.map(stock => {
+
+        const currentRow = currentRowsByVariant.get(
+            getMaterialVariantKey(
+                stock.profileType,
+                stock.color
+            )
+        );
+
+        if (currentRow === undefined) {
+            throw new Error(
+                "Finalisoidulle raakamateriaalivariantille ei löydy käyttöliittymäriviä."
+            );
+        }
+
+
+        return {
+            profileType: stock.profileType,
+            color: stock.color,
+            quantity: String(stock.quantity ?? "1"),
+            unlimited: stock.unlimited,
+            additional: currentRow.additional
+        };
+    });
+}
+
+
+function createFinalizedRemnantRows(postOrderInventory) {
+
+    return postOrderInventory.remnants.map(remnant =>
+        createRemnantRow(
+            remnant.length,
+            remnant.quantity,
+            remnant.profileType,
+            remnant.color
+        )
+    );
+}
+
+
+function showFinalizationError(message) {
+
+    const statusElement =
+        document.getElementById("finalizationStatus");
+
+    if (statusElement !== null) {
+        statusElement.textContent = message;
+    }
+}
+
+
+function finalizeCurrentWork() {
+
+    if (!isCurrentPlanReadyForFinalization()) {
+        showFinalizationError(
+            "Merkitse kaikki tangot tehdyiksi ennen työn päättämistä."
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const materialAvailability =
+            getMaterialAvailabilityFromForm();
+
+        const materialInventory =
+            createMaterialInventory(materialAvailability);
+
+        const postOrderInventory =
+            calculatePostOrderMaterialInventory(
+                currentGeneratedPlan,
+                materialInventory,
+                PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+                    .scoreSettings
+            );
+
+        const finalizedStockProfileRows =
+            createFinalizedStockProfileRows(
+                postOrderInventory,
+                getStockProfileRowsForStorage()
+            );
+
+        const finalizedStockGroups =
+            createStockProfileGroupsFromRows(
+                finalizedStockProfileRows
+            );
+
+        const finalizedRemnantRows =
+            createFinalizedRemnantRows(postOrderInventory);
+
+        document.getElementById("stockProfileList").replaceChildren(
+            ...finalizedStockGroups
+        );
+
+        document.getElementById("remnantList").replaceChildren(
+            ...finalizedRemnantRows
+        );
+
+        currentGeneratedPlan = null;
+        resetCompletedBarState();
+        workInputRevision++;
+
+        const resultElement = document.getElementById("result");
+
+        resultElement.className = "work-state-message";
+        resultElement.textContent =
+            "Työ päätetty ja materiaalivarasto päivitetty.";
+
+        saveCurrentWorkState();
+
+    } catch (error) {
+
+        showFinalizationError(
+            "Työtä ei voitu päättää: " +
+            (
+                error instanceof Error
+                    ? error.message
+                    : "tuntematon virhe."
+            )
+        );
+    }
+}
+
+
 function toggleBarCompletion(button) {
 
     const barId = button.dataset.barId;
@@ -10231,6 +10674,7 @@ function toggleBarCompletion(button) {
 
 
     updateCompletionProgress();
+    updateFinalizationActionAvailability();
     saveCurrentWorkState();
 }
 
@@ -10269,6 +10713,16 @@ function renderCuttingPlan(plan) {
             Valmiina <strong id="completedBarCount">${completedBarIds.size}</strong>
             / ${plan.bars.length} tankoa
         </p>
+        <button
+            id="finalizeWorkButton"
+            class="finalize-work-button"
+            type="button"
+            onclick="finalizeCurrentWork()"
+            ${isCurrentPlanReadyForFinalization() ? "" : "disabled"}
+        >
+            PÄÄTÄ TYÖ JA PÄIVITÄ VARASTO
+        </button>
+        <p id="finalizationStatus" class="finalization-status" aria-live="polite"></p>
         <div class="bar-list">
     `;
 

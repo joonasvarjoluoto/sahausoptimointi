@@ -332,6 +332,7 @@ input[type="number"]:disabled {
 
 .add-cut-button,
 .calculate-button,
+.finalize-work-button,
 .remove-cut-button,
 .new-work-button {
     width: 100%;
@@ -364,6 +365,29 @@ input[type="number"]:disabled {
     background: #125ca7;
     color: #ffffff;
     font-size: 1.1rem;
+}
+
+
+.finalize-work-button {
+    margin-top: 14px;
+    border: 2px solid #315a43;
+    background: #315a43;
+    color: #ffffff;
+}
+
+
+.finalize-work-button:disabled {
+    border-color: #5c6f80;
+    background: #6f8191;
+    cursor: not-allowed;
+}
+
+
+.finalization-status {
+    min-height: 1.5em;
+    margin: 10px 0 0;
+    color: #6e2929;
+    font-weight: 750;
 }
 
 
@@ -827,6 +851,7 @@ input[type="number"]:disabled {
 
 
     .add-cut-button,
+    .finalize-work-button,
     .remove-cut-button,
     .new-work-button,
     .bar-completion-button {
