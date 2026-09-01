@@ -124,6 +124,7 @@ h2 {
 }
 
 
+.stock-panel .stock-profile-group,
 .stock-panel .stock-profile-row {
     border-color: #dfd0ab;
     background: #fdfbf6;
@@ -192,6 +193,26 @@ h2 {
 
 #stockProfileList {
     display: grid;
+    gap: 14px;
+}
+
+
+.stock-profile-group {
+    padding: 12px;
+    border: 1px solid #d9dee3;
+    border-radius: 9px;
+    background: #f7f9fa;
+}
+
+
+.stock-profile-name {
+    margin: 0 0 10px;
+    font-weight: 700;
+}
+
+
+.stock-profile-variant-list {
+    display: grid;
     gap: 10px;
 }
 
@@ -200,22 +221,35 @@ h2 {
     display: grid;
     grid-template-columns:
         repeat(2, minmax(0, 1fr));
-    align-items: center;
+    align-items: end;
     gap: 10px;
-    padding: 10px;
-    border: 1px solid #d9dee3;
-    border-radius: 9px;
-    background: #f7f9fa;
+    padding: 10px 0;
+    border-top: 1px solid #d9dee3;
 }
 
 
-.stock-profile-name {
+.stock-profile-variant-list .stock-profile-row:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+
+.stock-profile-field {
+    display: grid;
     min-width: 0;
+    gap: 7px;
+    color: #2c3a47;
     font-weight: 700;
 }
 
 
+.stock-profile-field span {
+    font-size: 0.95rem;
+}
+
+
 .stock-profile-unlimited {
+    min-height: 54px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -227,6 +261,18 @@ h2 {
     width: 20px;
     height: 20px;
     margin: 0;
+}
+
+
+.stock-profile-remove-button {
+    min-width: 0;
+    min-height: 54px;
+}
+
+
+.stock-profile-add-button {
+    width: 100%;
+    margin-top: 10px;
 }
 
 .form-field {
@@ -637,10 +683,16 @@ input[type="number"]:disabled {
 
     .stock-profile-row {
         grid-template-columns:
-            minmax(0, 1.3fr)
             minmax(0, 1fr)
             100px
-            auto;
+            minmax(0, 0.8fr)
+            minmax(120px, max-content);
+    }
+
+
+    .stock-profile-add-button {
+        width: auto;
+        min-width: 160px;
     }
 
 
@@ -714,6 +766,7 @@ input[type="number"]:disabled {
     }
 
 
+    .stock-panel .stock-profile-group,
     .stock-panel .stock-profile-row {
         border-color: #55492f;
         background: #1e1b15;
@@ -759,6 +812,7 @@ input[type="number"]:disabled {
         border-color: #3b4650;
     }
 
+    .stock-profile-group,
     .stock-profile-row {
         border-color: #3b4650;
         background: #161d23;
@@ -766,6 +820,7 @@ input[type="number"]:disabled {
 
 
     .stock-profile-name,
+    .stock-profile-field,
     .stock-profile-unlimited {
         color: #d8e0e7;
     }

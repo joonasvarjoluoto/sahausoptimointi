@@ -30,6 +30,86 @@ const PROFILE_TYPES = Object.freeze({
     })
 });
 
+const MATERIAL_COLORS = Object.freeze([
+    Object.freeze({
+        value: "gray",
+        label: "Harmaa"
+    }),
+    Object.freeze({
+        value: "black",
+        label: "Musta"
+    }),
+    Object.freeze({
+        value: "white",
+        label: "Valkoinen"
+    })
+]);
+
+
+function normalizeMaterialColorForSelect(color) {
+
+    if (typeof color !== "string") {
+        return null;
+    }
+
+
+    const normalizedColor =
+        color.trim().toLocaleLowerCase("fi");
+
+
+    const matchingColor =
+        MATERIAL_COLORS.find(materialColor =>
+            materialColor.value === normalizedColor ||
+            materialColor.label.toLocaleLowerCase("fi") ===
+            normalizedColor
+        );
+
+
+    return matchingColor?.value ?? null;
+}
+
+
+function isSupportedMaterialColor(color) {
+
+    return MATERIAL_COLORS.some(
+        materialColor => materialColor.value === color
+    );
+}
+
+
+function createMaterialColorOptions(selectedColor = null) {
+
+    const normalizedColor =
+        normalizeMaterialColorForSelect(selectedColor);
+
+
+    return `
+        <option value="" ${normalizedColor === null ? "selected" : ""}>
+            Valitse väri
+        </option>
+        ${MATERIAL_COLORS.map(materialColor => `
+            <option
+                value="${materialColor.value}"
+                ${materialColor.value === normalizedColor ? "selected" : ""}
+            >
+                ${materialColor.label}
+            </option>
+        `).join("")}
+    `;
+}
+
+
+function getMaterialColorLabel(color) {
+
+    const normalizedColor =
+        normalizeMaterialColorForSelect(color);
+
+
+    return MATERIAL_COLORS.find(
+        materialColor => materialColor.value === normalizedColor
+    )?.label ?? color;
+}
+
 
 function createProfileTypeOptions(
     selectedProfileType = "verticalProfile"
@@ -49,11 +129,12 @@ function createProfileTypeOptions(
         .join("");
 }
 
-function createStockProfileRow(
+function createStockProfileVariantRow(
     profileType,
     quantity = "1",
     unlimited = true,
-    color = ""
+    color = null,
+    additional = false
 ) {
 
     const settings = PROFILE_TYPES[profileType];
@@ -68,28 +149,33 @@ function createStockProfileRow(
     const row = document.createElement("div");
 
     row.className = "stock-profile-row";
-    row.dataset.profileType = profileType;
+    row.dataset.stockRowKind =
+        additional
+            ? "additional"
+            : "default";
 
     row.innerHTML = `
-        <span class="stock-profile-name">
-            ${settings.label}
-        </span>
+        <label class="stock-profile-field">
+            <span>Väri</span>
+            <select
+                class="stock-profile-color"
+                aria-label="${settings.label}, väri"
+            >
+                ${createMaterialColorOptions(color)}
+            </select>
+        </label>
 
-        <input
-        class="stock-profile-color"
-            type="text"
-            placeholder="Väri"
-            aria-label="${settings.label}, väri"
-        >
-
-        <input
-            class="stock-profile-quantity"
-            type="number"
-            min="0"
-            step="1"
-            inputmode="numeric"
-            aria-label="${settings.label}, määrä"
-        >
+        <label class="stock-profile-field">
+            <span>Määrä (kpl)</span>
+            <input
+                class="stock-profile-quantity"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                aria-label="${settings.label}, määrä"
+            >
+        </label>
 
         <label class="stock-profile-unlimited">
             <input
@@ -100,6 +186,19 @@ function createStockProfileRow(
             >
             <span>Rajaton</span>
         </label>
+
+        ${additional
+        ? `
+            <button
+                class="remove-cut-button stock-profile-remove-button"
+                type="button"
+                onclick="removeStockProfileVariant(this)"
+            >
+                POISTA
+            </button>
+        `
+        : ""
+    }
     `;
 
     const quantityInput =
@@ -107,9 +206,66 @@ function createStockProfileRow(
 
     quantityInput.value = String(quantity);
     quantityInput.disabled = unlimited;
-    row.querySelector(".stock-profile-color").value = String(color ?? "");
 
     return row;
+}
+
+
+function createStockProfileGroup(
+    profileType,
+    variants = []
+) {
+
+    const settings = PROFILE_TYPES[profileType];
+
+    if (settings === undefined) {
+        throw new Error(
+            "Tuntematon profiilityyppi: " + profileType
+        );
+    }
+
+
+    const group = document.createElement("section");
+
+    group.className = "stock-profile-group";
+    group.dataset.profileType = profileType;
+
+    const heading = document.createElement("h4");
+
+    heading.className = "stock-profile-name";
+    heading.textContent = settings.label;
+
+    const variantList = document.createElement("div");
+
+    variantList.className = "stock-profile-variant-list";
+
+    variantList.replaceChildren(
+        ...variants.map(variant =>
+            createStockProfileVariantRow(
+                profileType,
+                variant.quantity,
+                variant.unlimited,
+                variant.color,
+                variant.additional === true
+            )
+        )
+    );
+
+    const addButton = document.createElement("button");
+
+    addButton.className =
+        "add-cut-button stock-profile-add-button";
+    addButton.type = "button";
+    addButton.textContent = "+ LISÄÄ VÄRI";
+    addButton.onclick = () => addStockProfileVariant(addButton);
+
+    group.append(
+        heading,
+        variantList,
+        addButton
+    );
+
+    return group;
 }
 
 
@@ -121,9 +277,63 @@ function createDefaultStockProfileRows() {
     stockProfileList.replaceChildren(
         ...Object.keys(PROFILE_TYPES).map(
             profileType =>
-                createStockProfileRow(profileType)
+                createStockProfileGroup(
+                    profileType,
+                    [
+                        {
+                            quantity: "1",
+                            unlimited: true,
+                            color: null,
+                            additional: false
+                        }
+                    ]
+                )
         )
     );
+}
+
+
+function addStockProfileVariant(addButton) {
+
+    const group = addButton.closest(".stock-profile-group");
+
+    if (group === null) {
+        return;
+    }
+
+
+    const variantList = group.querySelector(
+        ".stock-profile-variant-list"
+    );
+
+    variantList.appendChild(
+        createStockProfileVariantRow(
+            group.dataset.profileType,
+            "1",
+            true,
+            null,
+            true
+        )
+    );
+
+    handleOrderInputChange();
+}
+
+
+function removeStockProfileVariant(button) {
+
+    const row = button.closest(".stock-profile-row");
+
+    if (
+        row === null ||
+        row.dataset.stockRowKind !== "additional"
+    ) {
+        return;
+    }
+
+
+    row.remove();
+    handleOrderInputChange();
 }
 
 function updateStockProfileQuantityAvailability(
@@ -165,11 +375,12 @@ function createCutRow(
 
         <label class="form-field">
             <span>Väri</span>
-            <input
+            <select
                 class="cut-color"
-                type="text"
-                placeholder="Väri"
+                aria-label="Sahattavan kappaleen väri"
             >
+                ${createMaterialColorOptions(color)}
+            </select>
         </label>
 
         <label class="form-field">
@@ -205,7 +416,6 @@ function createCutRow(
 
     row.querySelector(".cut-length").value = String(length);
     row.querySelector(".cut-quantity").value = String(quantity);
-    row.querySelector(".cut-color").value = String(color ?? "");
     return row;
 }
 
@@ -230,11 +440,12 @@ function createRemnantRow(
 
         <label class="form-field">
             <span>Väri</span>
-            <input
+            <select
                 class="remnant-color"
-                type="text"
-                placeholder="Väri"
+                aria-label="Jäännöksen väri"
             >
+                ${createMaterialColorOptions(color)}
+            </select>
         </label>
 
         <label class="form-field">
@@ -274,8 +485,6 @@ function createRemnantRow(
     row.querySelector(".remnant-quantity").value =
         String(quantity);
 
-    row.querySelector(".remnant-color").value =
-        String(color ?? "");
     return row;
 }
 
@@ -341,14 +550,11 @@ function getCutsFromForm() {
 
         const length = Number(lengthInputs[i].value);
         const quantity = Number(quantityInputs[i].value);
-        const color = colorInputs[i].value.trim();
+        const color = colorInputs[i].value;
 
         cuts.push({
             profileType: profileTypeInputs[i].value,
-            color:
-                color === ""
-                    ? null
-                    : color,
+            color: color === "" ? null : color,
             length: length,
             quantity: quantity
         });
@@ -364,45 +570,46 @@ function getMaterialAvailabilityFromForm() {
             document.getElementById("stockLength").value
         );
 
-    const stockProfileRows =
-        document.querySelectorAll(".stock-profile-row");
-
     const newStock = [];
 
 
-    for (const row of stockProfileRows) {
+    for (const group of document.querySelectorAll(
+        ".stock-profile-group"
+    )) {
 
-        const profileType =
-            row.dataset.profileType;
+        const profileType = group.dataset.profileType;
 
-        const color =
-            row.querySelector(
-                ".stock-profile-color"
-            ).value.trim();
 
-        const unlimited =
-            row.querySelector(
-                ".stock-profile-unlimited-checkbox"
-            ).checked;
+        for (const row of group.querySelectorAll(
+            ".stock-profile-row"
+        )) {
 
-        const quantity =
-            unlimited
-                ? null
-                : Number(
-                    row.querySelector(
-                        ".stock-profile-quantity"
-                    ).value
-                );
+            const color =
+                row.querySelector(
+                    ".stock-profile-color"
+                ).value;
 
-        newStock.push({
-            profileType: profileType,
-            color:
-                color === ""
+            const unlimited =
+                row.querySelector(
+                    ".stock-profile-unlimited-checkbox"
+                ).checked;
+
+            const quantity =
+                unlimited
                     ? null
-                    : color,
-            unlimited: unlimited,
-            quantity: quantity
-        });
+                    : Number(
+                        row.querySelector(
+                            ".stock-profile-quantity"
+                        ).value
+                    );
+
+            newStock.push({
+                profileType: profileType,
+                color: color === "" ? null : color,
+                unlimited: unlimited,
+                quantity: quantity
+            });
+        }
     }
 
     const remnantRows =
@@ -420,7 +627,7 @@ function getMaterialAvailabilityFromForm() {
         const color =
             row.querySelector(
                 ".remnant-color"
-            ).value.trim();
+            ).value;
 
         const length =
             Number(
@@ -434,10 +641,7 @@ function getMaterialAvailabilityFromForm() {
 
         remnants.push({
             profileType: profileType,
-            color:
-                color === ""
-                    ? null
-                    : color,
+            color: color === "" ? null : color,
             length: length,
             quantity: quantity
         });
@@ -448,6 +652,72 @@ function getMaterialAvailabilityFromForm() {
         newStock: newStock,
         remnants: remnants
     };
+}
+
+
+function getMaterialColorValidationErrors(
+    cuts,
+    materialAvailability
+) {
+
+    const validationErrors = [];
+
+
+    for (let index = 0; index < cuts.length; index++) {
+
+        if (!isSupportedMaterialColor(cuts[index].color)) {
+            validationErrors.push(
+                "Sahattava rivi " +
+                (index + 1) +
+                ": valitse väri."
+            );
+        }
+    }
+
+
+    for (
+        let index = 0;
+        index < materialAvailability.remnants.length;
+        index++
+    ) {
+
+        if (
+            !isSupportedMaterialColor(
+                materialAvailability.remnants[index].color
+            )
+        ) {
+            validationErrors.push(
+                "Jäännösrivi " +
+                (index + 1) +
+                ": valitse väri."
+            );
+        }
+    }
+
+
+    for (
+        let index = 0;
+        index < materialAvailability.newStock.length;
+        index++
+    ) {
+
+        const stock = materialAvailability.newStock[index];
+
+
+        if (
+            (stock.unlimited || stock.quantity > 0) &&
+            !isSupportedMaterialColor(stock.color)
+        ) {
+            validationErrors.push(
+                "Raakalistarivi " +
+                (index + 1) +
+                ": valitse väri käytettävissä olevalle materiaalille."
+            );
+        }
+    }
+
+
+    return validationErrors;
 }
 
 
@@ -7925,6 +8195,443 @@ function runStoredWorkStateColorRegressionTest() {
 }
 
 
+function runMaterialColorOptionsRegressionTest() {
+
+    const expectedColors = [
+        { value: "gray", label: "Harmaa" },
+        { value: "black", label: "Musta" },
+        { value: "white", label: "Valkoinen" }
+    ];
+
+    const passed =
+        JSON.stringify(MATERIAL_COLORS) ===
+        JSON.stringify(expectedColors) &&
+        normalizeMaterialColorForSelect("Harmaa") === "gray" &&
+        normalizeMaterialColorForSelect(" MUSTA ") === "black" &&
+        normalizeMaterialColorForSelect("silver") === null &&
+        createMaterialColorOptions("black").includes(
+            'value=""'
+        ) &&
+        MATERIAL_COLORS.every(materialColor =>
+            createMaterialColorOptions("black").includes(
+                'value="' + materialColor.value + '"'
+            )
+        );
+
+
+    console.table([
+        {
+            test: "Tuetut materiaalivärit ovat keskitetty lista",
+            result: passed ? "PASS" : "FAIL",
+            colors: MATERIAL_COLORS.map(color => color.value).join(", ")
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runMultipleRemnantVariantFormParsingRegressionTest() {
+
+    const remnantList =
+        document.getElementById("remnantList");
+
+    const originalRows = [...remnantList.children];
+
+
+    try {
+
+        remnantList.replaceChildren(
+            createRemnantRow(
+                "2600",
+                "2",
+                "horizontalProfile",
+                "gray"
+            ),
+            createRemnantRow(
+                "3100",
+                "1",
+                "horizontalProfile",
+                "black"
+            )
+        );
+
+        const parsedRemnants =
+            getMaterialAvailabilityFromForm().remnants;
+
+        const passed =
+            parsedRemnants.length === 2 &&
+            parsedRemnants[0].profileType === "horizontalProfile" &&
+            parsedRemnants[0].color === "gray" &&
+            parsedRemnants[1].profileType === "horizontalProfile" &&
+            parsedRemnants[1].color === "black";
+
+
+        console.table([
+            {
+                test: "Useat saman profiilin eriväriset jäännösrivit luetaan lomakkeesta",
+                result: passed ? "PASS" : "FAIL",
+                rows: parsedRemnants.length
+            }
+        ]);
+
+
+        return passed;
+
+    } finally {
+
+        remnantList.replaceChildren(...originalRows);
+    }
+}
+
+
+function runMultipleStockVariantFormParsingRegressionTest() {
+
+    const stockProfileList =
+        document.getElementById("stockProfileList");
+
+    const originalRows = [...stockProfileList.children];
+
+
+    try {
+
+        stockProfileList.replaceChildren(
+            createStockProfileGroup(
+                "horizontalProfile",
+                [
+                    {
+                        quantity: "5",
+                        unlimited: false,
+                        color: "gray",
+                        additional: false
+                    },
+                    {
+                        quantity: "3",
+                        unlimited: false,
+                        color: "black",
+                        additional: true
+                    }
+                ]
+            )
+        );
+
+        const parsedNewStock =
+            getMaterialAvailabilityFromForm().newStock;
+
+        const grayVariant = parsedNewStock.find(stock =>
+            stock.profileType === "horizontalProfile" &&
+            stock.color === "gray"
+        );
+
+        const blackVariant = parsedNewStock.find(stock =>
+            stock.profileType === "horizontalProfile" &&
+            stock.color === "black"
+        );
+
+        const passed =
+            parsedNewStock.length === 2 &&
+            grayVariant?.quantity === 5 &&
+            grayVariant.unlimited === false &&
+            blackVariant?.quantity === 3 &&
+            blackVariant.unlimited === false &&
+            stockProfileList.querySelectorAll(
+                ".stock-profile-type"
+            ).length === 0;
+
+
+        console.table([
+            {
+                test: "Useat saman profiilin raakamateriaalivariantit luetaan lomakkeesta",
+                result: passed ? "PASS" : "FAIL",
+                grayQuantity: grayVariant?.quantity ?? "-",
+                blackQuantity: blackVariant?.quantity ?? "-"
+            }
+        ]);
+
+
+        return passed;
+
+    } finally {
+
+        stockProfileList.replaceChildren(...originalRows);
+    }
+}
+
+
+function runStockProfileGroupUiRegressionTest() {
+
+    const group = createStockProfileGroup(
+        "topRail",
+        [
+            {
+                quantity: "3",
+                unlimited: false,
+                color: "black",
+                additional: false
+            }
+        ]
+    );
+
+    const variantList = group.querySelector(
+        ".stock-profile-variant-list"
+    );
+
+    const addButton = group.querySelector(
+        ".stock-profile-add-button"
+    );
+
+    addStockProfileVariant(addButton);
+
+    const rows = variantList.querySelectorAll(
+        ".stock-profile-row"
+    );
+
+    const passed =
+        group.dataset.profileType === "topRail" &&
+        rows.length === 2 &&
+        rows[1].parentElement === variantList &&
+        rows[1].dataset.stockRowKind === "additional" &&
+        group.querySelectorAll(".stock-profile-type").length === 0;
+
+
+    console.table([
+        {
+            test: "Lisätty värivariantti jää oman profiiliryhmänsä alle",
+            result: passed ? "PASS" : "FAIL",
+            rows: rows.length
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runFiniteAndUnlimitedStockVariantRegressionTest() {
+
+    const materialAvailability = {
+        stockLength: 6000,
+        newStock: [
+            ...Object.keys(PROFILE_TYPES).map(profileType => ({
+                profileType: profileType,
+                color: "gray",
+                unlimited: true,
+                quantity: null
+            })),
+            {
+                profileType: "horizontalProfile",
+                color: "black",
+                unlimited: false,
+                quantity: 3
+            }
+        ],
+        remnants: []
+    };
+
+    let errorMessage = null;
+
+
+    try {
+        validateMaterialAvailability(materialAvailability);
+    } catch (error) {
+        errorMessage =
+            error instanceof Error
+                ? error.message
+                : String(error);
+    }
+
+
+    const passed = errorMessage === null;
+
+
+    console.table([
+        {
+            test: "Äärellinen ja rajaton eri värinen variantti voivat olla rinnakkain",
+            result: passed ? "PASS" : "FAIL",
+            error: errorMessage ?? "-"
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runStoredStockVariantRoundTripRegressionTest() {
+
+    const storedRows = [
+        ...Object.keys(PROFILE_TYPES).flatMap(profileType => [
+            {
+                profileType: profileType,
+                color: "gray",
+                quantity: profileType === "horizontalProfile" ? "5" : "1",
+                unlimited: profileType !== "horizontalProfile",
+                additional: false
+            },
+            ...(
+                profileType === "horizontalProfile"
+                    ? [
+                        {
+                            profileType: "horizontalProfile",
+                            color: "black",
+                            quantity: "3",
+                            unlimited: false,
+                            additional: true
+                        }
+                    ]
+                    : []
+            ),
+            ...(
+                profileType === "topRail"
+                    ? [
+                        {
+                            profileType: "topRail",
+                            color: "black",
+                            quantity: "1",
+                            unlimited: true,
+                            additional: true
+                        }
+                    ]
+                    : []
+            )
+        ])
+    ];
+
+    const stockProfileList = document.createElement("div");
+
+    restoreStockProfileRows(stockProfileList, storedRows);
+
+    const roundTrippedRows =
+        getStockProfileRowsForStorage(stockProfileList);
+
+    const removableRows =
+        stockProfileList.querySelectorAll(
+            ".stock-profile-remove-button"
+        ).length;
+
+    const legacyRows = storedRows.map(
+        ({ additional, ...row }) => row
+    );
+
+    const legacyStockProfileList =
+        document.createElement("div");
+
+    restoreStockProfileRows(
+        legacyStockProfileList,
+        legacyRows
+    );
+
+    const legacyRemovableRows =
+        legacyStockProfileList.querySelectorAll(
+            ".stock-profile-remove-button"
+        ).length;
+
+    const passed =
+        JSON.stringify(roundTrippedRows) ===
+        JSON.stringify(storedRows) &&
+        removableRows === 2 &&
+        legacyRemovableRows === 2;
+
+
+    console.table([
+        {
+            test: "Tallennettu materiaalivarianttirivi palautuu väreineen ja poistettavuuksineen",
+            result: passed ? "PASS" : "FAIL",
+            rows: roundTrippedRows.length,
+            removableRows: removableRows,
+            legacyRemovableRows: legacyRemovableRows
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runLegacyColorRestoreRegressionTest() {
+
+    const unresolvedAvailability = {
+        stockLength: 6000,
+        newStock: [
+            {
+                profileType: "verticalProfile",
+                color: null,
+                unlimited: true,
+                quantity: null
+            }
+        ],
+        remnants: [
+            {
+                profileType: "verticalProfile",
+                color: null,
+                length: 2600,
+                quantity: 1
+            }
+        ]
+    };
+
+    const validationErrors = getMaterialColorValidationErrors(
+        [
+            {
+                profileType: "verticalProfile",
+                color: null,
+                length: 2200,
+                quantity: 1
+            }
+        ],
+        unresolvedAvailability
+    );
+
+    const passed =
+        normalizeMaterialColorForSelect(null) === null &&
+        normalizeMaterialColorForSelect("   ") === null &&
+        normalizeMaterialColorForSelect("silver") === null &&
+        normalizeMaterialColorForSelect("Valkoinen") === "white" &&
+        validationErrors.length === 3;
+
+
+    console.table([
+        {
+            test: "Vanhat ratkaisemattomat värit pysyvät ratkaisemattomina",
+            result: passed ? "PASS" : "FAIL",
+            validationErrors: validationErrors.length
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runMaterialColorUiRegressionTests() {
+
+    const results = [
+        runMaterialColorOptionsRegressionTest(),
+        runMultipleRemnantVariantFormParsingRegressionTest(),
+        runMultipleStockVariantFormParsingRegressionTest(),
+        runStockProfileGroupUiRegressionTest(),
+        runFiniteAndUnlimitedStockVariantRegressionTest(),
+        runDuplicateNewStockVariantValidationRegressionTest(),
+        runStoredStockVariantRoundTripRegressionTest(),
+        runLegacyColorRestoreRegressionTest()
+    ];
+
+    const passed = results.every(result => result);
+
+    console.log(
+        "Materiaalivärien UI-regressiot: " +
+        results.filter(result => result).length +
+        "/" +
+        results.length +
+        " läpäisty"
+    );
+
+
+    return passed;
+}
+
+
 function verifyOptimizationDemandAccounting(
     cuts,
     optimization
@@ -8945,7 +9652,11 @@ function isValidStoredStockProfileRows(
             PROFILE_TYPES[row.profileType] === undefined ||
             !isStoredInputValue(row.quantity) ||
             typeof row.unlimited !== "boolean" ||
-            !isValidStoredColor(row.color)
+            !isValidStoredColor(row.color) ||
+            (
+                row.additional !== undefined &&
+                typeof row.additional !== "boolean"
+            )
         ) {
             return false;
         }
@@ -9133,34 +9844,95 @@ function getRemnantRowsForStorage() {
     );
 }
 
-function getStockProfileRowsForStorage() {
+function getStockProfileRowsForStorage(
+    stockProfileList = document.getElementById("stockProfileList")
+) {
 
-    return [
-        ...document.querySelectorAll(
-            "#stockProfileList .stock-profile-row"
+    const stockProfileRows = [];
+
+
+    for (const group of stockProfileList.querySelectorAll(
+        ".stock-profile-group"
+    )) {
+
+        for (const row of group.querySelectorAll(
+            ".stock-profile-row"
+        )) {
+
+            stockProfileRows.push({
+                profileType: group.dataset.profileType,
+
+                color:
+                    normalizeStoredColor(
+                        row.querySelector(
+                            ".stock-profile-color"
+                        ).value
+                    ),
+
+                quantity:
+                    row.querySelector(
+                        ".stock-profile-quantity"
+                    ).value,
+
+                unlimited:
+                    row.querySelector(
+                        ".stock-profile-unlimited-checkbox"
+                    ).checked,
+
+                additional:
+                    row.dataset.stockRowKind === "additional"
+            });
+        }
+    }
+
+
+    return stockProfileRows;
+}
+
+
+function restoreStockProfileRows(
+    stockProfileList,
+    stockProfileRows
+) {
+
+    const restoredRowsByProfileType = new Map(
+        Object.keys(PROFILE_TYPES).map(profileType => [
+            profileType,
+            []
+        ])
+    );
+
+
+    for (const row of stockProfileRows) {
+
+        const profileRows = restoredRowsByProfileType.get(
+            row.profileType
+        );
+
+        const additional =
+            row.additional === true ||
+            (
+                row.additional === undefined &&
+                profileRows.length > 0
+            );
+
+        profileRows.push({
+            quantity: row.quantity,
+            unlimited: row.unlimited,
+            color: normalizeMaterialColorForSelect(row.color),
+            additional: additional
+        });
+    }
+
+
+    stockProfileList.replaceChildren(
+        ...Object.keys(PROFILE_TYPES).map(profileType =>
+            createStockProfileGroup(
+                profileType,
+                restoredRowsByProfileType.get(profileType)
+            )
         )
-    ].map(row => ({
-
-        profileType:
-            row.dataset.profileType,
-
-        color:
-            normalizeStoredColor(
-                row.querySelector(
-                    ".stock-profile-color"
-                ).value
-            ),
-
-        quantity:
-            row.querySelector(
-                ".stock-profile-quantity"
-            ).value,
-
-        unlimited:
-            row.querySelector(
-                ".stock-profile-unlimited-checkbox"
-            ).checked
-    }));
+    );
 }
 
 
@@ -9305,19 +10077,9 @@ function restoreSavedWorkState() {
         String(state.kerf);
 
 
-    const stockProfileList =
-        document.getElementById("stockProfileList");
-
-    stockProfileList.replaceChildren(
-        ...state.stockProfileRows.map(
-            row =>
-                createStockProfileRow(
-                    row.profileType,
-                    row.quantity,
-                    row.unlimited,
-                    normalizeStoredColor(row.color)
-                )
-        )
+    restoreStockProfileRows(
+        document.getElementById("stockProfileList"),
+        state.stockProfileRows
     );
 
 
@@ -9334,7 +10096,7 @@ function restoreSavedWorkState() {
                 remnantRow.length,
                 remnantRow.quantity,
                 remnantRow.profileType,
-                normalizeStoredColor(remnantRow.color)
+                normalizeMaterialColorForSelect(remnantRow.color)
             )
         );
     }
@@ -9352,7 +10114,7 @@ function restoreSavedWorkState() {
                 inputRow.length,
                 inputRow.quantity,
                 inputRow.profileType,
-                normalizeStoredColor(inputRow.color)
+                normalizeMaterialColorForSelect(inputRow.color)
             )
         );
     }
@@ -9532,7 +10294,7 @@ function renderCuttingPlan(plan) {
                         ${PROFILE_TYPES[bar.profileType].label}
                         ${color === null
                 ? ""
-                : `<span class="bar-color">Väri: ${escapeHtml(color)}</span>`
+                : `<span class="bar-color">Väri: ${escapeHtml(getMaterialColorLabel(color))}</span>`
             }
                         · ${bar.number}/${plan.bars.length}
                      </span>
@@ -9681,6 +10443,13 @@ async function calculate() {
         getMaterialAvailabilityFromForm();
 
     const validationErrors = [];
+
+    validationErrors.push(
+        ...getMaterialColorValidationErrors(
+            cuts,
+            materialAvailability
+        )
+    );
 
 
     if (!Number.isFinite(stockLength) || stockLength <= 0) {
@@ -9909,6 +10678,10 @@ async function calculate() {
 
 function initializeWorkPersistence() {
 
+    for (const colorSelect of document.querySelectorAll(".cut-color")) {
+        colorSelect.innerHTML = createMaterialColorOptions();
+    }
+
     createDefaultStockProfileRows();
 
     document.addEventListener("input", event => {
@@ -9917,12 +10690,9 @@ function initializeWorkPersistence() {
             event.target.matches(
                 "#stockLength, " +
                 "#kerf, " +
-                ".stock-profile-color, " +
                 ".stock-profile-quantity, " +
-                ".remnant-color, " +
                 ".remnant-length, " +
                 ".remnant-quantity, " +
-                ".cut-color, " +
                 ".cut-length, " +
                 ".cut-quantity"
             )
@@ -9937,8 +10707,11 @@ function initializeWorkPersistence() {
         if (
             event.target.matches(
                 ".stock-profile-unlimited-checkbox, " +
+                ".stock-profile-color, " +
                 ".remnant-profile-type, " +
-                ".cut-profile-type"
+                ".remnant-color, " +
+                ".cut-profile-type, " +
+                ".cut-color"
             )
         ) {
             handleOrderInputChange();
@@ -11109,10 +11882,16 @@ function loadDevelopmentTestCase(
         .replaceChildren(
             ...Object.keys(PROFILE_TYPES).map(
                 profileType =>
-                    createStockProfileRow(
+                    createStockProfileGroup(
                         profileType,
-                        "1",
-                        true
+                        [
+                            {
+                                quantity: "1",
+                                unlimited: true,
+                                color: "gray",
+                                additional: false
+                            }
+                        ]
                     )
             )
         );
@@ -11125,7 +11904,8 @@ function loadDevelopmentTestCase(
                 createCutRow(
                     cut.length,
                     cut.quantity,
-                    cut.profileType
+                    cut.profileType,
+                    "gray"
                 )
             )
         );
@@ -11138,7 +11918,8 @@ function loadDevelopmentTestCase(
                 createRemnantRow(
                     remnant.length,
                     remnant.quantity,
-                    remnant.profileType
+                    remnant.profileType,
+                    "gray"
                 )
             )
         );
@@ -11266,7 +12047,8 @@ function loadTestProfileIsolation() {
 
     const verticalStockRow =
         document.querySelector(
-            '.stock-profile-row[data-profile-type="verticalProfile"]'
+            '.stock-profile-group[data-profile-type="verticalProfile"] ' +
+            ".stock-profile-row"
         );
 
     const unlimitedCheckbox =
