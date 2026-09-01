@@ -8889,6 +8889,214 @@ function runWorkFinalizationRegressionTest() {
 }
 
 
+function runWorkFinalizationPersistenceRegressionTest() {
+
+    const preFinalizationStockProfileRows = [
+        ...Object.keys(PROFILE_TYPES).map(profileType => ({
+            profileType: profileType,
+            color: "gray",
+            quantity: "1",
+            unlimited: true,
+            additional: false
+        })),
+        {
+            profileType: "verticalProfile",
+            color: "black",
+            quantity: "2",
+            unlimited: false,
+            additional: true
+        }
+    ];
+
+    const materialAvailability = {
+        stockLength: 6000,
+        newStock: preFinalizationStockProfileRows.map(row => ({
+            profileType: row.profileType,
+            color: row.color,
+            unlimited: row.unlimited,
+            quantity:
+                row.unlimited
+                    ? null
+                    : Number(row.quantity)
+        })),
+        remnants: []
+    };
+
+    const completedPlan = {
+        complete: true,
+        bars: [
+            {
+                id: "bar-1",
+                number: 1,
+                profileType: "verticalProfile",
+                color: "black",
+                source: "new",
+                sourceLength: 6000,
+                groupedCuts: [
+                    {
+                        length: 2200,
+                        quantity: 1
+                    }
+                ],
+                remaining: 1497,
+                waste: 3,
+                remnantStatus: "reusable"
+            }
+        ],
+        remainingItems: []
+    };
+
+    const inputRows = [
+        {
+            profileType: "verticalProfile",
+            color: "black",
+            length: "2200",
+            quantity: "1"
+        }
+    ];
+
+    const postOrderInventory =
+        calculatePostOrderMaterialInventory(
+            completedPlan,
+            createMaterialInventory(materialAvailability),
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings
+        );
+
+    const finalizedStockProfileRows =
+        createFinalizedStockProfileRows(
+            postOrderInventory,
+            preFinalizationStockProfileRows
+        );
+
+    const finalizedRemnantRows =
+        getFinalizedRemnantRowsForStorage(
+            postOrderInventory
+        );
+
+    const initialSnapshot = {
+        schemaVersion: WORK_STATE_SCHEMA_VERSION,
+        engineVersion: WORK_STATE_ENGINE_VERSION,
+        savedAt: "2026-09-01T12:00:00.000Z",
+        stockLength: "6000",
+        kerf: "3",
+        stockProfileRows: preFinalizationStockProfileRows,
+        remnantRows: [],
+        inputRows: inputRows,
+        generatedPlan: completedPlan,
+        completedBarIds: ["bar-1"]
+    };
+
+    const finalSnapshot = {
+        ...initialSnapshot,
+        stockProfileRows: finalizedStockProfileRows,
+        remnantRows: finalizedRemnantRows,
+        generatedPlan: null,
+        completedBarIds: []
+    };
+
+    let liveStockProfileRows =
+        preFinalizationStockProfileRows;
+
+    let liveRemnantRows = [];
+    let livePlan = completedPlan;
+    let liveCompletedBarIds = ["bar-1"];
+    let storedSnapshot = initialSnapshot;
+    let commitCount = 0;
+
+    function commitFinalization() {
+
+        liveStockProfileRows = finalizedStockProfileRows;
+        liveRemnantRows = finalizedRemnantRows;
+        livePlan = null;
+        liveCompletedBarIds = [];
+        commitCount++;
+    }
+
+
+    const failedPersistence =
+        persistThenCommitFinalization(
+            finalSnapshot,
+            commitFinalization,
+            () => false
+        );
+
+    const failedSavePreservedLiveWork =
+        failedPersistence === false &&
+        liveStockProfileRows ===
+        preFinalizationStockProfileRows &&
+        liveRemnantRows.length === 0 &&
+        livePlan === completedPlan &&
+        JSON.stringify(liveCompletedBarIds) ===
+        JSON.stringify(["bar-1"]) &&
+        storedSnapshot === initialSnapshot &&
+        commitCount === 0;
+
+    let writtenSnapshot = null;
+
+    const successfulRetry =
+        persistThenCommitFinalization(
+            finalSnapshot,
+            commitFinalization,
+            snapshot => {
+                writtenSnapshot = snapshot;
+                storedSnapshot = snapshot;
+                return true;
+            }
+        );
+
+    const finalizedBlackStock =
+        storedSnapshot.stockProfileRows.find(row =>
+            row.profileType === "verticalProfile" &&
+            row.color === "black"
+        );
+
+    const generatedBlackRemnant =
+        storedSnapshot.remnantRows.find(row =>
+            row.profileType === "verticalProfile" &&
+            row.color === "black" &&
+            row.length === "1497" &&
+            row.quantity === "1"
+        );
+
+    const passed =
+        failedSavePreservedLiveWork &&
+        successfulRetry === true &&
+        writtenSnapshot === finalSnapshot &&
+        liveStockProfileRows === finalizedStockProfileRows &&
+        liveRemnantRows === finalizedRemnantRows &&
+        livePlan === null &&
+        liveCompletedBarIds.length === 0 &&
+        commitCount === 1 &&
+        storedSnapshot.generatedPlan === null &&
+        storedSnapshot.completedBarIds.length === 0 &&
+        finalizedBlackStock?.quantity === "1" &&
+        generatedBlackRemnant !== undefined &&
+        isValidStoredWorkState(storedSnapshot) &&
+        canFinalizePlan(livePlan, new Set()) === false;
+
+
+    console.table([
+        {
+            test:
+                "Finalisointi ei muuta työtä, jos post-finalisointi tallennus epäonnistuu",
+            result: passed ? "PASS" : "FAIL",
+            failedSavePreservedLiveWork:
+                failedSavePreservedLiveWork,
+            successfulRetry: successfulRetry,
+            storedPlanCleared:
+                storedSnapshot.generatedPlan === null,
+            stockQuantity:
+                finalizedBlackStock?.quantity ?? "-",
+            generatedRemnant:
+                generatedBlackRemnant !== undefined
+        }
+    ]);
+
+
+    return passed;
+}
+
+
 function verifyOptimizationDemandAccounting(
     cuts,
     optimization
@@ -10199,43 +10407,67 @@ function restoreStockProfileRows(
 }
 
 
-function createWorkStateSnapshot() {
+function createWorkStateSnapshot({
+    stockLength =
+        document.getElementById("stockLength").value,
+
+    kerf =
+        document.getElementById("kerf").value,
+
+    stockProfileRows =
+        getStockProfileRowsForStorage(),
+
+    remnantRows =
+        getRemnantRowsForStorage(),
+
+    inputRows =
+        getInputRowsForStorage(),
+
+    generatedPlan =
+        currentGeneratedPlan,
+
+    completedBarIdsForStorage =
+        [...completedBarIds]
+} = {}) {
 
     return {
         schemaVersion: WORK_STATE_SCHEMA_VERSION,
         engineVersion: WORK_STATE_ENGINE_VERSION,
         savedAt: new Date().toISOString(),
 
-        stockLength:
-            document.getElementById("stockLength").value,
-
-        kerf:
-            document.getElementById("kerf").value,
-
-        stockProfileRows:
-            getStockProfileRowsForStorage(),
-
-        remnantRows:
-            getRemnantRowsForStorage(),
-
-        inputRows:
-            getInputRowsForStorage(),
-
-        generatedPlan: currentGeneratedPlan,
-        completedBarIds: [...completedBarIds]
+        stockLength: stockLength,
+        kerf: kerf,
+        stockProfileRows: stockProfileRows,
+        remnantRows: remnantRows,
+        inputRows: inputRows,
+        generatedPlan: generatedPlan,
+        completedBarIds: completedBarIdsForStorage
     };
 }
 
-function saveCurrentWorkState() {
+
+function writeWorkStateSnapshot(workStateSnapshot) {
 
     try {
         localStorage.setItem(
             WORK_STORAGE_KEY,
-            JSON.stringify(createWorkStateSnapshot())
+            JSON.stringify(workStateSnapshot)
         );
+
+        return true;
+
     } catch {
         // Tallennuksen estyminen ei saa rikkoa laskentaa tai sahausnäkymää.
+        return false;
     }
+}
+
+
+function saveCurrentWorkState() {
+
+    return writeWorkStateSnapshot(
+        createWorkStateSnapshot()
+    );
 }
 
 
@@ -10523,9 +10755,24 @@ function createFinalizedStockProfileRows(
 }
 
 
-function createFinalizedRemnantRows(postOrderInventory) {
+function getFinalizedRemnantRowsForStorage(
+    postOrderInventory
+) {
 
-    return postOrderInventory.remnants.map(remnant =>
+    return postOrderInventory.remnants.map(remnant => ({
+        profileType: remnant.profileType,
+        color: remnant.color,
+        length: String(remnant.length),
+        quantity: String(remnant.quantity)
+    }));
+}
+
+
+function createFinalizedRemnantRows(
+    finalizedRemnantRowsForStorage
+) {
+
+    return finalizedRemnantRowsForStorage.map(remnant =>
         createRemnantRow(
             remnant.length,
             remnant.quantity,
@@ -10533,6 +10780,23 @@ function createFinalizedRemnantRows(postOrderInventory) {
             remnant.color
         )
     );
+}
+
+
+function persistThenCommitFinalization(
+    finalWorkStateSnapshot,
+    commitFinalization,
+    persistWorkStateSnapshot = writeWorkStateSnapshot
+) {
+
+    if (!persistWorkStateSnapshot(finalWorkStateSnapshot)) {
+        return false;
+    }
+
+
+    commitFinalization();
+
+    return true;
 }
 
 
@@ -10585,28 +10849,60 @@ function finalizeCurrentWork() {
                 finalizedStockProfileRows
             );
 
+        const finalizedRemnantRowsForStorage =
+            getFinalizedRemnantRowsForStorage(
+                postOrderInventory
+            );
+
         const finalizedRemnantRows =
-            createFinalizedRemnantRows(postOrderInventory);
+            createFinalizedRemnantRows(
+                finalizedRemnantRowsForStorage
+            );
 
-        document.getElementById("stockProfileList").replaceChildren(
-            ...finalizedStockGroups
-        );
+        const finalWorkStateSnapshot =
+            createWorkStateSnapshot({
+                stockProfileRows:
+                    finalizedStockProfileRows,
 
-        document.getElementById("remnantList").replaceChildren(
-            ...finalizedRemnantRows
-        );
+                remnantRows:
+                    finalizedRemnantRowsForStorage,
 
-        currentGeneratedPlan = null;
-        resetCompletedBarState();
-        workInputRevision++;
+                generatedPlan: null,
+                completedBarIdsForStorage: []
+            });
 
-        const resultElement = document.getElementById("result");
+        const didFinalize =
+            persistThenCommitFinalization(
+                finalWorkStateSnapshot,
+                () => {
+                    document.getElementById("stockProfileList")
+                        .replaceChildren(
+                            ...finalizedStockGroups
+                        );
 
-        resultElement.className = "work-state-message";
-        resultElement.textContent =
-            "Työ päätetty ja materiaalivarasto päivitetty.";
+                    document.getElementById("remnantList")
+                        .replaceChildren(
+                            ...finalizedRemnantRows
+                        );
 
-        saveCurrentWorkState();
+                    currentGeneratedPlan = null;
+                    resetCompletedBarState();
+                    workInputRevision++;
+
+                    const resultElement =
+                        document.getElementById("result");
+
+                    resultElement.className = "work-state-message";
+                    resultElement.textContent =
+                        "Työ päätetty ja materiaalivarasto päivitetty.";
+                }
+            );
+
+        if (!didFinalize) {
+            showFinalizationError(
+                "Työtä ei voitu päättää, koska tallennus epäonnistui. Työtä ei muutettu."
+            );
+        }
 
     } catch (error) {
 
