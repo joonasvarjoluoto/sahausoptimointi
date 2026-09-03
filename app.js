@@ -8043,6 +8043,128 @@ function runStoredDuplicateNewStockVariantRegressionTest() {
 }
 
 
+function runStoredStockRowCountValidationRegressionTest() {
+
+    let rowsInspected = false;
+
+    const rowsOverLimit = new Proxy([], {
+        get(target, property, receiver) {
+
+            if (property === "length") {
+                return MAX_STORED_FORM_ROW_COUNT + 1;
+            }
+
+
+            if (property === Symbol.iterator) {
+                rowsInspected = true;
+            }
+
+
+            return Reflect.get(
+                target,
+                property,
+                receiver
+            );
+        }
+    });
+
+    const passed =
+        !isValidStoredStockProfileRows(
+            rowsOverLimit
+        ) &&
+        rowsInspected === false;
+
+
+    console.table([
+        {
+            test:
+                "Tallennetun raakalistan rivirajan ylitys hylätään ennen rivien käsittelyä",
+
+            result:
+                passed ? "PASS" : "FAIL",
+
+            maximumRows:
+                MAX_STORED_FORM_ROW_COUNT,
+
+            attemptedRows:
+                MAX_STORED_FORM_ROW_COUNT + 1,
+
+            rowsInspected: rowsInspected
+        }
+    ]);
+
+
+    return passed;
+}
+
+
+function runStoredCanonicalNewStockVariantRegressionTest() {
+
+    const createRows = colors => [
+        ...colors.map((color, index) => ({
+            profileType: "verticalProfile",
+            color: color,
+            quantity: "1",
+            unlimited: true,
+            additional: index > 0
+        })),
+
+        ...Object.keys(PROFILE_TYPES)
+            .filter(
+                profileType =>
+                    profileType !==
+                    "verticalProfile"
+            )
+            .map(profileType => ({
+                profileType: profileType,
+                color: null,
+                quantity: "1",
+                unlimited: true,
+                additional: false
+            }))
+    ];
+
+    const results = [
+        {
+            test:
+                "Väriarvo ja suomenkielinen nimi tunnistetaan samaksi variantiksi",
+
+            result:
+                !isValidStoredStockProfileRows(
+                    createRows([
+                        "gray",
+                        " Harmaa "
+                    ])
+                )
+                    ? "PASS"
+                    : "FAIL"
+        },
+        {
+            test:
+                "Useat tuntemattomat värit eivät saa palautua samoiksi ratkaisemattomiksi riveiksi",
+
+            result:
+                !isValidStoredStockProfileRows(
+                    createRows([
+                        "legacy-silver",
+                        "legacy-bronze"
+                    ])
+                )
+                    ? "PASS"
+                    : "FAIL"
+        }
+    ];
+
+
+    console.table(results);
+
+
+    return results.every(
+        result => result.result === "PASS"
+    );
+}
+
+
 function runStoredWorkStateColorRegressionTest() {
 
     const stockProfileRows =
@@ -10045,6 +10167,7 @@ function getRemnantStatusLabel(remnantStatus) {
 const WORK_STORAGE_KEY = "sahausoptimointi.currentWork";
 const WORK_STATE_SCHEMA_VERSION = 3;
 const WORK_STATE_ENGINE_VERSION = "material-v0.3";
+const MAX_STORED_FORM_ROW_COUNT = 1000;
 
 const DEFAULT_STOCK_LENGTH = "6000";
 const DEFAULT_KERF = "3";
@@ -10094,7 +10217,7 @@ function normalizeStoredColor(color) {
 function isValidStoredInputRows(inputRows) {
 
     return Array.isArray(inputRows) &&
-        inputRows.length <= 1000 &&
+        inputRows.length <= MAX_STORED_FORM_ROW_COUNT &&
         inputRows.every(row =>
             isPlainObject(row) &&
             typeof row.profileType === "string" &&
@@ -10109,7 +10232,10 @@ function isValidStoredStockProfileRows(
     stockProfileRows
 ) {
 
-    if (!Array.isArray(stockProfileRows)) {
+    if (
+        !Array.isArray(stockProfileRows) ||
+        stockProfileRows.length > MAX_STORED_FORM_ROW_COUNT
+    ) {
         return false;
     }
 
@@ -10140,12 +10266,15 @@ function isValidStoredStockProfileRows(
 
 
         const normalizedColor =
-            normalizeStoredColor(row.color);
+            normalizeMaterialColorForSelect(
+                row.color
+            );
 
         const variantKey =
-            row.profileType +
-            ":" +
-            JSON.stringify(normalizedColor);
+            getMaterialVariantKey(
+                row.profileType,
+                normalizedColor
+            );
 
 
         if (seenVariants.has(variantKey)) {
