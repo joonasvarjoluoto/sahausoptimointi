@@ -8052,8 +8052,8 @@ function runStoredWorkStateColorRegressionTest() {
 
                 color:
                     profileType === "verticalProfile"
-                        ? "silver"
-                        : null,
+                        ? "black"
+                        : "gray",
 
                 quantity: "1",
                 unlimited: true
@@ -8133,6 +8133,12 @@ function runStoredWorkStateColorRegressionTest() {
         }
     };
 
+    const legacyDraftState = {
+        ...legacyState,
+        generatedPlan: null,
+        completedBarIds: []
+    };
+
 
     const invalidColorStates = [
         {
@@ -8171,7 +8177,8 @@ function runStoredWorkStateColorRegressionTest() {
 
     const passed =
         isValidStoredWorkState(state) &&
-        isValidStoredWorkState(legacyState) &&
+        !isValidStoredWorkState(legacyState) &&
+        isValidStoredWorkState(legacyDraftState) &&
         normalizeStoredColor("") === null &&
         normalizeStoredColor("   ") === null &&
         invalidColorStates.every(
@@ -8183,13 +8190,15 @@ function runStoredWorkStateColorRegressionTest() {
     console.table([
         {
             test:
-                "Tallennettu työ säilyttää värit ja hyväksyy vanhat värittömät rivit",
+                "Suunnitelma vaatii ratkaistut värit mutta legacy-luonnos säilyy yhteensopivana",
             result:
                 passed ? "PASS" : "FAIL",
             coloredState:
                 isValidStoredWorkState(state),
             legacyState:
                 isValidStoredWorkState(legacyState),
+            legacyDraftState:
+                isValidStoredWorkState(legacyDraftState),
             emptyColorNormalizesToNull:
                 normalizeStoredColor("") === null &&
                 normalizeStoredColor("   ") === null,
@@ -8934,7 +8943,7 @@ function runWorkFinalizationPersistenceRegressionTest() {
                 sourceLength: 6000,
                 groupedCuts: [
                     {
-                        length: 2200,
+                        length: 4500,
                         quantity: 1
                     }
                 ],
@@ -8950,7 +8959,7 @@ function runWorkFinalizationPersistenceRegressionTest() {
         {
             profileType: "verticalProfile",
             color: "black",
-            length: "2200",
+            length: "4500",
             quantity: "1"
         }
     ];
@@ -9059,6 +9068,7 @@ function runWorkFinalizationPersistenceRegressionTest() {
         );
 
     const passed =
+        isValidStoredWorkState(initialSnapshot) &&
         failedSavePreservedLiveWork &&
         successfulRetry === true &&
         writtenSnapshot === finalSnapshot &&
@@ -9083,6 +9093,8 @@ function runWorkFinalizationPersistenceRegressionTest() {
             failedSavePreservedLiveWork:
                 failedSavePreservedLiveWork,
             successfulRetry: successfulRetry,
+            initialSnapshotValid:
+                isValidStoredWorkState(initialSnapshot),
             storedPlanCleared:
                 storedSnapshot.generatedPlan === null,
             stockQuantity:
@@ -10168,7 +10180,8 @@ function isValidStoredPlan(plan) {
         !Array.isArray(plan.bars) ||
         plan.bars.length === 0 ||
         plan.bars.length > 10000 ||
-        !Array.isArray(plan.remainingItems)
+        !Array.isArray(plan.remainingItems) ||
+        plan.remainingItems.length > 0
     ) {
         return false;
     }
@@ -10196,28 +10209,244 @@ function isValidStoredPlan(plan) {
         validSources.has(bar.source) &&
         Number.isFinite(bar.sourceLength) &&
         bar.sourceLength > 0 &&
+        hasSupportedMillimeterPrecision(bar.sourceLength) &&
         Array.isArray(bar.groupedCuts) &&
         bar.groupedCuts.length > 0 &&
         bar.groupedCuts.every(cut =>
             isPlainObject(cut) &&
             Number.isFinite(cut.length) &&
             cut.length > 0 &&
-            Number.isInteger(cut.quantity) &&
+            hasSupportedMillimeterPrecision(cut.length) &&
+            Number.isSafeInteger(cut.quantity) &&
             cut.quantity > 0
         ) &&
         Number.isFinite(bar.remaining) &&
         bar.remaining >= 0 &&
+        hasSupportedMillimeterPrecision(bar.remaining) &&
         Number.isFinite(bar.waste) &&
         bar.waste >= 0 &&
+        hasSupportedMillimeterPrecision(bar.waste) &&
         validRemnantStatuses.has(bar.remnantStatus)
     ) &&
         plan.remainingItems.every(item =>
             isPlainObject(item) &&
             Number.isFinite(item.length) &&
             item.length > 0 &&
-            Number.isInteger(item.quantity) &&
+            hasSupportedMillimeterPrecision(item.length) &&
+            Number.isSafeInteger(item.quantity) &&
             item.quantity > 0
         );
+}
+
+
+function adaptStoredPlanForVerification(plan) {
+
+    return {
+        complete: plan.complete,
+
+        bars: plan.bars.map(bar => ({
+            profileType: bar.profileType,
+            color: bar.color ?? null,
+            source: bar.source,
+            sourceLength: bar.sourceLength,
+            pattern: bar.groupedCuts.map(cut => ({
+                length: cut.length,
+                quantity: cut.quantity
+            })),
+            remaining: bar.remaining,
+            waste: bar.waste
+        })),
+
+        remainingItems: plan.remainingItems.map(item => ({
+            profileType: item.profileType,
+            color: item.color ?? null,
+            length: item.length,
+            quantity: item.quantity
+        }))
+    };
+}
+
+
+function verifyStoredPlanSawPhysics(plan, kerf) {
+
+    for (const bar of plan.bars) {
+
+        let calculatedRemaining = bar.sourceLength;
+        let calculatedWasteUnits = 0;
+
+
+        for (const cut of bar.groupedCuts) {
+
+            for (let quantity = 0; quantity < cut.quantity; quantity++) {
+
+                const cutResult = cutPiece(
+                    calculatedRemaining,
+                    cut.length,
+                    kerf
+                );
+
+
+                if (!cutResult.possible) {
+                    throw new Error(
+                        "Tallennetun suunnitelman sahausta ei voida tehdä annetusta lähteestä."
+                    );
+                }
+
+
+                calculatedRemaining = cutResult.remaining;
+                calculatedWasteUnits += millimetersToDpUnits(
+                    cutResult.waste
+                );
+            }
+        }
+
+
+        if (
+            millimetersToDpUnits(calculatedRemaining) !==
+            millimetersToDpUnits(bar.remaining)
+        ) {
+            throw new Error(
+                "Tallennetun suunnitelman jäännös ei vastaa sahausfysiikkaa."
+            );
+        }
+
+
+        if (
+            calculatedWasteUnits !==
+            millimetersToDpUnits(bar.waste)
+        ) {
+            throw new Error(
+                "Tallennetun suunnitelman sahahukka ei vastaa sahausfysiikkaa."
+            );
+        }
+    }
+
+
+    return true;
+}
+
+
+function createStoredPlanVerificationContext(state) {
+
+    const stockLength = Number(state.stockLength);
+    const kerf = Number(state.kerf);
+
+
+    if (
+        !Number.isFinite(kerf) ||
+        kerf < 0 ||
+        !hasSupportedMillimeterPrecision(kerf)
+    ) {
+        throw new Error(
+            "Tallennetun suunnitelman sahausvara on virheellinen."
+        );
+    }
+
+
+    const cuts = state.inputRows.map(row => ({
+        profileType: row.profileType,
+        color: row.color ?? null,
+        length: Number(row.length),
+        quantity: Number(row.quantity)
+    }));
+
+
+    for (const cut of cuts) {
+
+        if (
+            !isSupportedMaterialColor(cut.color) ||
+            !Number.isFinite(cut.length) ||
+            cut.length <= 0 ||
+            !hasSupportedMillimeterPrecision(cut.length) ||
+            cut.length > stockLength ||
+            !Number.isSafeInteger(cut.quantity) ||
+            cut.quantity <= 0
+        ) {
+            throw new Error(
+                "Tallennetun suunnitelman sahattavat rivit ovat virheelliset."
+            );
+        }
+    }
+
+
+    const materialAvailability = {
+        stockLength: stockLength,
+
+        newStock: state.stockProfileRows.map(row => ({
+            profileType: row.profileType,
+            color: row.color ?? null,
+            unlimited: row.unlimited,
+            quantity: row.unlimited
+                ? null
+                : Number(row.quantity)
+        })),
+
+        remnants: state.remnantRows.map(row => ({
+            profileType: row.profileType,
+            color: row.color ?? null,
+            length: Number(row.length),
+            quantity: Number(row.quantity)
+        }))
+    };
+
+
+    if (
+        getMaterialColorValidationErrors(
+            cuts,
+            materialAvailability
+        ).length > 0
+    ) {
+        throw new Error(
+            "Tallennetun suunnitelman materiaalivärit ovat virheelliset."
+        );
+    }
+
+
+    validateMaterialAvailability(
+        materialAvailability
+    );
+
+
+    return {
+        cuts: cuts,
+        kerf: kerf,
+        materialInventory: createMaterialInventory(
+            materialAvailability
+        ),
+        optimization: adaptStoredPlanForVerification(
+            state.generatedPlan
+        )
+    };
+}
+
+
+function verifyStoredGeneratedPlan(state) {
+
+    const verificationContext =
+        createStoredPlanVerificationContext(state);
+
+
+    verifyOptimizationDemandAccounting(
+        verificationContext.cuts,
+        verificationContext.optimization
+    );
+
+    verifyOptimizationBarBalances(
+        verificationContext.optimization
+    );
+
+    verifyOptimizationSourceUsage(
+        verificationContext.materialInventory,
+        verificationContext.optimization
+    );
+
+    verifyStoredPlanSawPhysics(
+        state.generatedPlan,
+        verificationContext.kerf
+    );
+
+
+    return true;
 }
 
 
@@ -10252,6 +10481,13 @@ function isValidStoredWorkState(state) {
     }
 
 
+    try {
+        verifyStoredGeneratedPlan(state);
+    } catch {
+        return false;
+    }
+
+
     const validBarIds = new Set(
         state.generatedPlan.bars.map(bar => bar.id)
     );
@@ -10263,6 +10499,311 @@ function isValidStoredWorkState(state) {
     ) &&
         new Set(state.completedBarIds).size ===
         state.completedBarIds.length;
+}
+
+
+function createStoredPlanSemanticRegressionState() {
+
+    return createWorkStateSnapshot({
+        stockLength: "6000",
+        kerf: "3",
+
+        stockProfileRows: Object.keys(PROFILE_TYPES).map(
+            profileType => ({
+                profileType: profileType,
+                color: profileType === "verticalProfile"
+                    ? "black"
+                    : "gray",
+                quantity: "1",
+                unlimited: profileType !== "verticalProfile",
+                additional: false
+            })
+        ),
+
+        remnantRows: [
+            {
+                profileType: "verticalProfile",
+                color: "black",
+                length: "2500",
+                quantity: "1"
+            }
+        ],
+
+        inputRows: [
+            {
+                profileType: "verticalProfile",
+                color: "black",
+                length: "2200",
+                quantity: "1"
+            }
+        ],
+
+        generatedPlan: {
+            complete: true,
+            bars: [
+                {
+                    id: "bar-1",
+                    number: 1,
+                    profileType: "verticalProfile",
+                    color: "black",
+                    source: "new",
+                    sourceLength: 6000,
+                    groupedCuts: [
+                        {
+                            length: 2200,
+                            quantity: 1
+                        }
+                    ],
+                    remaining: 3797,
+                    waste: 3,
+                    remnantStatus: "reusable"
+                }
+            ],
+            remainingItems: []
+        },
+
+        completedBarIdsForStorage: []
+    });
+}
+
+
+function cloneStoredPlanSemanticRegressionState() {
+    return JSON.parse(
+        JSON.stringify(
+            createStoredPlanSemanticRegressionState()
+        )
+    );
+}
+
+
+function addSecondStoredPlanRegressionBar(state) {
+
+    state.inputRows[0].quantity = "2";
+    state.stockProfileRows.find(row =>
+        row.profileType === "verticalProfile"
+    ).quantity = "2";
+
+    state.generatedPlan.bars.push({
+        ...state.generatedPlan.bars[0],
+        id: "bar-2",
+        number: 2,
+        groupedCuts: state.generatedPlan.bars[0]
+            .groupedCuts.map(cut => ({ ...cut }))
+    });
+
+
+    return state;
+}
+
+
+function runStoredPlanSemanticValidationRegressionTests() {
+
+    const validUncompletedState =
+        cloneStoredPlanSemanticRegressionState();
+
+    const validCompletedState =
+        cloneStoredPlanSemanticRegressionState();
+
+    validCompletedState.completedBarIds = ["bar-1"];
+
+    const validPartiallyCompletedState =
+        addSecondStoredPlanRegressionBar(
+            cloneStoredPlanSemanticRegressionState()
+        );
+
+    validPartiallyCompletedState.completedBarIds = ["bar-1"];
+
+    const validIncompleteDraftState =
+        cloneStoredPlanSemanticRegressionState();
+
+    validIncompleteDraftState.stockLength = "";
+    validIncompleteDraftState.kerf = "";
+    validIncompleteDraftState.generatedPlan = null;
+    validIncompleteDraftState.completedBarIds = [];
+
+    for (const row of validIncompleteDraftState.stockProfileRows) {
+        row.color = null;
+        row.quantity = "";
+    }
+
+    for (const row of [
+        ...validIncompleteDraftState.remnantRows,
+        ...validIncompleteDraftState.inputRows
+    ]) {
+        row.color = null;
+        row.length = "";
+        row.quantity = "";
+    }
+
+
+    const corruptCases = [
+        {
+            name: "Materiaalin paisuminen hylätään",
+            mutate: state => {
+                state.generatedPlan.bars[0].remaining = 7000;
+            }
+        },
+        {
+            name: "Valmis suunnitelma ei saa sisältää remainingItems-rivejä",
+            mutate: state => {
+                state.generatedPlan.remainingItems = [
+                    {
+                        length: 2200,
+                        quantity: 1
+                    }
+                ];
+            }
+        },
+        {
+            name: "Tasapainoinen mutta sahausvaran ohittava tanko hylätään",
+            mutate: state => {
+                state.generatedPlan.bars[0].remaining = 3800;
+                state.generatedPlan.bars[0].waste = 0;
+            }
+        },
+        {
+            name: "Fyysisesti mahdoton sahausjärjestys hylätään",
+            mutate: state => {
+                state.inputRows = [
+                    {
+                        profileType: "verticalProfile",
+                        color: "black",
+                        length: "5000",
+                        quantity: "1"
+                    },
+                    {
+                        profileType: "verticalProfile",
+                        color: "black",
+                        length: "1000",
+                        quantity: "1"
+                    }
+                ];
+
+                const bar = state.generatedPlan.bars[0];
+                bar.groupedCuts = [
+                    { length: 5000, quantity: 1 },
+                    { length: 1000, quantity: 1 }
+                ];
+                bar.remaining = 0;
+                bar.waste = 0;
+                bar.remnantStatus = "none";
+            }
+        },
+        {
+            name: "Uuden tangon väärä lähdepituus hylätään",
+            mutate: state => {
+                state.generatedPlan.bars[0].sourceLength = 5900;
+                state.generatedPlan.bars[0].remaining = 3697;
+            }
+        },
+        {
+            name: "Varastosta puuttuva materiaalivariantti hylätään",
+            mutate: state => {
+                state.inputRows[0].color = "white";
+                state.generatedPlan.bars[0].color = "white";
+            }
+        },
+        {
+            name: "Äärellisen uuden materiaalin ylitys hylätään",
+            mutate: state => {
+                addSecondStoredPlanRegressionBar(state);
+                state.stockProfileRows.find(row =>
+                    row.profileType === "verticalProfile"
+                ).quantity = "1";
+            }
+        },
+        {
+            name: "Varastosta puuttuva jäännös hylätään",
+            mutate: state => {
+                const bar = state.generatedPlan.bars[0];
+                bar.source = "remnant";
+                bar.sourceLength = 2600;
+                bar.remaining = 397;
+            }
+        },
+        {
+            name: "Jäännöksen määrän ylitys hylätään",
+            mutate: state => {
+                addSecondStoredPlanRegressionBar(state);
+
+                for (const bar of state.generatedPlan.bars) {
+                    bar.source = "remnant";
+                    bar.sourceLength = 2500;
+                    bar.remaining = 297;
+                }
+            }
+        },
+        {
+            name: "Suunnitelman ja syötteen kappale-ero hylätään",
+            mutate: state => {
+                const bar = state.generatedPlan.bars[0];
+                bar.groupedCuts[0].length = 2300;
+                bar.remaining = 3697;
+            }
+        },
+        {
+            name: "Liian tarkka suunnitelmamitta hylätään",
+            mutate: state => {
+                state.generatedPlan.bars[0].sourceLength = 6000.01;
+            }
+        },
+        {
+            name: "Liian tarkka persisted sahausvara hylätään",
+            mutate: state => {
+                state.kerf = "3.01";
+            }
+        }
+    ];
+
+
+    const results = [
+        {
+            test: "Kelvollinen keskeneräinen työ hyväksytään",
+            result: isValidStoredWorkState(validUncompletedState)
+                ? "PASS"
+                : "FAIL"
+        },
+        {
+            test: "Kelvollinen valmis työ hyväksytään",
+            result: isValidStoredWorkState(validCompletedState)
+                ? "PASS"
+                : "FAIL"
+        },
+        {
+            test: "Kelvollinen osittain merkitty työ hyväksytään",
+            result: isValidStoredWorkState(
+                validPartiallyCompletedState
+            )
+                ? "PASS"
+                : "FAIL"
+        },
+        {
+            test: "Keskeneräinen luonnos säilyttää merkkijonoarvojen yhteensopivuuden",
+            result: isValidStoredWorkState(validIncompleteDraftState)
+                ? "PASS"
+                : "FAIL"
+        },
+
+        ...corruptCases.map(testCase => {
+            const state = cloneStoredPlanSemanticRegressionState();
+            testCase.mutate(state);
+
+            return {
+                test: testCase.name,
+                result: !isValidStoredWorkState(state)
+                    ? "PASS"
+                    : "FAIL"
+            };
+        })
+    ];
+
+
+    console.table(results);
+
+
+    return results.every(
+        result => result.result === "PASS"
+    );
 }
 
 
@@ -10630,6 +11171,60 @@ function restoreSavedWorkState() {
 
 
     return true;
+}
+
+
+function runStoredPlanRestoreBoundaryRegressionTest() {
+
+    if (
+        typeof document === "undefined" ||
+        typeof localStorage === "undefined"
+    ) {
+        return false;
+    }
+
+
+    const corruptState =
+        cloneStoredPlanSemanticRegressionState();
+
+    corruptState.stockLength = "6100";
+    corruptState.generatedPlan.bars[0].remaining = 7000;
+
+
+    localStorage.setItem(
+        WORK_STORAGE_KEY,
+        JSON.stringify(corruptState)
+    );
+
+    document.getElementById("stockLength").value = "4321";
+
+
+    const restored = restoreSavedWorkState();
+
+    const passed =
+        restored === false &&
+        document.getElementById("stockLength").value ===
+        DEFAULT_STOCK_LENGTH &&
+        localStorage.getItem(WORK_STORAGE_KEY) === null &&
+        currentGeneratedPlan === null &&
+        document.querySelectorAll(".bar-card").length === 0;
+
+
+    console.table([
+        {
+            test:
+                "Korrupti suunnitelma hylätään ennen persisted DOM-tilan palautusta",
+            result: passed ? "PASS" : "FAIL",
+            restored: restored,
+            stockLength:
+                document.getElementById("stockLength").value,
+            savedStateRemoved:
+                localStorage.getItem(WORK_STORAGE_KEY) === null
+        }
+    ]);
+
+
+    return passed;
 }
 
 
