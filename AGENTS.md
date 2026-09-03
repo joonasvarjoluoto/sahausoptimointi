@@ -1,152 +1,114 @@
 # AGENTS.md
 
-## Projektin tarkoitus
+## Ohjeiden tarkoitus ja projektidokumentit
 
-Tämä on oppimisprojekti, jossa rakennetaan selaimessa toimivaa sahausoptimointia 6000 mm:n alumiiniprofiileille. Tavoite ei ole vain minimoida sahahukkaa, vaan muodostaa tuotannon kannalta järkevä kokonaisratkaisu, joka huomioi uuden materiaalin käytön, olemassa olevat jäännökset, syntyvien jäännösten arvon, materiaalivaraston pirstaloitumisen ja myöhemmin myös työajan sekä sahausjärjestyksen. Pidä kustannuskomponentit erillisinä ja mahdollisuuksien mukaan euroiksi muunnettavina; yksi läpinäkymätön kokonaispiste ei saa hävittää perusteluja.
+Lue tämä tiedosto ennen projektia koskevaa työtä. Tämä sisältää pysyvät toimintatavat ja säännöt, joiden rikkoutuminen voisi muuttaa sahaus- tai materiaalilogiikan merkitystä.
 
-6000 mm on projektin tavallinen ja käyttöliittymän oletusarvoinen uuden raakatangon pituus. Pidä laskenta silti nykyisen `stockLength`-syötteen mukaisesti yleiskäyttöisenä, ellei tehtävässä erikseen päätetä lukita pituutta.
+Käytä lisäksi tehtävän mukaan:
 
-Projektissa oppiminen on yhtä tärkeä tavoite kuin toimiva lopputulos. Ratkaisujen, oletusten ja algoritmimuutosten pitää olla käyttäjän ymmärrettävissä ja perusteltavissa vaihe vaiheelta.
+- `ROADMAP.md`: etenemisjärjestys, nykyinen vaihe ja myöhemmät tavoitteet. Lue se, kun käyttäjä kysyy seuraavaa vaihetta tai pyytää suunnittelemaan laajempaa kehitystä.
+- `BACKLOG.md`: todelliset mutta ei-kiireelliset virheet, rajoitteet ja parannuskohteet. Backlog-merkintä ei itsessään anna lupaa toteuttaa muutosta.
+- `DOMAIN_NOTES.md`: tuotanto- ja liiketoimintafaktat, arviot sekä avoimet kysymykset. Arviota ei saa muuttaa koodin taloussäännöksi ilman erillistä päätöstä ja testejä.
 
-## Fyysinen tuotantomalli
+Jos dokumentti ja nykyinen lähdekoodi ovat ristiriidassa, tarkista ensin lähdekoodi ja Git-tila. Raportoi ristiriita; korjaa dokumentaatio vain tehtävän rajojen tai käyttäjän luvan puitteissa.
 
-Projektissa on tällä hetkellä kuusi fyysisesti erillistä perusprofiilityyppiä:
+## Projektin tavoite
+
+Tämä on oppimisprojekti, jossa rakennetaan selaimessa toimivaa sahausoptimointia alumiiniprofiileille. Tavallinen uuden tangon pituus ja käyttöliittymän oletus on 6000 mm, mutta laskennan pitää käyttää nykyistä `stockLength`-syötettä, ellei tehtävässä erikseen päätetä lukita pituutta.
+
+Tavoite ei ole vain vähentää sahahukkaa. Ratkaisun pitää huomioida erillisinä ja selitettävinä ainakin uuden materiaalin käyttö, olemassa olevat jäännökset, syntyvien jäännösten arvo, sahahukka ja varaston pirstaloituminen. Työaika ja sahausjärjestys tulevat myöhemmin. Kustannuskomponentteja ei saa piilottaa yhteen perustelemattomaan kokonaispisteeseen.
+
+Oppiminen on yhtä tärkeää kuin toimiva tulos. Perustele olennaiset oletukset, algoritmimuutokset ja testit käyttäjälle ymmärrettävästi.
+
+## Nykyinen rakenne
+
+Projekti toimii suoraan selaimessa ilman rakennusvaihetta tai paketinhallintaa:
+
+- `index.html`: mobiiliystävälliset syötteet, työtoiminnot ja tulosalue.
+- `app.js`: käyttöliittymä, materiaalivarasto, optimizerit, pisteytys, renderöinti, dev-testit ja localStorage-työtila.
+- `style.css`: mobiili ensin -asettelu ja tuloskorttien tilat.
+
+Tallennetun työtilan nykyinen versiointi:
+
+- `WORK_STATE_SCHEMA_VERSION = 3`
+- `WORK_STATE_ENGINE_VERSION = "material-v0.3"`
+
+Kun skeema tai moottorin yhteensopivuus muuttuu, arvioi versionnosto ja päivitä dokumentaatio samassa rajatussa työssä.
+
+## Kriittiset tuotanto- ja materiaalisäännöt
+
+Nykyiset kuusi fyysisesti erillistä profiilityyppiä ovat:
 
 - `uProfile` = U-profiili, mittarooli `doorHeight`
 - `verticalProfile` = Pystyprofiili, mittarooli `doorHeight`
+- `closingProfile` = Vasteprofiili, mittarooli `doorHeight`
 - `horizontalProfile` = Vaakaprofiili, mittarooli `doorWidth`
 - `topRail` = Yläkisko, mittarooli `openingWidth`
 - `bottomRail` = Alakisko, mittarooli `openingWidth`
-- `responseProfile` = Vasteprofiili; lisää se aina oikeana profiilityyppinä suunnitteluun, vaikka sen tarkka mittarooli tai kappalesäännöt täsmennetään tarvittaessa erikseen
 
-Eri profiilityypit eivät ole keskenään materiaalina vaihtokelpoisia. Optimizeri ei saa koskaan käyttää esimerkiksi Vaakaprofiilin uutta tankoa tai jäännöstä Pystyprofiilin kappaleeseen.
+Eri profiilityypit eivät ole materiaalina vaihtokelpoisia. Materiaalin nykyinen vähimmäisidentiteetti on `profileType + color`; tietomallin pitää sallia myöhemmät lisäattribuutit ilman täydellistä uudelleenkirjoitusta. Väri on materiaalin yhteensopivuudessa kova rajoite, mutta tulevassa sahausjärjestyksessä yleensä pehmeä tuotantopreferenssi.
 
-Materiaalin identiteetti ei saa lukittua pelkkään `profileType`-kenttään. Nykyinen vähimmäismalli on `profileType + color`, ja mallin pitää sallia tulevat lisäattribuutit ilman tietomallin uusiksi kirjoittamista, esimerkiksi:
+Uuden tangon pituus tulee `stockLength`-syötteestä. Noin 8 mm ripustusreikää tai huonompaa tangon päätä ei saa kovakoodata nykyiseen hukkaan; tuleva malli voi käyttää esimerkiksi `usableLength`- ja `endAllowance`-kenttiä.
+
+Jäännös kuuluu aina materiaalivarianttiin. Nykyinen ryhmittelyavain on `profileType + color + length`, ja ryhmä sisältää `quantity`-määrän. Pysyviä jäännös-ID:itä ei tarvita, mutta optimointihaku saa luoda anonyymejä väliaikaisia lähdeinstansseja.
+
+Sahausvaran oletus on 3 mm. `cutPiece()` on sahausfysiikan authoritative sääntö. Älä muuta huomaamatta sitä, milloin terän leveys vähennetään, tai täydellisen loppusovituksen semantiikkaa.
+
+Pidä materiaalinäkymä ja tuleva tuotantonäkymä erillään:
+
+- materiaali: `bar`/`source` ja varaston tilasiirtymät;
+- tuotanto: yksi `cut operation` kuvaa sahausliikkeen ja juuri siinä liikkeessä mukana olevat lähteet.
+
+Tarkemmat tuotantohavainnot ja keskeneräiset talousoletukset ovat `DOMAIN_NOTES.md`:ssä.
+
+## Aktiivinen optimointipolku
+
+Käyttöliittymän aktiivinen polku on inventory-aware:
+
+`calculate()`
+→ `getCutsFromForm()`
+→ `getMaterialAvailabilityFromForm()`
+→ `createMaterialInventory()`
+→ `optimizeOrderByProfileTypeWithInventory()`
+→ `getMaterialSourcesForProfile()`
+→ `optimizeOrderInventoryBeamDP()`
+→ `scoreCompleteMaterialTransitionPlan()`
+→ `adaptMaterialOptimizationForUi()`
+→ `renderCuttingPlan()`
+
+`optimizeOrderByProfileTypeWithInventory()` optimoi profiilityypit erikseen ja yhdistää tulokset lopuksi. Tämä on nykyisen single-order-prototyypin tarkoituksellinen rajaus.
+
+`optimizeOrderInventoryBeamDP()` kantaa tilassa jäljellä olevat tilauskappaleet ja materiaalilähteet. Tila-avain huomioi äärellisten lähteiden jäljellä olevat määrät. `consumeMaterialSource()` ei saa mutatoida muiden beam-haarojen lähteitä.
+
+Valmiit ratkaisut pisteytetään `scoreCompleteMaterialTransitionPlan()`-funktiolla. Osittaisten beam-tilojen järjestys on edelleen heuristinen eikä käytä täysin samaa materiaalitalousmallia.
+
+Legacy- ja vertailupolkuja ovat muun muassa `optimizeOrderMaterialBeamDP()`, `optimizeOrderBeamDP()`, `optimizeOrderDP()`, `optimizeCuts()` sekä `generateCombinations() → evaluateCombination() → findBestCombination() → optimizeOrder()`. Niitä ei ole kytketty aktiiviseen käyttöliittymään eikä niitä saa ottaa varapoluksi, poistaa tai olettaa oikeiksi ilman erillistä tehtävää ja testejä. Yhdistelmäpolkua ei saa käyttää suurille syötteille ilman suorituskyvyn arviointia.
+
+## Materiaalivarasto ja pisteytys
+
+Uusi materiaali ja jäännös sisältävät aina värin:
 
 ```js
 {
     profileType: "verticalProfile",
     color: "black",
-    attributes: {}
-}
-```
-
-Käytä tällaista material variant -avainta aina, kun materiaalin vaihtokelpoisuutta tai varastoa arvioidaan. `color` ei silti ole sahausjärjestyksessä välttämättä kova rajoite, vaan yleensä pehmeä tuotantopreferenssi.
-
-Uudet tangot ovat tällä hetkellä kaikissa perusprofiilityypeissä saman `stockLength`-pituuden mukaisia, käytännössä aina 6000 mm. Toisessa päässä on noin 8 mm ripustusreikä, ja tangot asetetaan sahalle niin, että ehjä pää on vasemmalla stopparia vasten ja reiällinen, huonompi pää jää oikealle. Älä kovakoodaa tästä kiinteää hukkaa: tulevassa mallissa käyttökelpoinen pituus ja päävara voivat olla esimerkiksi `usableLength`- ja `endAllowance`-kenttiä. Pidä laskenta silti nykyisen `stockLength`-syötteen mukaisesti yleiskäyttöisenä, ellei tehtävässä erikseen päätetä lukita pituutta.
-
-Jäännös kuuluu aina tiettyyn materiaalivarianttiin. Jäännökset voidaan pitää varastossa ryhmiteltyinä, käytännössä esimerkiksi avaimella `(materialVariant, length, quantity)`; pysyviä yksilö-ID:itä ei tarvita tässä vaiheessa. Optimointisimulaatio saa kuitenkin luoda anonyymejä, väliaikaisia bar/source-instansseja, koska niiden pituudet erkanevat sahausten myötä.
-
-Sahausvaran oletusarvo on 3 mm. `cutPiece()` on sahausvaran nykyinen keskitetty sääntö. Älä muuta huomaamatta sitä, milloin terän leveys vähennetään. Nykyisessä mallissa terän leveys syntyy vain, kun sahaus oikeasti vaatii terän leveyden verran materiaalia; täydelliseen loppusovitukseen liittyvä semantiikka on toteutettu `cutPiece()`-funktion kautta ja sitä pitää käsitellä yhtenä projektin ydinsääntönä.
-
-## Tulevan tuotantomallin arkkitehtuuriperiaatteet
-
-Tilaus ei ole optimizerille jakamaton yksikkö. Tilaus koostuu kappaleista, joita saa pilkkoa ja yhdistellä muiden tilausten kappaleiden kanssa profiilityypeittäin tai myöhemmin turvallisuussääntöjen sallimalla tavalla. Säilytä silti jokaisessa tuotetussa kappaleessa `orderId` ja `openingId`, jotta kappaleet voidaan niputtaa, merkitä asiakkaalle ja palauttaa oikeaan aukkoon.
-
-Erota kaksi näkymää selvästi:
-
-- **Materiaalinäkymä:** uusi tanko, jäännös ja niiden tilasiirtymät ovat `bar`/`source`-objekteja. Tämä näkymä kertoo, mistä materiaali tuli ja mitä jäännöksiä jäi.
-- **Tuotantonäkymä:** yksi `cut operation` on yksi sahausliike tietyllä katkaisumitalla ja joukolla juuri siinä liikkeessä päällekkäin olevia lähteitä. Se kertoo työn järjestyksen ja samanaikaisen sahaamisen.
-
-Sahausnippu ei ole pysyvä objekti. Yhdessä sahausliikkeessä voi olla useita uusia tankoja ja/tai jäännöksiä, myös eri väreissä. Sama nippu voi saada useita leikkauksia, ja sen lähteitä voi lisätä tai poistaa leikkausten välillä. Älä siis mallinna yhtä muuttumatonta batchia alusta loppuun.
-
-Nykyinen turvallinen oletus on, että yhdessä sahausliikkeessä sahataan yhtä profiilityyppiä. Tuleva yhteensopivuus pitää kuitenkin mallintaa muokattavana turvallisuussääntönä, ei kovakoodattuna identtisyysvertailuna: esimerkiksi tietty profiilityyppi voi myöhemmin olla sallittu toisen kanssa. `maxStackSize` on profiilityyppikohtainen ja muokattava ominaisuus; käytännön tyypillinen maksimi on usein 4 tai 6, mutta arvo ei ole globaali vakio.
-
-Väriyhtenäisyys on tuotannossa hyödyllinen pehmeä preferenssi: samanväriset työt on yleensä mukava saada valmiiksi, niputtaa aukkoittain, merkitä ja siirtää pois työalueelta. Se ei kuitenkaan saa estää materiaalin kannalta selvästi parempaa tai turvallista ratkaisua ilman erillistä asetusta. Myöhempi WIP-/työaluekriteeri voi rangaista tarpeettomasta keskeneräisestä tavarasta ja suosia yhden työvaiheen valmistamista, niputtamista ja varastoon siirtämistä kerrallaan.
-
-Rolling-horizon-uudelleenoptimointi on sallittu: suunnitelmaa voidaan päivittää, kun osa tilauksista on sahattu, varasto muuttuu tai seuraavat 5–10 tilausta tarkentuvat. Järjestelmän ei tarvitse lukita koko tulevaa tuotantoa yhdellä peruuttamattomalla ajolla.
-
-## Nykyinen rakenne
-
-Projekti on pieni, ilman rakennustyökaluja suoraan selaimessa toimiva prototyyppi:
-
-- `index.html` sisältää mobiiliystävälliset syötteet, työpainikkeet ja tulosalueen. Se lataa `style.css`:n ja `app.js`:n suoraan ilman rakennusvaihetta.
-- `app.js` sisältää käyttöliittymän käsittelyn, materiaalivaraston muodostamisen, sahauslaskennan, DP- ja beam-hakufunktiot, pisteytyksen, tulosten muodostamisen, dev-testit sekä versioidun localStorage-työtilan.
-- `style.css` sisältää mobiili ensin -asettelun, tankokortit, materiaaliosioiden visuaaliset erot, valmistumistilat ja työpöydän leveämmän asettelun.
-- Projektissa ei toistaiseksi ole paketinhallintaa, rakennusvaihetta tai varsinaista automaattista testikehystä.
-
-Nykyinen tallennetun työtilan versiointi:
-
-- `WORK_STATE_SCHEMA_VERSION = 3`
-- `WORK_STATE_ENGINE_VERSION = "material-v0.3"`
-
-Moottoriversiota käytetään estämään vanhalla materiaalimallilla muodostettujen suunnitelmien palautuminen uuden mallin alle.
-
-## Aktiivinen optimointipolku
-
-Käyttöliittymän aktiivinen polku on inventory-aware. Älä oleta vanhoja beam- tai greedy-funktioita aktiivisiksi vain siksi, että ne ovat edelleen tiedostossa.
-
-Nykyinen korkean tason polku on:
-
-`calculate()`
--> `getCutsFromForm()`
--> `getMaterialAvailabilityFromForm()`
--> `createMaterialInventory()`
--> `optimizeOrderByProfileTypeWithInventory()`
--> profiilikohtainen `getMaterialSourcesForProfile()`
--> `optimizeOrderInventoryBeamDP()`
--> valmiiden ratkaisujen `scoreCompleteMaterialTransitionPlan()`
--> `adaptMaterialOptimizationForUi()`
--> `renderCuttingPlan()`
-
-`optimizeOrderByProfileTypeWithInventory()` käsittelee jokaisen profiilityypin erillään ja yhdistää tulokset vasta lopuksi. Tämä on nykyisen single-order-optimizerin tarkoituksellinen materiaalirajaus, ei lopullinen tuotantoarkkitehtuuri. Tulevassa multi-order-optimizerissa 5–10 tilausta voidaan järjestää ja pilkkoa materiaalinäkökulmasta yhteisesti, samalla kun `orderId` ja `openingId` säilyvät jäljitettävyyttä varten.
-
-`optimizeOrderInventoryBeamDP()` kantaa tilassa sekä jäljellä olevia tilauskappaleita että jäljellä olevia materiaalilähteitä. Tilan avain huomioi myös äärellisten lähteiden jäljellä olevat määrät, jotta kaksi samaa leikkaustilannetta mutta eri varastotilannetta eivät yhdisty virheellisesti.
-
-Valmiit ratkaisut pisteytetään `scoreCompleteMaterialTransitionPlan()`-funktiolla. Osittaisia beam-tiloja ei vielä pisteytetä samalla täydellisellä materiaalitalousmallilla, vaan niiden ranking on edelleen heuristinen. Tämä on tiedossa oleva jatkokehityskohde.
-
-Tiedostossa säilytetään vertailua varten myös vanhempia polkuja, kuten `optimizeOrderMaterialBeamDP()`, `optimizeOrderBeamDP()`, `optimizeOrderDP()`, `optimizeCuts()` sekä yhdistelmäpohjainen polku:
-
-`generateCombinations()` -> `evaluateCombination()` -> `findBestCombination()` -> `optimizeOrder()`
-
-Näitä legacy-polkuja ei ole kytketty aktiiviseen käyttöliittymään eikä niitä käytetä virhetilanteen varapolkuna. Älä oleta niitä valmiiksi tai oikeiksi vain siksi, että funktiot ovat olemassa. Kaikkien yhdistelmien muodostaminen kasvaa eksponentiaalisesti, joten sitä ei saa ottaa käyttöön suurille syötteille ilman suorituskyvyn arviointia.
-
-## Materiaalivarasto
-
-Käyttöliittymässä uusi materiaali annetaan nykyisin profiilityypeittäin muodossa, joka vastaa tätä rakennetta:
-
-```js
-{
-    profileType: "verticalProfile",
     unlimited: false,
     quantity: 4
 }
 ```
 
-Rajattomalla lähteellä `quantity` on `null`. Äärellisellä lähteellä `quantity` on kokonaisluku vähintään 0. Arvo 0 tarkoittaa, että kyseistä uutta materiaalia ei ole saatavilla.
-
-Jäännös on esimerkiksi:
-
 ```js
 {
     profileType: "verticalProfile",
+    color: "black",
     length: 2600,
     quantity: 3
 }
 ```
 
-`createMaterialInventory()` yhdistää nykyisessä mallissa saman profiilityypin ja saman pituuden jäännökset yhdeksi ryhmäksi. Kun väri ja lisäattribuutit tulevat käyttöön, ryhmittelyavain laajennetaan material variantiksi; väriä ei saa hävittää varastosiirtymässä.
+Rajattomalla uudella lähteellä `quantity` on `null`. Äärellisellä lähteellä se on kokonaisluku vähintään 0; nollamääräistä lähdettä ei saa tarjota optimizerille. `createMaterialInventory()` yhdistää jäännökset nykyisin saman `profileType + color + length` -avaimen alle.
 
-`getMaterialSourcesForProfile()` palauttaa vain valitun profiilityypin yhteensopivat jäännökset ja mahdollisen uuden materiaalin. Nollamääräistä äärellistä uutta materiaalia ei saa lisätä lähteeksi.
-
-`consumeMaterialSource()` ei saa mutatoida muiden beam-haarojen materiaalilähteitä.
-
-## Optimointiperiaatteet
-
-Noudata seuraavaa tärkeysjärjestystä, ellei käyttäjä muuta sitä tehtävässä:
-
-1. **Oikeellisuus:** jokainen tilattu kappale sahataan täsmälleen pyydetty määrä, oikeasta profiilityypistä ja lähteestä, johon se mahtuu.
-2. **Materiaalitalous:** minimoi uuden materiaalin todellinen kustannus huomioiden olemassa olevien jäännösten käyttö, syntyvien jäännösten arvo, sahahukka ja jäännösvaraston pirstaloituminen. Älä minimoi pelkkää käsiteltyjen materiaalikappaleiden määrää materiaalikustannuksen kustannuksella.
-3. **Olemassa olevien jäännösten järkevä käyttö:** käytä olemassa olevia jäännöksiä ennen uuden tangon avaamista, kun niiden käyttö on kokonaisuuden kannalta järkevää. Tämä ei ole absoluuttinen greedy-sääntö; huono jäännös voidaan jättää käyttämättä, jos sen käyttäminen johtaisi huonompaan kokonaisratkaisuun.
-4. **Varaston muoto:** yksi koskematon 6000 mm tanko ei ole samanarvoinen kuin useampi lyhyempi jäännös, vaikka materiaalipituuksien summa olisi lähes sama. Jäännösten lukumäärällä, pituusjakaumalla ja myöhemmin profiilityypillä, iällä sekä varastomäärällä on merkitystä.
-5. **Tuotantotehokkuus:** stopparin siirrot ja samanaikainen sahaus ovat tärkeimmät tulevat tuotantokriteerit. Batch-/stack-sahaus, käsiteltävien tankojen määrä, värivaihdot, WIP ja tuotantojärjestys tulevat niiden jälkeen. Materiaalikustannus on tällä hetkellä ensisijainen aktiivinen optimointikriteeri.
-6. **Deterministisyys ja selitettävyys:** sama syöte ja samat asetukset tuottavat saman tuloksen. Tasatilanteissa suosi vakaata ja helposti perusteltavaa valintaa. Tuloksen pitää pystyä erittelemään uuden materiaalin, hukan, jäännösarvon, jäännösten käsittelyn ja tulevien tuotantokriteerien vaikutukset.
-
-Käyttäjän tuotannon karkea kustannusvertailu on, että noin 1 metri hukkaprofiilia vastaa suuruusluokaltaan noin puolen tunnin palkkaa. Käytä tätä vain suuntaa-antavana kalibrointiperiaatteena, älä kovakoodattuna talouslakina ilman erillistä päätöstä.
-
-## Nykyinen pisteytyscheckpoint
-
-`PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings` sisältää tällä hetkellä olennaisesti seuraavat arvot:
+`PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings` on kalibroitu checkpoint:
 
 ```js
 minimumLength: 500
@@ -162,242 +124,103 @@ freeScrapLength: 200
 largeScrapPenaltyFactor: 1.7
 ```
 
-Jäännöksen arvo on jatkuva pituuden funktio, ei kiinteä 1000 mm raja. Älä palauta vanhaa ajatusta, jossa kaikki alle 1000 mm automaattisesti heitetään pois.
+Arvot eivät ole todistettuja optimeja. Muuta niitä vain regressioiden ja selkeän perustelun kautta.
 
-`reusableRemnantHandlingPenalty` liittyy säästettävän jäännöksen käsittelyyn ja vaikuttaa myös siihen, kumpi disposition on taloudellisesti järkevä.
+Jäännöksen arvo on jatkuva pituuden funktio, ei kiinteä 1000 mm:n raja. `reusableRemnantHandlingPenalty` kuvaa säästettävän jäännöksen käsittelyä. `newStockRemnantCreationPenalty` lisätään vain, kun uudesta raakatangosta syntyy uusi säästettävä jäännös; sitä ei lisätä olemassa olevan jäännöksen lyhentämisestä. Älä yhdistä näitä penaltyja ilman nimenomaista syytä ja regressiotestejä.
 
-`newStockRemnantCreationPenalty` on eri käsite: nykyinen arvo 50 lisätään vain silloin, kun **uudesta raakatangosta** syntyy uusi **säästettävä** jäännös. Tarkoitus on mallintaa jäännösvaraston pirstaloitumista. Kun olemassa olevaa jäännöstä sahataan ja siitä jää edelleen yksi jäännös, tätä uutta 50 pisteen syntymisrangaistusta ei lisätä.
+`scoreCompleteMaterialTransitionPlan()` käyttää uuden tangon lähdearvona täyttä `sourceLength`-arvoa, vanhan jäännöksen lähdearvona sen nykyistä jäännösarvoa ja syntyvästä jäännöksestä dispositionin mukaista krediittiä. Romualumiinin noin 10 %:n jälleenmyyntiarvio ja sen suhde nykyiseen `scrapValueFactor`-asetukseen on kuvattu `DOMAIN_NOTES.md`:ssä; arviota ei saa tulkita automaattiseksi parametrimuutokseksi.
 
-Älä yhdistä näitä kahta penaltya yhdeksi asetukseksi ilman nimenomaista syytä ja regressiotestejä.
+## Optimointiprioriteetit
 
-`scoreCompleteMaterialTransitionPlan()` käyttää uuden tangon lähdearvona täyttä `sourceLength`-arvoa. Olemassa olevan jäännöksen lähdearvo perustuu sen nykyiseen jäännösarvoon. Syntyvä säästettävä jäännös antaa arvokrediitin, romu saa `scrapValueFactor`-krediitin, ja lisäksi huomioidaan käsittely- sekä romurangaistukset.
+Noudata tätä järjestystä, ellei käyttäjä muuta sitä:
 
-Nykyiset score-parametrit ovat **kalibroitu checkpoint**, eivät lopullisesti todistetut optimiarvot. Muuta niitä vain testien kautta.
+1. **Oikeellisuus:** kaikki tilatut kappaleet tehdään täsmälleen oikeina määrinä yhteensopivasta materiaalista.
+2. **Materiaalitalous:** minimoi todellinen uuden materiaalin kustannus huomioiden jäännökset, hukka ja varaston pirstaloituminen.
+3. **Jäännösten järkevä käyttö:** olemassa oleva jäännös ei ole ehdoton greedy-valinta, jos kokonaisratkaisu huononee.
+4. **Varaston muoto:** koskematon pitkä tanko on joustavampi kuin sama pituus useana lyhyenä jäännöksenä.
+5. **Tuotantotehokkuus:** stopparin siirrot ja samanaikainen sahaus ovat tärkeimmät myöhemmät tuotantokriteerit; materiaalikustannus on nyt ensisijainen.
+6. **Deterministisyys ja selitettävyys:** sama syöte tuottaa saman tuloksen, ja kustannusvaikutukset voidaan eritellä.
 
-## Tuotannon käytännön säännöt myöhempää optimointia varten
+Beam-haun tulosta ei saa väittää globaaliksi optimiksi ilman käsin tehtyä todistusta tai täsmäratkaisijaa. Käytä tarvittaessa ilmaisuja `heuristinen`, `paras tutkituista vaihtoehdoista` tai `optimum todistettu täsmäratkaisijalla`.
 
-Seuraavat säännöt ovat tiedossa, mutta kaikki eivät vielä vaikuta aktiiviseen scoreen tai sahausjärjestykseen:
+## Käyttöliittymän ja persistenssin invariantit
 
-- Pysty- ja Vaakaprofiilit kannattaa sahata peräkkäin ja mieluiten aikaisin, jotta kokoonpano voi alkaa.
-- U-listat tarvitaan vasta asennuksessa, joten ne voidaan sahata myöhemmin ja varastoida erikseen.
-- Ala- ja Yläkisko ovat saman aukon mittaisia ja ne pakataan yhteen aukon mukaan.
-- Yksi tilaus voi sisältää useita aukkoja. Älä hardkoodaa oletusta neljästä ovesta per aukko.
-- Materiaalikustannus on yleensä tärkeämpi kuin työajan säästö.
-- Käytännössä halutaan käyttää avatut 6000 mm tangot tehokkaasti eikä kasvattaa jäännösvarastoa tarpeettomasti.
-- Pitkä käyttökelpoinen jäännös voi olla arvokkaampi kuin useampi lyhyt jäännös, mutta koskematon 6000 mm tanko on joustavampi kuin saman materiaalimäärän pirstoutuminen useaksi jäännökseksi.
+Raakalista, Jäännökset ja Sahattavat pidetään käyttöliittymässä erillisinä. Tankokortissa näkyvät profiilityyppi, materiaalilähde, lähdepituus, sahattavat kappaleet, syntyvä jäännös ja sahahukka. Osittaista ratkaisua ei saa näyttää valmiina sahaussuunnitelmana.
 
-Myöhempää jäännösmallia varten on tarkoitus huomioida profiilityyppikohtainen käyttökelpoisuus, jäännöksen pituus, varastossa oleva määrä ja ikä, esimerkiksi `ordersSinceUse`.
+`TEHTY`-merkintä on palautettava käyttöliittymätila eikä muuta materiaalivarastoa. Varasto muuttuu vain työn finalisoinnissa `calculatePostOrderMaterialInventory()`-tuloksen perusteella.
 
-## Käyttöliittymän nykyinen tila
+Finalisointi noudattaa persistoi-ensin/commitoi-sitten-järjestystä: lopullinen snapshot kirjoitetaan onnistuneesti ennen varasto-DOM:n vaihtamista ja suunnitelman tyhjentämistä. Epäonnistunut tallennus ei saa muuttaa live-työtä.
 
-UI:ssa Raakalista, Jäännökset ja Sahattavat on erotettu visuaalisesti toisistaan. Älä poista tätä eroa huomaamatta.
+Tallennettu suunnitelma validoidaan rakenteellisesti, semanttisesti ja sahausfysiikan kannalta ennen DOM-palautusta. Persistoiduilla lomakeriveillä on 1000 rivin raja, ja tallennettujen stock-varianttien duplikaatit tarkistetaan UI:n kanonisoidulla värillä.
 
-Sahaussuunnitelman tankokortissa näkyy nykyisin:
+## Testaus
 
-- profiilityyppi
-- materiaalilähde: `Jäännös` tai `Uusi tanko`
-- lähdepituus
-- sahattavat kappaleet
-- syntyvä jäännös
-- sahahukka
+Projektissa ei vielä ole varsinaista testikehystä. Käytä `app.js`:n nimettyjä `run...RegressionTest(s)()`-funktioita sekä selaimen dev-apureita, kuten `loadTestA()`, `loadTestAWithRemnants()`, `loadTestD1()` ja `runCurrentOrderSummaryTest()`. DOM:ia muuttavan apurin palauttama `undefined` on normaali.
 
-Jos optimointia ei voida suorittaa loppuun, käyttöliittymä näyttää käsittelemättä jääneiden kappaleiden yhteydessä myös profiilityypin, esimerkiksi `Pystyprofiili · 2700 mm × 1`.
+Kun korjaat virheen, tee ensin tapaus, joka osoittaa sen. Tarkista muutoksen jälkeen vähintään:
 
-Osittaista ratkaisua ei saa esittää valmiina sahaussuunnitelmana.
+- kaikki pyydetyt kappaleet ja määrät;
+- koko materiaalivariantin yhteensopivuus;
+- äärellisten lähteiden määrärajojen pitävyys;
+- lähdepituuden, sahaushukan ja jäännöksen materiaalitase;
+- mahdottoman syötteen ja osittaisen ratkaisun oikea raportointi;
+- syötteiden ja rinnakkaisten hakutilojen mutatoimattomuus;
+- deterministinen toisto;
+- aiemmat relevantit regressiot.
 
-## Kehityssuunta
+Perustestit:
 
-Kehitä nykyistä prototyyppiä pienissä, erikseen testattavissa vaiheissa. Seuraava askel ennen isompaa algoritmilaajennusta on arkkitehtuurikatselmus: tarkista nykyisen single-order-optimizerin vastuut, materiaalitietomallin laajennuspolku ja rajapinta tuleviin tuotanto-operaatioihin. Lähimmät tärkeät suunnat ovat:
+- **Testi A ilman jäännöksiä:** 17 uutta tankoa (U 4, Pysty 7, Vaaka 2, Yläkisko 2, Alakisko 2). Tämä on käsin perusteltu profiilikohtainen tankomääräminimi.
+- **Testi A jäännöksillä:** `totalBars = 22`, `newBars = 10`, `remnantBars = 12`, kaikki 12 annettua jäännöstä käytetään ja uusista tangoista syntyy nykyisin 9 säästettävää jäännöstä.
+- **Testi D1:** Pysty 2200 mm × 2, vanha Pysty-jäännös 3900 mm × 1 ja rajaton uusi materiaali. Odotettu tulos on yksi uusi tanko, 2200 mm × 2, noin 1594 mm jäännös ja vanha 3900 mm jäännös käyttämättä.
 
-1. Jatka inventory-aware optimizerin ja pisteytyksen kalibrointia realistisilla sekä tarkoituksella hankalilla regressioilla.
-2. Paranna testattavuutta niin, että samoja tilauksia ei tarvitse syöttää käsin uudelleen.
-3. Lisää myöhemmin käyttöliittymään useiden nimettyjen töiden/testitilausten tallennus ja lataus. Nykyinen `currentWork`-localStorage tukee vain yhtä aktiivista työtilaa.
-4. Rakenna myöhemmin systemaattinen testipankki ja automaattinen laatumittaus.
-5. Laajenna single-order-optimizer myöhemmin palauttamaan yksi ainoa voittaja -ratkaisun sijasta pieni top-K/Pareto-joukko aidosti erilaisia materiaalivaraston tilasiirtymiä, esimerkiksi kolme vaihtoehtoa. Erota vaihtoehdot oikeasti toisistaan, älä näytä lähes identtisiä järjestysvariantteja.
-6. Lisää vasta tämän jälkeen tuotantojärjestyksen, stopparin siirtojen, samanaikaisten sahausoperaatioiden tai monen tilauksen yhteisoptimoinnin sääntöjä. Multi-order-haku katsoo aluksi tyypillisesti 5–10 tilausta; myöhemmin siihen voidaan lisätä kiireellisyys, deadline, asentajien tarpeet ja materiaalin niukkuus.
-7. Kalibroi myöhemmin jäännösten terminal inventory value sekä kysyntä- ja tuotantohistorian avulla. Kausivaihtelu voi vaikuttaa siihen, kuinka arvokas tietty jäännös on tulevaa käyttöä varten.
-8. Kuvasta luettava sahauslista on realistinen myöhempi välivaihe ennen suoraa integraatiota yrityksen järjestelmään. Se ei ole nykyinen prioriteetti; optimizerin pitää ensin olla luotettava.
-9. Lopullinen tavoite voi olla tilaustietojen hakeminen suoraan Easoftista tai muusta yrityksen järjestelmästä ilman paperin tai kuvan välivaihetta, jos integraatiomahdollisuus myöhemmin saadaan.
+Aja tehtävän laajuuteen nähden soveltuvat tarkistukset. Käytä `node --check app.js`-syntaksitarkistusta, jos Node on saatavilla, ja `git diff --check`-tarkistusta. Optimointia tai persistenssiä muuttava työ vaatii lisäksi relevantit regressiot ja mahdollisuuksien mukaan selaintestin. Älä väitä selaintestiä tehdyksi, jos sitä ei voitu ajaa.
 
-Pidä käyttöliittymä ja optimointilogiikka mahdollisuuksien mukaan erillään. Laskentafunktioiden tulisi ottaa arvot parametreina ja palauttaa dataa; DOM:n lukeminen ja HTML-tuloksen muodostaminen kuuluvat käyttöliittymäkerrokseen. Easoft-integraatio on tuleva adapteri: core-optimointilogiikka ei saa riippua käyttöliittymästä, Easoftista tai niiden tietomuodoista. Tee tätä erottelua vain tehtävän kannalta tarpeellisina, pieninä refaktorointeina.
+## Toimintavaltuudet ja yhteistyötapa
 
-## Nykyiset dev-testit
+Toimi opettavana ohjelmointiparina.
 
-`app.js`:n lopussa on tällä hetkellä tarkoituksellisia väliaikaisia kehitysapureita:
+- Kun käyttäjä pyytää analyysiä, katselmusta, diagnoosia tai suunnitelmaa, tutki relevantit tiedostot ja raportoi muuttamatta niitä.
+- Kun käyttäjä pyytää toteuttamaan, jatkamaan tai korjaamaan, tee pyynnön rajaiset paikalliset muutokset ja aja relevantit ei-tuhoavat tarkistukset. Älä anna pelkkiä kopioitavia koodiohjeita, ellei käyttäjä pyydä niitä.
+- Kun käyttäjä pyytää ohjeistamaan muutoksen tekemistä itse, älä muokkaa tiedostoja. Näytä todelliset ympäröivät koodirivit ja tarkka lisäys- tai korvauskohta.
+- Tee yksi looginen ja testattava vaihe kerrallaan. Jos seuraava käyttäytymismuutos riippuu käyttäjän selaintestistä, anna täsmälliset testivaiheet ja odota havainto ennen seuraavaa vaihetta.
+- Tutki aina nykyinen repo ja Git-tila ennen täsmällisiä muutosohjeita tai toteutusta. Säilytä käyttäjän keskeneräiset ja tehtävään liittymättömät muutokset.
+- Jos käyttäjä vastaa pitkän ohjeen aikaisempaan kohtaan, älä oleta myöhempien kohtien toteutuneen.
+- Selitä olennainen algoritmi ja vaikeat ehdot selkeällä suomella. Perussyntaksia ei tarvitse opettaa ilman tarvetta.
+- Käytä sanaa **korvaa** vain, kun vanha koodi todella poistetaan. Muuten sano **lisää** ja nimeä tarkka kohta.
+- Säilytä projektin nimeämistapa ja UTF-8. Kommentoi syytä tai vaikeaa sääntöä, älä itsestään selvää syntaksia.
+- Raportoi tehtävän ulkopuolinen todellinen ongelma erikseen. Kirjaa se `BACKLOG.md`:hen konkreettisena havaintona, mutta älä korjaa sitä samalla ilman lupaa.
+- Kirjaa uusi tuotanto- tai liiketoimintafakta `DOMAIN_NOTES.md`:hen niin, että lähde, varmuustaso ja avoin vaikutus koodiin erotetaan toisistaan.
 
-- `loadDevelopmentTestCase()`
-- `loadTestA()`
-- `loadTestAWithRemnants()`
-- `loadTestD1()`
-- `runCurrentOrderSummaryTest()`
-
-Näitä saa käyttää konsolista regressioiden nopeaan lataamiseen. Konsolin `undefined` on normaali tulos funktiolle, joka muuttaa DOM:ia mutta ei palauta arvoa.
-
-Dev-testit ovat väliaikainen ratkaisu siihen asti, että nimetyt työt/testit voidaan tallentaa sovellukseen. Niitä ei tarvitse poistaa pelkästään siksi, että varsinainen tallennusominaisuus myöhemmin lisätään; ne voivat muodostaa pysyvän regressiotestipankin alun. Myöhemmin ne voidaan siirtää esimerkiksi `dev-tests.js`:ään, jos se parantaa rakennetta.
-
-### Nykyiset tärkeät regressiot
-
-**Testi A ilman jäännöksiä**
-
-Nykyisillä score-asetuksilla tavoite ja havaittu tulos ovat:
-
-- U-profiili: 4 uutta tankoa
-- Pystyprofiili: 7 uutta tankoa
-- Vaakaprofiili: 2 uutta tankoa
-- Yläkisko: 2 uutta tankoa
-- Alakisko: 2 uutta tankoa
-- yhteensä 17 uutta tankoa
-
-Tässä 17 on käsin perusteltu teoreettinen minimimäärä kyseiselle testille profiilikohtaisesti.
-
-**Testi A jäännöksillä**
-
-Nykyisillä score-asetuksilla havaittu regressiotulos:
-
-- `totalBars = 22`
-- `newBars = 10`
-- `remnantBars = 12`
-- kaikki annetut 12 olemassa olevaa jäännöstä käytetään
-- uusista tangoista syntyy tällä hetkellä 9 käyttökelpoiseksi luokiteltua jäännöstä
-
-Pelkkä `totalBars` ei ole tämän testin ensisijainen tavoite; olennaista on uuden materiaalin käyttö ja jäännösten järkevä hyödyntäminen.
-
-**Testi D1**
-
-Syöte:
-
-- Pystyprofiili 2200 mm × 2
-- olemassa oleva Pystyprofiilin jäännös 3900 mm × 1
-- uusi Pystyprofiili rajaton
-
-Nykyisillä score-arvoilla oikea ja testattu ratkaisu on:
-
-- yksi uusi 6000 mm tanko
-- siitä 2200 mm × 2
-- syntyvä jäännös noin 1594 mm
-- vanha 3900 mm jäännös jätetään käyttämättä
-
-Tämä regressio suojaa erityisesti siltä virheeltä, jossa optimizeri avaa kaksi uutta tankoa vain saadakseen kaksi pitkää jäännöstä.
-
-## Testausohjeet
-
-Testaa laskentalogiikkaa pienillä käsin tarkistettavilla tapauksilla sekä realistisilla moniprofiilitöillä. Tarkista jokaisesta tuloksesta vähintään:
-
-- kaikki pyydetyt kappaleet esiintyvät täsmälleen oikean määrän;
-- kappaleen `profileType` vastaa käytetyn lähteen profiilityyppiä ja tulevassa mallissa koko material variant on yhteensopiva;
-- uusia tankoja tai jäännöksiä ei käytetä enempää kuin varastossa on;
-- yhden lähdekappaleen kappaleet, sahahukka ja jäännös eivät ylitä lähdepituutta;
-- mahdoton kappale ei päädy kelvolliseen valmiiseen sahaussuunnitelmaan;
-- osittainen tulos raportoidaan osittaisena eikä valmiina;
-- lähdetaulukoita tai käyttäjän antamia olioita ei mutatoida odottamatta;
-- sama syöte tuottaa saman tuloksen joka ajolla;
-- score-muutos ei korjaa yhtä regressiota rikkomalla aiempia regressioita.
-
-Kun korjaat virheen, tee ensin tapaus, joka osoittaa virheen, ja varmista muutoksen jälkeen, että tapaus toimii ja aiemmat perustapaukset säilyvät.
-
-Älä väitä beam-heuristiikan löytämää ratkaisua globaalisti optimaaliseksi vain siksi, että se näyttää hyvältä. Jos optimum voidaan todistaa käsin tai täsmäratkaisijalla, kerro perustelu erikseen.
-
-## Tuleva systemaattinen optimizerin laadun arviointi
-
-Pelkkä itse keksittyjen rajatapauksien kokoelma ei riitä lopulliseksi laadunvarmistukseksi. Tavoittele myöhemmin yhdistelmää seuraavista menetelmistä:
-
-1. **Kiinteät regressiot:** käsin valitut tunnetut tapaukset kuten Testi A ja D1.
-2. **Seedattu RNG / fuzz testing:** generoi suuri määrä satunnaisia tilauksia, varastoja, profiilityyppejä ja jäännöksiä. Käytä toistettavaa seed-arvoa, jotta löytynyt ongelmatapaus voidaan generoida uudelleen.
-3. **Kohdistetut vaikeat generaattorit:** painota mittoja lähelle kapasiteetti- ja kerf-rajoja, lähes sopivia jäännöksiä, niukkaa varastoa ja useita lähes samanarvoisia ratkaisuja. Pelkkä tasainen satunnaisjakauma tuottaa liikaa helppoja tapauksia.
-4. **Property-testit:** varmista yleiset invariantit riippumatta siitä, mikä optimum on. Esimerkiksi materiaalivariantti ei saa vaihtua virheellisesti, materiaalimäärää ei saa ylittää, `orderId`/`openingId` säilyvät, rivijärjestyksen muuttamisen ei pitäisi huonontaa ratkaisun laatua perusteettomasti ja lisämateriaalin lisääminen ei saa tehdä aiemmin mahdollisesta tilauksesta mahdotonta.
-5. **Täsmäratkaisija / oracle pienille tapauksille:** rakenna myöhemmin hidas mutta varma vertailuratkaisija esimerkiksi exhaustive searchilla, MILP:llä tai CP-SAT:lla. Käytä sitä tuhansien pienten satunnaistapausten optimumin todentamiseen.
-6. **Laatumittarit:** raportoi esimerkiksi kuinka usein heuristiikka löytää täsmälleen optimumin, keskimääräinen poikkeama optimumista, 95./99. prosenttipiste ja pahin havaittu tapaus.
-7. **Oikeat tuotantotilaukset:** vertaa myöhemmin historiallisia töitä optimizerin tuloksiin ja, kun mahdollista, täsmäratkaisun alarajaan tai todistettuun optimumiin.
-
-Tavoite on lopulta pystyä sanomaan optimizerin laadusta mitattavasti, ei vain että se "näyttää hyvältä".
-
-## Parametrien automaattinen viritys ja koneoppiminen
-
-Projektissa voidaan myöhemmin hyödyntää automaattista parametrien viritystä. Ensimmäinen järkevä käyttökohde ei ole neuroverkon käyttäminen cutting-stock-ratkaisijan korvaajana, vaan score- ja hakuparametrien optimointi testipankkia vasten.
-
-Mahdollisia menetelmiä ovat esimerkiksi grid/random search, Bayesian optimization ja evoluutioalgoritmit. Parametreja ei saa kuitenkaan virittää vain yhteen tai muutamaan käsin valittuun tapaukseen; tarvitsemme laajan testijoukon ja selkeän tavoitefunktion.
-
-Jos myöhemmin kertyy oikeaa tuotantohistoriaa, koneoppimista voidaan käyttää esimerkiksi arvioimaan todennäköisyyttä, että tietyn material variantin ja pituisen jäännöksen voi oikeasti käyttää tulevissa tilauksissa. Tällainen malli voisi myöhemmin täydentää käsin määriteltyä jäännösarvokäyrää sekä huomioida kausivaihtelun.
-
-## Kuvasta luettava sahauslista ja myöhempi integraatio
-
-Kuvasta luettava sahauslista on mahdollinen myöhempi ominaisuus. Käyttöpolku voisi olla:
-
-1. käyttäjä ottaa puhelimella kuvan puhtaasta sahauslistasta;
-2. vision-malli lukee vain tarvittavat painetut sahausrivit;
-3. backend palauttaa rakenteisen JSON-tuloksen;
-4. sovellus näyttää tunnistetut tiedot käyttäjälle tarkistettavaksi;
-5. vasta käyttäjän hyväksynnän jälkeen tiedot lisätään optimizerille.
-
-Älä lähetä API-avainta selaimen `app.js`:ssä. Jos ulkoista vision-API:a joskus käytetään, salainen avain kuuluu backendille. GitHub Pages ei itsessään aja tällaista backend-koodia.
-
-Kuvantulkinta on tällä hetkellä roadmap-ominaisuus, ei nykyisen optimizerikehityksen prioriteetti. Lopullisesti tilausdata olisi parempi hakea suoraan Easoftista tai muusta yrityksen järjestelmästä adapterin kautta, jos rajapinta tai muu integraatiotapa saadaan myöhemmin käyttöön. Core ei saa riippua integraatiosta.
-
-## Codexin ja ChatGPT:n työskentelytapa
-
-Toimi opettavana ohjelmointiparina, älä projektin itsenäisenä uudelleenkirjoittajana.
-
-- Tutki aina nykyinen repo ennen täsmällisiä koodimuutosohjeita. GitHubista ei näe käyttäjän commitoimattomia paikallisia muutoksia; erottele tämä selvästi.
-- Tee yksi rajattu, ymmärrettävä ja testattava muutos kerrallaan.
-- Kun käyttäjä tekee muutokset itse VS Codessa, näytä aina todelliset ympäröivät koodirivit ja tarkka lisäyskohta.
-- Käytä sanaa **"korvaa"** vain silloin, kun vanha koodi todella poistetaan ja uusi koodi tulee sen tilalle. Jos koodia lisätään, sano esimerkiksi **"lisää tämä tämän rivin jälkeen"** tai **"lisää tähän kohtaan"**.
-- Jos HTML-rakenne on olennainen, näytä mieluummin valmis ympäröivä lohko kuin epämääräinen ohje kuten "lisää ennen Jäännös-kohtaa".
-- Jos käyttäjä vastaa pitkän ohjeen aikaisempaan kohtaan, älä oleta että myöhemmät saman viestin muutokset on tehty.
-- Säilytä käyttäjän oma koodi ja nimeämistapa aina kun se on järkevää.
-- Selitä muutoksen kannalta olennainen algoritmi ja tärkeät ehdot selkeällä suomella. Perussyntaksia ei tarvitse selittää ilman tarvetta.
-- Näytä, miten muutos voidaan tarkistaa käytännössä, mielellään rajatapauksella tai kontrastitestillä, jossa väärä ja oikea käyttäytyminen erottuvat selvästi.
-- Kerro oletukset, epävarmuudet ja havaitut riskit suoraan.
-- Jos huomaat tehtävän ulkopuolisen ongelman, raportoi se erikseen. Älä korjaa sitä samalla ilman lupaa.
-- Kommentoi koodissa syytä tai vaikeaa sääntöä, älä itsestään selvää syntaksia.
-- Pidä tekstit ja lähdekoodit UTF-8-muodossa. Älä muuta kokonaisen tiedoston merkistökoodausta sivuvaikutuksena.
-
-Älä tee suurta ominaisuutta, laajaa refaktorointia tai arkkitehtuurin vaihtoa omin päin. Esitä ensin lyhyt suunnitelma, vaikutus nykyiseen toimintaan ja pienin järkevä ensimmäinen vaihe. Odota käyttäjän hyväksyntä ennen toteutusta.
+Älä tee suurta ominaisuutta, laajaa refaktorointia tai arkkitehtuurin vaihtoa omin päin. Esitä ensin lyhyt suunnitelma, vaikutus nykyiseen toimintaan ja pienin järkevä ensimmäinen vaihe, ja odota käyttäjän hyväksyntä.
 
 ## Turvalliset muutosrajat
 
 Ilman käyttäjän erillistä pyyntöä älä:
 
-- vaihda ohjelmointikieltä, käyttöliittymäkehystä tai projektin rakennetta;
-- lisää npm-riippuvuuksia, pakettienhallintaa, palvelinta, tietokantaa tai pilvipalvelua;
-- korvaa koko algoritmia yhdellä kertaa;
-- poista legacy-algoritmeja;
+- vaihda ohjelmointikieltä, käyttöliittymäkehystä tai projektirakennetta;
+- lisää riippuvuuksia, paketinhallintaa, palvelinta, tietokantaa tai pilvipalvelua;
+- korvaa koko algoritmia tai poista legacy-polkuja;
 - muuta käyttöliittymän toimintaa, termejä tai ulkoasua;
 - muuta sahausvaran, jäännöksen tai optimointiprioriteettien merkitystä;
 - muuta score-parametreja ilman regressiotestejä;
-- optimoi suorituskykyä tavalla, joka vaikeuttaa opeteltavuutta ennen kuin ongelma on mitattu;
-- siivoa tai muotoile tehtävään liittymättömiä tiedostoja;
-- tee committeja, julkaisuja tai muita ulkoisia toimia ilman käyttäjän pyyntöä.
+- tee tehtävään liittymätöntä siivousta tai muotoilua;
+- tee commitia, pushia, julkaisua tai muuta ulkoista kirjoitusta.
 
-Säilytä vanhat vertailupolut niin kauan kuin niistä on hyötyä regressioissa tai uuden polun ymmärtämisessä. Älä jätä sovellusta tilanteeseen, jossa käyttöliittymä kutsuu keskeneräistä toteutusta.
+Refaktoroinnin pitää ensisijaisesti parantaa luettavuutta tai testattavuutta muuttamatta käyttäytymistä. Ota regressiot talteen ennen refaktorointia, erota käyttäytymisen muutos rakenteen muutoksesta, vältä abstraktioita ennen kahta todellista käyttötapaa ja poista vanhaa vasta korvaavan polun käytön, testauksen ja käyttäjän hyväksynnän jälkeen.
 
-## Refaktorointiohjeet
+## Git ja valmisraportointi
 
-Refaktoroinnin pitää ensisijaisesti parantaa luettavuutta tai testattavuutta muuttamatta käyttäytymistä.
+Tee yksi ymmärrettävä ja testattu idea per commit. Commit-viesti on englanniksi, alkaa isolla imperatiiviverbillä, ei käytä `feat:`-tyyppistä etuliitettä eikä pääty pisteeseen.
 
-- Ota lähtötilanteesta talteen konkreettiset regressiot ennen refaktorointia.
-- Erota käyttäytymisen muutos ja rakenteen muutos eri vaiheisiin ja mielellään eri committeihin.
-- Siirrä tai nimeä vain tehtävän kannalta tarpeellinen koodi.
-- Vältä yleiskäyttöisiä abstraktioita ennen kuin niille on vähintään kaksi todellista käyttötapaa.
-- Pidä funktiot pieninä ja vastuut selkeinä, mutta älä pilko koodia pelkän rivimäärän vuoksi.
-- Poista vanhaa tai päällekkäistä koodia vasta, kun korvaava polku on käytössä, testattu ja käyttäjä on hyväksynyt poiston.
-- Jos muutos koskee useita funktioita tai tiedostoja, kerro riippuvuudet ja ehdota vaiheistus ennen muokkaamista.
+Commitoi tai pushaa vain, kun käyttäjä pyytää nimenomaisesti commitia tai pushia. Pelkkä tiedoston tai repon sisällön muokkauspyyntö ei anna commit-lupaa.
 
-## Commit-käytäntö
-
-Tee yksi ymmärrettävä ja testattu idea per commit aina kun se on käytännöllistä.
-
-Commit-viestit ovat englanniksi, alkavat isolla imperatiiviverbillä, eivät käytä `feat:`-tyyppisiä etuliitteitä eivätkä pääty pisteeseen.
-
-Älä tee committia automaattisesti ilman käyttäjän pyyntöä. Kun käyttäjä pyytää suoraan päivittämään tiedoston ja tekemään muutoksen repoon, suora dokumentaatiocommit on sallittu kyseisen pyynnön rajoissa.
-
-## Valmiin muutoksen raportointi
-
-Kerro lopuksi tiiviisti:
+Kerro valmiin muutoksen yhteydessä:
 
 1. mitä muuttui;
-2. miksi muutos tehtiin;
-3. miten se testattiin ja millä syötteillä;
-4. mitä jäi tarkoituksella tekemättä;
-5. mikä on pienin luonteva seuraava askel.
+2. miksi;
+3. miten ja millä syötteillä se testattiin;
+4. mitä jätettiin tarkoituksella tekemättä;
+5. pienin luonteva seuraava askel.
 
-Jos et voinut todentaa muutosta selaimessa tai automaattisilla testeillä, sano se selvästi. Älä väitä optimointitulosta optimaaliseksi ilman perustelua tai testiä; käytä tarvittaessa tarkempaa ilmaisua kuten `heuristinen`, `paras tutkituista yhdistelmistä` tai `optimum todistettu täsmäratkaisijalla`.
+Mainitse suoraan tarkistukset, joita ei voitu tehdä.
