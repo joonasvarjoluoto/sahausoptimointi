@@ -30,7 +30,8 @@ Valmiina ovat muun muassa:
 - persistoidun raakalistan riviraja ja kanoninen varianttiduplikaattien tarkistus;
 - profiiliryhmän yhden oletusrivin tarkistus myös legacy-tallenteille (B-001, testattu 2026-09-06);
 - yhteinen neljän perustestin testipankki ja avointa työtä muuttamaton core-regressioajo (automaattitestit ja käyttäjän selaintarkistus läpäisty 2026-09-06);
-- Node-testiajuri: 29/29 regressioryhmää ja paluukoodi 0 vahvistettu myös käyttäjän VS Coden terminaalissa (2026-09-06).
+- Node-testiajuri: 29/29 regressioryhmää ja paluukoodi 0 vahvistettu myös käyttäjän VS Coden terminaalissa (2026-09-06);
+- B-003:n tallennettujen profiilinimien korjaus: 90/90 kohdistettua tapausta, laajentunut Node-paketti 30/30 sekä automaattiset selaintestit ja käyttäjän tarkistus läpäisty.
 
 ## Seuraava työvaihe
 
@@ -38,11 +39,13 @@ Arkkitehtuurikatselmus ja ensimmäinen rajattu refaktorointi on tehty. Core-opti
 
 Node-testiajuri on hyväksytty: `run-regressions.cjs` ajaa saman testipankin ja valitut puhtaat regressiot. Käyttäjä vahvisti VS Coden terminaalissa tuloksen `Regressioryhmät: 29/29 läpäisty` ja paluukoodin 0. Paketinhallintaa, uusia riippuvuuksia tai `app.js`:n pilkkomista ei tarvittu.
 
-Seuraava työvaihe on vaiheen 2 kohdistettu testipankin laajennus: materiaalin niukkuus, varianttieristys ja kerfin rajatapaukset. Aloita pienistä kiinteistä tapauksista, joiden odotukset voi perustella käsin. Hakua tai score-parametreja ei muuteta samalla.
+`BACKLOG.md / B-003` on korjattu ja hyväksytty myös käyttäjän tarkistuksessa. Tallennusskeema ja optimizerin käyttäytyminen säilyvät ennallaan; korjaus koskee virheellisten profiilinimien hylkäämistä.
+
+Tämän jälkeen aloitetaan alla kuvattu vaihe 1b yhdestä pienestä, puhtaasta core-alueesta. Vaiheen 2 kohdistetut testit (materiaalin niukkuus, varianttieristys ja kerfin rajat) säilyvät suunnitelmassa: irrotettavan alueen puuttuvat testit lisätään ennen siirtoa, ja laajempaa laatumittausta voidaan jatkaa ensimmäisen irrotuksen jälkeen. Koko sovelluksen pilkkominen ei ole laatumittauksen aloitusehto.
 
 Katselmuksen myöhemmät rakennerajat säilyvät: materiaalivariantin identiteetti keskitetään ennen lisäattribuutteja, materiaaliratkaisu ja tuotanto-operaatiot pidetään erillään, ja monen tilauksen kappalekohdistus säilytetään ennen sahausmittojen ryhmittelyä. Samanlaiset varastojäännökset pysyvät määrällisinä ryhminä; pysyviä yksilö-ID:itä ei tarvita.
 
-Persistenssiauditin default/additional-rivi-invariantti on korjattu ja testattu (B-001). Työssä havaittu erillinen profiilinimen jäsenyystarkistuksen virhe on kirjattu kohtaan `BACKLOG.md / B-003`; se käsitellään omana rajattuna korjauksenaan.
+Persistenssiauditin default/additional-rivi-invariantti on korjattu ja testattu (B-001). Pienin seuraava toteutus on ensimmäisen core-irrotuksen rajaus ja latausratkaisun suunnitelma. Suorien core-kutsujen vastaava profiilivalidointihavainto on kirjattu erikseen kohtaan `BACKLOG.md / B-004`; sitä ei korjata moduulien siirron sivussa.
 
 ## Vaihe 1: testattavuuden perusta
 
@@ -61,6 +64,49 @@ Node-ajuri (2026-09-06): `run-regressions.cjs` kokoaa 29 testiryhmää, eristä�
 - Pidä Testi A, Testi A jäännöksillä ja D1 pakollisina checkpoint-tapauksina.
 
 Valmis, kun sama regressiopaketti voidaan ajaa toistettavasti ilman lomakerivien käsin syöttämistä ja tulos raportoi selvät PASS/FAIL-tiedot.
+
+## Vaihe 1b: app.js:n vaiheittainen jakaminen vastuualueisiin
+
+Tämä on etenemissuunnan luonnos, ei lupa koko projektirakenteen vaihtoon yhdellä kertaa. Jaa koodi sen mukaan, mitä se tekee ja mistä se saa riippua, älä tiedoston rivimäärän perusteella. Tärkein raja on puhdas core suhteessa selaimeen, käyttöliittymään ja tallennukseen.
+
+### Etenemisjärjestys
+
+1. **Node-testiajuri valmiiksi — tehty.** Yhteinen testipankki ja komentoriviajo toimivat nykyisessä rakenteessa.
+2. **Korjaa B-003 erikseen — tehty ja hyväksytty.** Virheen osoittava regressio epäonnistui ennen korjausta ja läpäisee sen jälkeen; myös palautusraja on testattu selaimessa. Korjaus on käyttäytymismuutos, ei osa tiedostojen siirtoa.
+3. **Irrota ensimmäinen pieni puhdas core-alue.** Ensisijainen ehdokas on `cutPiece()` yhdessä tarvitsemiensa 0,1 mm:n mittayksiköiden ja muunnos-/tarkistusapurien kanssa. Älä siirrä samalla koko materiaalidomainia, pisteytystä tai UI:ta. Rajaa riippuvuudet ja moduulien lataustapa ennen toteutusta.
+4. **Varmista ensimmäinen irrotus.** Aja koko Node-regressiopaketti, alueen kohdistetut testit sekä selaimen laskenta-, dev-apuri- ja tallennuksen palautustarkistukset. Vertaa tuloksia ennen siirtoa talletettuun aineistoon.
+5. **Irrota inventory/material-logiikka pienissä osissa.** Erota varaston muodostus, materiaalilähteet, lähteiden kulutus ja materiaalitilasiirtymät. Jäännösten arvotus ja kustannuskomponentit säilyvät nimettyinä ja selitettävinä; pisteytyksen tiedostorajasta päätetään todellisten riippuvuuksien perusteella.
+6. **Aja samat tarkistukset jokaisen irrotuksen jälkeen.** Älä niputa useita siirtoja yhdeksi testattavaksi loppuvaiheeksi.
+7. **Irrota optimizer vasta domain-/materiaalirajojen selkiydyttyä.** Säilytä hakujärjestys, pisteytys, tasatilanteiden ratkaisu ja tulosrakenne. Legacy-polkuja ei poisteta eikä oteta aktiiviseksi varapoluksi tämän työn yhteydessä.
+8. **Jätä UI ja persistenssin I/O viimeisiksi.** Sovelluksen käynnistys ja työnkulun koordinointi voivat lopulta jäädä pieneen `app.js`:ään. Tallenteiden puhdas validointi erotetaan DOM-palautuksesta ja localStorage-käsittelystä silloin, kun tätä rajaa käsitellään.
+
+Ensimmäinen irrotus tehdään ennen vaiheen 2 laajempaa mittauskokonaisuutta. Loput irrotukset voidaan rytmittää vaiheen 2 rinnalle sen mukaan, mitä testaus ja kehitys tarvitsevat. UI:n ja persistenssin koko uudelleenjärjestely ei saa muodostua edellytykseksi oraclelle tai satunnaistestaukselle: aktiivinen optimizeri toimii jo nyt ilman DOM:ia.
+
+### Riippuvuudet ja mahdollinen lopputulos
+
+Mahdollinen tiedostojako, ei vielä lukittu hakemisto- tai moduulimuotopäätös:
+
+- `src/domain.js`: puhtaat domain-määrittelyt, materiaalin identiteetti, mittayksiköt ja sahausfysiikka.
+- `src/material.js`: varasto, saatavuus, lähteiden kulutus ja materiaalitilasiirtymät; pisteytyksen sijoitus tarkentuu irrotuksen yhteydessä.
+- `src/optimizer.js`: haku ja ratkaisujen vertailu domain-/materiaalirajapintojen kautta.
+- `src/persistence.js`: tallennus, versiointi ja palautuksen koordinointi; puhtaat tallennevalidoinnit pidetään erotettavina I/O:sta.
+- `src/ui.js`: lomakkeet, tapahtumat ja renderöinti.
+- `src/app.js`: käynnistys ja työnkulun koordinointi.
+- `tests/cases.js` ja erillinen ajuri: testidata ja testien suoritus; nykyinen `run-regressions.cjs` säilyy toimivana käyttöpolkuna siirtymän ajan. Mahdollinen `run-tests.mjs` ei ole tässä vaiheessa päätetty tiedostomuoto.
+
+Core ei saa riippua `document`-, `window`- tai `localStorage`-rajapinnoista, UI:sta, persistenssin I/O:sta eikä testidatasta. Materiaalikerros voi käyttää domainia, optimizer domainia ja materiaalikerrosta. Selainpuoli ja testit käyttävät näitä samoja toteutuksia; niitä ei kopioida erikseen Nodea varten. Syklisiä riippuvuuksia vältetään. Testidata voi siirtyä omaan tiedostoon pienessä erillisessä vaiheessa, mutta testit eivät ole coren riippuvuus.
+
+Nykyinen `index.html` lataa tavallisen globaalin `app.js`-skriptin, HTML käyttää inline-tapahtumankäsittelijöitä ja Node-ajuri lataa saman tiedoston `vm.Script`-ympäristöön. Siksi ensimmäisen irrotuksen suunnitelmaan kuuluu myös selaimen ja Node-ajurin yhteensopiva latausratkaisu. Säilytä nykyiset dev-apurit ja painikkeet toimivina tarvittaessa ohuilla väliaikaisilla yhteensopivuusrajapinnoilla. Älä lisää rakennusvaihetta, paketinhallintaa tai riippuvuuksia vain tiedostojen pilkkomiseksi.
+
+### Hyväksymisportti jokaiselle irrotukselle
+
+- Ota lähtötulokset talteen ennen muutosta ja lisää puuttuvat kohdistetut testit ennen siirtoa. Koko nykyinen regressiopaketti on lähtötaso, ei todistus kaiken käyttäytymisen kattavuudesta.
+- Vertaa samoilla syötteillä myös sahausjakoja, materiaalilähteitä, määriä, hukkaa, jäännöksiä, kustannuserittelyä ja mahdottomien syötteiden raportointia, ei vain tankomäärää.
+- Säilytä kerf- ja loppusovitussemantiikka, `stockLength`-syötteen käyttö, materiaalivarianttien yhteensopivuus, jäännösten arvo, mutatoimattomuus ja deterministisyys.
+- Aja koko Node-paketti sekä relevantit selaimen UI-, persistenssi- ja dev-apuritestit. Pelkkä vihreä Node-ajo ei todista selainlatauksen toimivuutta.
+- Tee yksi looginen, testattava siirto kerrallaan ja päivitä muuttuneet polut/ohjeet samassa työssä. Älä yhdistä algoritmiparannusta tai virhekorjausta rakenteen muutokseen. Commit ja push tehdään vain käyttäjän pyynnöstä.
+
+Tavoite jokaiselle refaktoroinnille: arkkitehtuuri muuttui, optimizerin käyttäytyminen ei. Rivimäärille ei aseteta tavoitteita, eikä koko tiedostojakoa toteuteta ennen todellisten riippuvuuksien tarkistamista ja käyttäjän hyväksyntää.
 
 ## Vaihe 2: optimizerin laadun mittaaminen
 

@@ -24,6 +24,7 @@ const suites = [
         "runStoredStockRowCountValidationRegressionTest",
         "runStoredCanonicalNewStockVariantRegressionTest",
         "runStoredStockDefaultRowValidationRegressionTests",
+        "runStoredProfileTypeValidationRegressionTests",
         "runStoredWorkStateColorRegressionTest",
         "runWorkFinalizationRegressionTest",
         "runWorkFinalizationPersistenceRegressionTest",

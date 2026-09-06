@@ -154,6 +154,8 @@ Finalisointi noudattaa persistoi-ensin/commitoi-sitten-järjestystä: lopullinen
 
 Tallennettu suunnitelma validoidaan rakenteellisesti, semanttisesti ja sahausfysiikan kannalta ennen DOM-palautusta. Persistoiduilla lomakeriveillä on 1000 rivin raja, ja tallennettujen stock-varianttien duplikaatit tarkistetaan UI:n kanonisoidulla värillä. Jokaisella profiiliryhmällä pitää olla täsmälleen yksi oletusrivi. Validointi ja palautus käyttävät samaa legacy-sääntöä: jos `additional` puuttuu, profiilin ensimmäinen rivi on oletusrivi ja myöhemmät lisärivejä.
 
+Tallennettujen raakalista-, sahattava- ja jäännösrivien sekä suunnitelman tankojen profiilinimen pitää olla `PROFILE_TYPES`-olion oma avain. Prototyypistä peritty ominaisuus, kuten `constructor` tai `toString`, ei ole kelvollinen profiili.
+
 ## Testaus
 
 Projektissa ei vielä ole varsinaista testikehystä. Turvallinen perustestiajo on `runCoreRegressionTests()`: se ajaa A:n, A:n jäännöksillä, D1:n ja profiilieristyksen ilman DOM- tai localStorage-käsittelyä. Se tarkistaa checkpoint-odotukset, riippumattoman tulosvalidoinnin, sahausfysiikan, syötteiden mutatoimattomuuden ja deterministisen toiston. `createDevelopmentTestCases()` tuottaa sekä tämän ajon että selainloaderien tuoreet lähtötiedot.

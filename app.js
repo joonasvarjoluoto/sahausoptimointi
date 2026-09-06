@@ -8234,6 +8234,110 @@ function runStoredStockDefaultRowValidationRegressionTests() {
 }
 
 
+function runStoredProfileTypeValidationRegressionTests() {
+
+    const results = [];
+
+    for (const profileType of Object.keys(PROFILE_TYPES)) {
+        const state = cloneStoredPlanSemanticRegressionState();
+        for (const stock of state.stockProfileRows) {
+            stock.color = stock.profileType === profileType ? "black" : "gray";
+            stock.unlimited = stock.profileType !== profileType;
+        }
+        state.inputRows[0].profileType = profileType;
+        state.remnantRows[0].profileType = profileType;
+        state.generatedPlan.bars[0].profileType = profileType;
+
+        const before = JSON.stringify(state);
+        const passed = isValidStoredWorkState(state) &&
+            isValidStoredWorkState({ ...state, generatedPlan: null }) &&
+            JSON.stringify(state) === before;
+
+        results.push({
+            test: "Oma profiili hyväksytään: " + profileType,
+            result: passed ? "PASS" : "FAIL"
+        });
+    }
+
+    const fields = [
+        {
+            name: "stockProfileRows",
+            set: (state, profileType) => state.stockProfileRows.push({
+                profileType: profileType,
+                color: "gray",
+                quantity: "1",
+                unlimited: true,
+                additional: false
+            }),
+            validate: state => isValidStoredStockProfileRows(state.stockProfileRows)
+        },
+        {
+            name: "inputRows",
+            set: (state, profileType) => {
+                state.inputRows[0].profileType = profileType;
+            },
+            validate: state => isValidStoredInputRows(state.inputRows)
+        },
+        {
+            name: "remnantRows",
+            set: (state, profileType) => {
+                state.remnantRows[0].profileType = profileType;
+            },
+            validate: state => isValidStoredInputRows(state.remnantRows)
+        },
+        {
+            name: "generatedPlan",
+            set: (state, profileType) => {
+                state.generatedPlan.bars[0].profileType = profileType;
+            },
+            validate: state => isValidStoredPlan(state.generatedPlan)
+        }
+    ];
+
+    const invalidProfileTypes = [
+        ...Object.getOwnPropertyNames(Object.prototype),
+        "unknownProfile", "", " verticalProfile ",
+        undefined, null, 0, true, [], {}
+    ];
+
+    for (const field of fields) {
+        for (const profileType of invalidProfileTypes) {
+            const state = cloneStoredPlanSemanticRegressionState();
+            field.set(state, profileType);
+            const before = JSON.stringify(state);
+            const fieldAccepted = field.validate(state);
+            const planAccepted = isValidStoredWorkState(state);
+            // Suunnitelman tankoja ei ole luonnoksessa; muut kentät ovat
+            // samoja molemmissa ja ne pitää hylätä myös ilman suunnitelmaa.
+            const draftAccepted = field.name === "generatedPlan"
+                ? null
+                : isValidStoredWorkState({ ...state, generatedPlan: null });
+            const passed = fieldAccepted === false &&
+                planAccepted === false &&
+                draftAccepted !== true &&
+                JSON.stringify(state) === before;
+
+            results.push({
+                test: field.name + " hylkää " + String(profileType),
+                result: passed ? "PASS" : "FAIL",
+                fieldAccepted: fieldAccepted,
+                planAccepted: planAccepted,
+                draftAccepted: draftAccepted
+            });
+        }
+    }
+
+    console.table(results);
+    console.log(
+        "Tallennettujen profiilinimien regressiot: " +
+        results.filter(result => result.result === "PASS").length +
+        "/" + results.length + " läpäisty"
+    );
+
+    return results.every(result => result.result === "PASS");
+}
+
+
 function runStoredWorkStateColorRegressionTest() {
 
     const stockProfileRows =
@@ -10328,12 +10432,14 @@ function normalizeStoredColor(color) {
 
 function isValidStoredInputRows(inputRows) {
 
+    // Tallenteesta hyväksytään vain omat profiiliavaimet, ei esimerkiksi
+    // Object.prototype-oliolta perittyjä constructor/toString-nimiä.
     return Array.isArray(inputRows) &&
         inputRows.length <= MAX_STORED_FORM_ROW_COUNT &&
         inputRows.every(row =>
             isPlainObject(row) &&
             typeof row.profileType === "string" &&
-            PROFILE_TYPES[row.profileType] !== undefined &&
+            Object.prototype.hasOwnProperty.call(PROFILE_TYPES, row.profileType) &&
             isStoredInputValue(row.length) &&
             isStoredInputValue(row.quantity) &&
             isValidStoredColor(row.color)
@@ -10375,7 +10481,7 @@ function isValidStoredStockProfileRows(
         if (
             !isPlainObject(row) ||
             typeof row.profileType !== "string" ||
-            PROFILE_TYPES[row.profileType] === undefined ||
+            !Object.prototype.hasOwnProperty.call(PROFILE_TYPES, row.profileType) ||
             !isStoredInputValue(row.quantity) ||
             typeof row.unlimited !== "boolean" ||
             !isValidStoredColor(row.color) ||
@@ -10468,7 +10574,7 @@ function isValidStoredPlan(plan) {
         bar.id === "bar-" + (index + 1) &&
         bar.number === index + 1 &&
         typeof bar.profileType === "string" &&
-        PROFILE_TYPES[bar.profileType] !== undefined &&
+        Object.prototype.hasOwnProperty.call(PROFILE_TYPES, bar.profileType) &&
         isValidStoredColor(bar.color) &&
         validSources.has(bar.source) &&
         Number.isFinite(bar.sourceLength) &&

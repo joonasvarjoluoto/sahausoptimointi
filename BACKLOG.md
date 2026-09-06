@@ -35,18 +35,27 @@ Prioriteetit:
 - **Ennen toteutusta:** rakenna mittaus ja pienien tapausten oracle; älä muuta heuristiikkaa yksittäisen esimerkin perusteella.
 - **Hyväksymiskriteeri:** uusi ranking parantaa mitattua laatua edustavassa testipankissa ilman kohtuutonta suorituskykyhaittaa.
 
-### B-003 — Persistoidun profiilinimen tarkistus hyväksyy perityn ominaisuuden
+### B-004 — Suoran core-kutsun profiilivalidointi hyväksyy perityn ominaisuuden
 
 - **Tila:** vahvistettu Node-ajolla 2026-09-06
 - **Prioriteetti:** keskitaso
-- **Alue:** localStorage / profiilityypin validointi ja palautus
-- **Havainto:** `isValidStoredStockProfileRows()` käyttää tarkistusta `PROFILE_TYPES[row.profileType] !== undefined`, joka hyväksyy myös olion perityn ominaisuuden, kuten `constructor`.
-- **Toisto tai näyttö:** lisää kuuden normaalin oletusrivin rinnalle `{ profileType: "constructor", color: "gray", quantity: "1", unlimited: true, additional: false }`. Rivivalidointi palauttaa `true`, mutta `createStockProfileGroupsFromRows()` heittää virheen, koska profiilia ei löydy palautuksen Mapista.
-- **Vaikutus:** korruptoitunut tai käsin muokattu tallenne voi keskeyttää palautuksen poikkeukseen. Tavallinen profiilivalikko ei tuota tällaista arvoa.
-- **Ennen toteutusta:** tarkista saman jäsenyystarkistuksen käyttö myös muissa tallennetuissa profiilikentissä ja rajaa korjaus validointiin.
-- **Hyväksymiskriteeri:** vain projektin omat kuusi profiiliavainta hyväksytään; perityn ominaisuuden sisältävä työtila hylätään ennen tallennetun DOM-tilan palautusta ja nykyiset regressiot säilyvät.
+- **Alue:** core-rajapintojen syötevalidointi; ei tallennetun työtilan validointi
+- **Havainto:** `validateCutProfileTypes()` ja eräät materiaalin validointikohdat käyttävät edelleen `PROFILE_TYPES[avain] === undefined` -tarkistusta, joka ei erota omia profiileja prototyypin ominaisuuksista.
+- **Toisto tai näyttö:** `validateCutProfileTypes([{ profileType: "constructor", color: "gray", length: 1000, quantity: 1 }])` palauttaa `true`. Samalla syötteellä ja kuuden normaalin harmaan profiilin rajattomalla varastolla `optimizeOrderByProfileTypeWithInventory()` palauttaa `complete: true`, nolla tankoa ja tyhjän `remainingItems`-listan.
+- **Vaikutus:** suora core-kutsuja voi saada virheellisestä profiilista virheellisen valmiin tuloksen. Tavallinen UI-valikko ei tuota tätä nimeä, ja `calculate()`-polun riippumaton tulosvalidointi hylkää kappaletaseen poikkeaman. B-003 estää vastaavat nimet tallenteista.
+- **Ennen toteutusta:** kartoita puhtaiden core-rajapintojen profiilijäsenyyden tarkistukset ja lisää niiden omat regressiot. Älä yhdistä korjausta moduuli-irrotukseen.
+- **Hyväksymiskriteeri:** suorat core-rajapinnat hylkäävät perityt ja tuntemattomat profiilinimet; kuusi sallittua profiilia ja normaalit optimointitulokset säilyvät ennallaan.
 
 ## Valmistuneet
+
+### B-003 — Persistoidun profiilinimen tarkistus hyväksyy perityn ominaisuuden
+
+- **Tila:** valmis; automaattiset Node- ja selaintestit sekä käyttäjän tarkistus läpäisty 2026-09-06
+- **Prioriteetti:** keskitaso
+- **Alue:** localStorage / profiilityypin validointi ja palautus
+- **Korjaus:** raakalistan rivit, sahattavat rivit, jäännösrivit ja suunnitelman tangot hyväksyvät vain `PROFILE_TYPES`-olion omat avaimet. Prototyypistä perittyjä nimiä ei hyväksytä profiileiksi.
+- **Testit:** `runStoredProfileTypeValidationRegressionTests()` kattaa 90 tapausta: kuusi kelvollista profiilia sekä perityt nimet, tuntemattomat nimet ja virheelliset tyypit kaikissa neljässä tallennuskohdassa. Vanha koodi epäonnistui 48 tapauksessa; korjattu läpäisee kaikki. Node-ajurissa 30/30 ryhmää läpäisty. Eristetyssä Edgessä 84 virheellistä tallennetta hylättiin ennen varastorivien palautusta ja 12 nykyistä/legacy-tallennetta palautui käynnistyksessä suunnitelmineen ja TEHTY-merkintöineen.
+- **Rajaus:** tallennusskeema 3 ja moottoriversio `material-v0.3` säilyvät; kelvollisten tallenteiden muoto ei muutu. Suorien core-kutsujen vastaava tarkistus on erillinen B-004. Optimointia tai moduulirakennetta ei muutettu.
 
 ### B-001 — Persistoidun stock-ryhmän default/additional-invariantti
 
