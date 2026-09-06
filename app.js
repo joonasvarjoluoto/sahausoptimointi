@@ -8165,6 +8165,75 @@ function runStoredCanonicalNewStockVariantRegressionTest() {
 }
 
 
+function runStoredStockDefaultRowValidationRegressionTests() {
+
+    const cases = [
+        { name: "Yksi eksplisiittinen oletusrivi", flags: [false], expected: true },
+        { name: "Oletusrivi ja lisärivit", flags: [false, true, true], expected: true },
+        { name: "Oletusrivi lisärivin jälkeen", flags: [true, false], expected: true },
+        { name: "Legacy-rivi ilman additional-kenttää", flags: [undefined], expected: true },
+        { name: "Useat legacy-rivit", flags: [undefined, undefined, undefined], expected: true },
+        { name: "Legacy-oletusrivi ja eksplisiittinen lisärivi", flags: [undefined, true], expected: true },
+        { name: "Eksplisiittinen oletusrivi ja legacy-lisärivi", flags: [false, undefined], expected: true },
+        { name: "Pelkkä lisärivi hylätään", flags: [true], expected: false },
+        { name: "Kaikki rivit lisärivejä hylätään", flags: [true, true], expected: false },
+        { name: "Kaksi oletusriviä hylätään", flags: [false, false], expected: false },
+        { name: "Legacy- ja eksplisiittinen oletusrivi yhdessä hylätään", flags: [undefined, false], expected: false },
+        { name: "Lisärivi ja legacy-lisärivi ilman oletusriviä hylätään", flags: [true, undefined], expected: false },
+        { name: "Puuttuva profiiliryhmä hylätään", flags: [], expected: false },
+        { name: "Virheellinen additional-tyyppi hylätään", flags: ["false"], expected: false }
+    ];
+
+    const colors = ["black", "white", "gray"];
+
+    const results = cases.map(test => {
+
+        const state = cloneStoredPlanSemanticRegressionState();
+
+        state.stockProfileRows = [
+            ...test.flags.map((additional, index) => ({
+                profileType: "verticalProfile",
+                color: colors[index],
+                quantity: "1",
+                unlimited: false,
+                ...(additional === undefined ? {} : { additional })
+            })),
+            ...state.stockProfileRows.filter(
+                row => row.profileType !== "verticalProfile"
+            )
+        ];
+
+        const beforeValidation = JSON.stringify(state);
+        const rowsAccepted =
+            isValidStoredStockProfileRows(state.stockProfileRows);
+        const planAccepted = isValidStoredWorkState(state);
+        const draftAccepted = isValidStoredWorkState({
+            ...state,
+            generatedPlan: null
+        });
+
+        const passed =
+            rowsAccepted === test.expected &&
+            planAccepted === test.expected &&
+            draftAccepted === test.expected &&
+            JSON.stringify(state) === beforeValidation;
+
+        return {
+            test: test.name,
+            result: passed ? "PASS" : "FAIL",
+            expected: test.expected,
+            rowsAccepted: rowsAccepted,
+            planAccepted: planAccepted,
+            draftAccepted: draftAccepted
+        };
+    });
+
+    console.table(results);
+
+    return results.every(result => result.result === "PASS");
+}
+
+
 function runStoredWorkStateColorRegressionTest() {
 
     const stockProfileRows =
@@ -8669,9 +8738,50 @@ function runStoredStockVariantRoundTripRegressionTest() {
             ".stock-profile-remove-button"
         ).length;
 
+    const legacyRoundTrippedRows =
+        getStockProfileRowsForStorage(legacyStockProfileList);
+
+    const reorderedRows = [...storedRows].reverse();
+    const reorderedStockProfileList = document.createElement("div");
+
+    restoreStockProfileRows(reorderedStockProfileList, reorderedRows);
+
+    const reorderedRoundTrippedRows =
+        getStockProfileRowsForStorage(reorderedStockProfileList);
+
+    const expectedReorderedRows = Object.keys(PROFILE_TYPES).flatMap(
+        profileType => reorderedRows.filter(
+            row => row.profileType === profileType
+        )
+    );
+
+    const oneDefaultPerProfile = [
+        stockProfileList,
+        legacyStockProfileList,
+        reorderedStockProfileList
+    ].every(list => Object.keys(PROFILE_TYPES).every(profileType => {
+
+        const group = list.querySelector(
+            '.stock-profile-group[data-profile-type="' + profileType + '"]'
+        );
+
+        return group !== null &&
+            group.querySelectorAll('[data-stock-row-kind="default"]').length === 1 &&
+            group.querySelector('[data-stock-row-kind="default"]')
+                .querySelector(".stock-profile-remove-button") === null;
+    }));
+
     const passed =
+        isValidStoredStockProfileRows(storedRows) &&
+        isValidStoredStockProfileRows(legacyRows) &&
+        isValidStoredStockProfileRows(reorderedRows) &&
         JSON.stringify(roundTrippedRows) ===
         JSON.stringify(storedRows) &&
+        JSON.stringify(legacyRoundTrippedRows) ===
+        JSON.stringify(storedRows) &&
+        JSON.stringify(reorderedRoundTrippedRows) ===
+        JSON.stringify(expectedReorderedRows) &&
+        oneDefaultPerProfile &&
         removableRows === 2 &&
         legacyRemovableRows === 2;
 
@@ -8682,7 +8792,8 @@ function runStoredStockVariantRoundTripRegressionTest() {
             result: passed ? "PASS" : "FAIL",
             rows: roundTrippedRows.length,
             removableRows: removableRows,
-            legacyRemovableRows: legacyRemovableRows
+            legacyRemovableRows: legacyRemovableRows,
+            oneDefaultPerProfile: oneDefaultPerProfile
         }
     ]);
 
@@ -8755,6 +8866,7 @@ function runMaterialColorUiRegressionTests() {
         runStockProfileGroupUiRegressionTest(),
         runFiniteAndUnlimitedStockVariantRegressionTest(),
         runDuplicateNewStockVariantValidationRegressionTest(),
+        runStoredStockDefaultRowValidationRegressionTests(),
         runStoredStockVariantRoundTripRegressionTest(),
         runLegacyColorRestoreRegressionTest()
     ];
@@ -10228,6 +10340,14 @@ function isValidStoredInputRows(inputRows) {
         );
 }
 
+function isAdditionalStoredStockProfileRow(row, hasPreviousRows) {
+
+    // Legacy-tallenteessa profiilin ensimmäinen rivi toimii oletusrivinä.
+    return row.additional === true ||
+        (row.additional === undefined && hasPreviousRows);
+}
+
+
 function isValidStoredStockProfileRows(
     stockProfileRows
 ) {
@@ -10241,6 +10361,9 @@ function isValidStoredStockProfileRows(
 
 
     const seenProfileTypes =
+        new Set();
+
+    const profilesWithDefaultRows =
         new Set();
 
     const seenVariants =
@@ -10281,6 +10404,18 @@ function isValidStoredStockProfileRows(
             return false;
         }
 
+        if (!isAdditionalStoredStockProfileRow(
+            row,
+            seenProfileTypes.has(row.profileType)
+        )) {
+
+            if (profilesWithDefaultRows.has(row.profileType)) {
+                return false;
+            }
+
+            profilesWithDefaultRows.add(row.profileType);
+        }
+
 
         seenVariants.add(
             variantKey
@@ -10294,7 +10429,7 @@ function isValidStoredStockProfileRows(
 
     return Object.keys(PROFILE_TYPES).every(
         profileType =>
-            seenProfileTypes.has(
+            profilesWithDefaultRows.has(
                 profileType
             )
     );
@@ -11041,12 +11176,10 @@ function createStockProfileGroupsFromRows(stockProfileRows) {
             row.profileType
         );
 
-        const additional =
-            row.additional === true ||
-            (
-                row.additional === undefined &&
-                profileRows.length > 0
-            );
+        const additional = isAdditionalStoredStockProfileRow(
+            row,
+            profileRows.length > 0
+        );
 
         profileRows.push({
             quantity: row.quantity,

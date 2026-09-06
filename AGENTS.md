@@ -151,7 +151,7 @@ Raakalista, Jäännökset ja Sahattavat pidetään käyttöliittymässä erillis
 
 Finalisointi noudattaa persistoi-ensin/commitoi-sitten-järjestystä: lopullinen snapshot kirjoitetaan onnistuneesti ennen varasto-DOM:n vaihtamista ja suunnitelman tyhjentämistä. Epäonnistunut tallennus ei saa muuttaa live-työtä.
 
-Tallennettu suunnitelma validoidaan rakenteellisesti, semanttisesti ja sahausfysiikan kannalta ennen DOM-palautusta. Persistoiduilla lomakeriveillä on 1000 rivin raja, ja tallennettujen stock-varianttien duplikaatit tarkistetaan UI:n kanonisoidulla värillä.
+Tallennettu suunnitelma validoidaan rakenteellisesti, semanttisesti ja sahausfysiikan kannalta ennen DOM-palautusta. Persistoiduilla lomakeriveillä on 1000 rivin raja, ja tallennettujen stock-varianttien duplikaatit tarkistetaan UI:n kanonisoidulla värillä. Jokaisella profiiliryhmällä pitää olla täsmälleen yksi oletusrivi. Validointi ja palautus käyttävät samaa legacy-sääntöä: jos `additional` puuttuu, profiilin ensimmäinen rivi on oletusrivi ja myöhemmät lisärivejä.
 
 ## Testaus
 

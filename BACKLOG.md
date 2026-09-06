@@ -25,16 +25,6 @@ Prioriteetit:
 
 ## Avoimet havainnot
 
-### B-001 — Persistoidun stock-ryhmän default/additional-invariantti
-
-- **Tila:** vahvistettu aiemmassa B7-auditissa
-- **Prioriteetti:** matala
-- **Alue:** localStorage / uuden materiaalin rivit
-- **Havainto:** `isValidStoredStockProfileRows()` tarkistaa `additional`-kentän tyypin mutta ei varmista, että jokaisella profiilityypillä on palautuksen jälkeen täsmälleen yksi ei-poistettava oletusrivi. Esimerkiksi kaikki rivit voivat olla `additional: true`.
-- **Vaikutus:** korruptoitunut tai käsin muokattu tallennustila voi palauttaa ryhmän, jonka kaikki varianttirivit ovat poistettavia. Tunnettu materiaalitaseen rikkoutuminen ei ole osoitettu.
-- **Ennen toteutusta:** päätä legacy-tilojen yhteensopivuus, koska vanhoista riveistä `additional` voi puuttua.
-- **Hyväksymiskriteeri:** jokaisella profiilityypillä on palautuksen jälkeen yksi oletusrivi, lisärivien poistettavuus on johdonmukainen ja nykyiset legacy-/väriregressiot säilyvät.
-
 ### B-002 — Osittaisten inventory-beam-tilojen heuristinen järjestys
 
 - **Tila:** havaittu ja dokumentoitu
@@ -44,6 +34,28 @@ Prioriteetit:
 - **Vaikutus:** beam voi karsia haaran, joka olisi päätynyt parempaan valmiiseen materiaaliratkaisuun.
 - **Ennen toteutusta:** rakenna mittaus ja pienien tapausten oracle; älä muuta heuristiikkaa yksittäisen esimerkin perusteella.
 - **Hyväksymiskriteeri:** uusi ranking parantaa mitattua laatua edustavassa testipankissa ilman kohtuutonta suorituskykyhaittaa.
+
+### B-003 — Persistoidun profiilinimen tarkistus hyväksyy perityn ominaisuuden
+
+- **Tila:** vahvistettu Node-ajolla 2026-09-06
+- **Prioriteetti:** keskitaso
+- **Alue:** localStorage / profiilityypin validointi ja palautus
+- **Havainto:** `isValidStoredStockProfileRows()` käyttää tarkistusta `PROFILE_TYPES[row.profileType] !== undefined`, joka hyväksyy myös olion perityn ominaisuuden, kuten `constructor`.
+- **Toisto tai näyttö:** lisää kuuden normaalin oletusrivin rinnalle `{ profileType: "constructor", color: "gray", quantity: "1", unlimited: true, additional: false }`. Rivivalidointi palauttaa `true`, mutta `createStockProfileGroupsFromRows()` heittää virheen, koska profiilia ei löydy palautuksen Mapista.
+- **Vaikutus:** korruptoitunut tai käsin muokattu tallenne voi keskeyttää palautuksen poikkeukseen. Tavallinen profiilivalikko ei tuota tällaista arvoa.
+- **Ennen toteutusta:** tarkista saman jäsenyystarkistuksen käyttö myös muissa tallennetuissa profiilikentissä ja rajaa korjaus validointiin.
+- **Hyväksymiskriteeri:** vain projektin omat kuusi profiiliavainta hyväksytään; perityn ominaisuuden sisältävä työtila hylätään ennen tallennetun DOM-tilan palautusta ja nykyiset regressiot säilyvät.
+
+## Valmistuneet
+
+### B-001 — Persistoidun stock-ryhmän default/additional-invariantti
+
+- **Tila:** valmis; automaattiset testit ja käyttäjän selaintarkistus läpäisty 2026-09-06
+- **Prioriteetti:** matala
+- **Alue:** localStorage / uuden materiaalin rivit
+- **Korjaus:** jokaisella profiiliryhmällä vaaditaan täsmälleen yksi oletusrivi ennen työtilan palautusta. Validointi ja palautus käyttävät samaa `isAdditionalStoredStockProfileRow()`-sääntöä.
+- **Legacy-yhteensopivuus:** puuttuva `additional` tulkitaan oletusriviksi vain profiilin ensimmäisellä rivillä. Eksplisiittinen oletusrivi saa edelleen olla lisärivin jälkeen. Skeema säilyy versiona 3.
+- **Testit:** uusi `runStoredStockDefaultRowValidationRegressionTests()` kattaa 14 tapausta sekä luonnokselle että suunnitelmalliselle työtilalle. Vahvistettu selaimessa yhden oletusrivin ja poistettavuuden säilyminen, viiden korruptin riviyhdistelmän hylkäys ennen varaston palautusta sekä nykyisen ja legacy-työn palautuminen suunnitelmineen ja TEHTY-merkintöineen. Väri-, persistenssi-, finalisointi- ja perusregressiot läpäisty.
 
 ## Uuden merkinnän malli
 

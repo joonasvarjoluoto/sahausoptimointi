@@ -27,9 +27,10 @@ Valmiina ovat muun muassa:
 - versioitu localStorage-työtila;
 - finalisoinnin persistoi-ensin/commitoi-sitten-turva;
 - tallennetun suunnitelman semanttinen ja fyysinen validointi;
-- persistoidun raakalistan riviraja ja kanoninen varianttiduplikaattien tarkistus.
+- persistoidun raakalistan riviraja ja kanoninen varianttiduplikaattien tarkistus;
+- profiiliryhmän yhden oletusrivin tarkistus myös legacy-tallenteille (B-001, testattu 2026-09-06).
 
-## Seuraava päätös
+## Seuraava työvaihe
 
 Ennen suurempaa algoritmilaajennusta tehdään nykyisen single-order-rakenteen arkkitehtuurikatselmus. Katselmuksessa rajataan:
 
@@ -39,7 +40,7 @@ Ennen suurempaa algoritmilaajennusta tehdään nykyisen single-order-rakenteen a
 4. mitkä nykyisen `app.js`:n DOM-riippuvuudet estävät automaattista testausta;
 5. mikä on pienin turvallinen ensimmäinen refaktorointi ilman käyttäytymisen muutosta.
 
-Ennen katselmusta päätetään, suljetaanko persistenssiauditin jäljellä oleva matalan prioriteetin default/additional-rivi-invariantti. Se on kirjattu kohtaan `BACKLOG.md / B-001`.
+Persistenssiauditin default/additional-rivi-invariantti on korjattu ja testattu (B-001). Työssä havaittu erillinen profiilinimen jäsenyystarkistuksen virhe on kirjattu kohtaan `BACKLOG.md / B-003`; se käsitellään omana rajattuna korjauksenaan.
 
 ## Vaihe 1: testattavuuden perusta
 
