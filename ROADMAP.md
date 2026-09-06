@@ -35,9 +35,25 @@ Valmiina ovat muun muassa:
 - ensimmäinen puhdas core-irrotus: `src/cutting-physics.js` ja yhteensopiva selain-/Node-lataus toteutettu; automaattitestit ja käyttäjän Node-/selaintarkistus läpäisty;
 - tilauspohjainen Sahattavat-UI, yhteinen kiskosyöttö ja skeema 4 toteutettu; Node 33/33, automaattiset selaintestit ja käyttäjän tarkistus läpäisty.
 
+### Tuotantomuistion vertailu nykytilaan (2026-09-06)
+
+Muistion ”Tuleva tilaus-UI, varastonhallinta ja sahaustoleranssit” päällekkäisiä kohtia ei toteuteta uudelleen:
+
+| Muistion asia | Nykytila |
+| --- | --- |
+| Tilauskortit, yksi väri, viisi accordionia, mitta/määrä ja yhteinen kiskosyöttö | Toteutettu; adapteri tuottaa erilliset fyysiset profiilirivit |
+| `orderId` syötteessä | Toteutettu; kappalekohtainen tuloskohdistus ja `openingId` ovat myöhempää työtä |
+| Rajalliset varastosaldot ja käytön vähentäminen finalisoinnissa | Toteutettu; tuotannon todellisiin alkusaldoihin siirtymisestä ei vielä ole päätöstä |
+| Raakalistan accordionit, hälytysyhteenveto ja vastaanotto | Ei toteutettu; vaihe 1c |
+| Mittatoleranssit ja erilliset kapasiteettivarat | Ei toteutettu; vaihe 1c:n tuotantokäytön edellytys |
+
+Tuotantofaktat ja alustavat luvut ovat `DOMAIN_NOTES.md`:ssä. Tämä päivitys ei muuta kerfin 3 mm:n oletusta, täsmäsovituksen hyväksymistä, pisteytystä tai tallennusversioita.
+
 ## Seuraava työvaihe
 
 Käyttäjän pyynnöstä materiaalimoduulien irrotuksen edelle otettiin tilauspohjainen Sahattavat-UI. Käyttäjä vahvisti testien läpäisyn ja seitsemän cut-rivin oikean muodostumisen kahdesta erivärisestä tilauksesta omine tunnisteineen. Laajaa moduulirefaktorointia tai optimizerimuutoksia ei yhdistetty UI-työhön. Seuraava pieni vaihe on materiaalivariantin identiteetin ja varaston muodostuksen riippuvuuksien rajaus ennen seuraavaa moduulisiirtoa.
+
+Uusi tuotantomuistio ei muuta tätä välitöntä työvaihetta. Sen uudet ominaisuudet on koottu vaiheeseen 1c: niitä voidaan tehdä materiaalirajojen selkiydyttyä pieninä erillisinä töinä ilman koko moduulijaon valmistumista. Toleranssimallia ei lykätä myöhempään score-viritykseen, jos sovellusta ollaan ottamassa oikeaan tuotantoon.
 
 Skeema nostettiin 3 → 4: tallennetaan tilausten tunnisteet, nimet, värit ja accordionien mittarivit/avaustilat. Käyttäjä vahvisti vanhojen töiden olevan kuvitteellista testidataa ja hyväksyi tyhjästä aloittamisen; migraatiota tai vanhan UI:n rinnakkaistukea ei toteuteta. Vanha tallenne poistuu uuden sivun palautuksessa ilmoituksen kanssa. Moottoriversio `material-v0.3` säilyy.
 
@@ -119,6 +135,34 @@ Eristetyssä Edgessä tarkistettiin oikeat laskenta- ja TEHTY-painikkeet sekä u
 - Tee yksi looginen, testattava siirto kerrallaan ja päivitä muuttuneet polut/ohjeet samassa työssä. Älä yhdistä algoritmiparannusta tai virhekorjausta rakenteen muutokseen. Commit ja push tehdään vain käyttäjän pyynnöstä.
 
 Tavoite jokaiselle refaktoroinnille: arkkitehtuuri muuttui, optimizerin käyttäytyminen ei. Rivimäärille ei aseteta tavoitteita, eikä koko tiedostojakoa toteuteta ennen todellisten riippuvuuksien tarkistamista ja käyttäjän hyväksyntää.
+
+## Vaihe 1c: varaston käytettävyys ja tuotantokapasiteetin varmistaminen
+
+Tämä on tulevien töiden suunnitelma, ei valmis ominaisuuspaketti. Tarkat tuotantoperusteet, epävarmuudet ja luvut ovat `DOMAIN_NOTES.md`:ssä. Vaihe voidaan rytmittää 1b:n ja laatumittauksen rinnalle; refaktorointi ja laskennan käyttäytymismuutos pidetään eri töinä.
+
+### Varastonhallinnan pienet toteutusvaiheet
+
+1. **Sovi todellisten saldojen käyttöönotto.** Säilytä optimizerin jo toimiva rajallisten lähteiden tuki ja finalisointi. Määrittele alkusaldojen kirjaaminen sekä `unlimited`-/tuntemattoman saldon käsittely ennen automaattisia tuotantohälytyksiä; rajattomuutta ei muuteta keksityksi kappalemääräksi.
+2. **Määrittele ja testaa puhdas saldon tilaluokittelu.** Alustavat yhteiset asetukset ovat `reorderThreshold = 50` ja `criticalStockThreshold = 10`: yli 50 normaali, 11–50 tilaa lisää, 1–10 kriittisen vähän, 0 loppu. Nämä ovat varastonhallinnan eivätkä optimizerin score-asetuksia.
+3. **Tiivistä Raakalista profiiliaccordioneiksi.** Suljettu otsikko näyttää tilan ja oleelliset värikohtaiset poikkeukset, esimerkiksi ”Vaakaprofiili — Musta 47 kpl, tilaa lisää”. Avattuna näytetään värit ja todelliset määrät. Tuntematonta saldoa ei esitetä varmennettuna ”varasto OK” -tilana.
+4. **Lisää erillinen tiivis hälytysyhteenveto.** Näytä poikkeusten määrät ja avattava, vakavuuden mukaan ryhmitelty lista: loppu, kriittisen vähän, tilaa lisää. Runsaan varaston kaikkia määräkenttiä ei tarvitse pitää esillä päivittäisessä käytössä.
+5. **Lisää vastaanotto omana toimintona.** Saapunut määrä lisätään valitun profiili-/värivariantin saldoon, esimerkiksi 7 + 100 = 107. Määrittele tallennusvirheen käsittely ja avoimen suunnitelman mitätöinti samassa rajatussa työssä. Varastotapahtumien historia jää myöhemmäksi.
+
+Hyväksymistestit: saldot 0, 1, 10, 11, 50 ja 51; varianttien eristys; rajaton/tuntematon saldo; 34 tangon saatavuus säilyy 34:nä hälytyksestä huolimatta; vastaanotto 7 + 100 sekä virheelliset määrät ja tallennusvirhe. UI-muutoksille tarkistetaan mobiiliasettelu, palautus ja ettei accordionin pelkkä avaus muuta laskentaa tai TEHTY-tilaa.
+
+### Erillinen toleranssimalli ennen riskialttiiden täsmäsovitusten tuotantokäyttöä
+
+1. **Määrittele kapasiteettimalli ja hyväksy parametrit.** Pidä nimellismitta, todellinen kerf, kappalekohtainen vara, mahdollinen kerf-marginaali sekä tangon pää-/turvallisuusvara erillään. Noin 1 mm/kappale on kokeiluehdotus, ei automaattisesti käyttöön otettava vakio. Noin 3,4 mm:n terähavainnon soveltaminen nykyiseen oletukseen päätetään erikseen.
+2. **Lisää tapaukset ennen laskentamuutosta.** Testaa nolla- ja lähes nollajäännös, viiden kappaleen +0,5 mm:n virheen kumuloituminen 2,5 mm:iin, viimeinen katkaisu, rajalliset lähteet ja jäännöslähteet. Erottele laskennan vara fyysisestä sahahukasta, jäännöksestä ja materiaalitaseesta; kappaleen tilattua mittaa ei kasvateta.
+3. **Toteuta yksi rajattu kapasiteettimuutos.** Optimizerin kelpoisuustarkistus, tulosvalidointi ja tallennetun suunnitelman tulkinta käyttävät samaa hyväksyttyä mallia. Arvioi skeema-/moottoriversion tarve. Säilytä nollavaroilla nykyiset vertailutulokset ja dokumentoi tarkoitukselliset muutokset varojen ollessa käytössä.
+4. **Varmista tuotannossa ja kalibroi.** Pelkkä nimellismittojen täsmääminen tai regressioiden läpäisy ei todista fyysistä toleranssiturvaa. Riskialttiita täsmäsovituksia ei hyväksytä tuotantoon ennen mallin ja mittaushavaintojen varmistamista.
+
+### Vastuurajat
+
+- Tilaus-UI tuottaa normalisoidut cut-rivit; optimizer ei tunne accordioneja.
+- Todellinen varastosaldo asettaa materiaalirajoitteen ja toimii erikseen hälytysten lähtötietona. Hälytys ei vähennä käytettävissä olevaa määrää.
+- Toleranssi- ja kapasiteettivarat kuuluvat turvallisen kapasiteetin laskentaan, eivät piilotetuiksi kerf- tai score-muutoksiksi.
+- Aukkokohtainen `Tilaus → Aukko → profiilit` -syöttö ja `openingId` arvioidaan vasta tuotantokohdistuksen tarpeesta vaiheessa 4. Valmista tilaus-UI:ta ei tehdä uudelleen tämän muistion perusteella.
 
 ## Vaihe 2: optimizerin laadun mittaaminen
 

@@ -47,6 +47,55 @@ Ennen mahdollista muutosta selvitä:
 - Nykyinen laskenta käyttää silti yleistä `stockLength`-syötettä eikä vähennä kiinteää päävaraa.
 - Tuleva malli voi tarvita esimerkiksi `usableLength`- ja `endAllowance`-kentät.
 
+## Mittatoleranssi ja kapasiteetin turvallisuusvarat
+
+- **Lähde ja päivämäärä:** käyttäjän muistio ”Tuleva tilaus-UI, varastonhallinta ja sahaustoleranssit”, 2026-09-06.
+- **Vahvistettu tuotantohavainto:** positiiviset mittavirheet voivat kasautua. Viisi kappaletta, joista kukin on 0,5 mm nimellismittaa pidempi, kuluttavat yhteensä 2,5 mm lisäpituutta. Laskennallinen nolla- tai lähes nollajäännös voi silloin jättää viimeisen kappaleen vajaaksi.
+- **Käyttäjän ilmoittamat likimääräiset mitat:** hyväksyttävä mittatoleranssi on noin ±1 mm, vaikka tavallisesti pyritään tarkempaan tulokseen. Todellinen terän leveys on noin 3,4 mm. Soveltamisala ja mitatut arvot tarkennetaan ennen mallin lukitsemista.
+- **Tuotantopreferenssi:** muutaman millimetrin ylimääräinen hukka per tanko on hyväksyttävämpi kuin viimeisen kappaleen jääminen liian lyhyeksi.
+- **Nykyinen vaikutus koodiin:** ei parametrimuutosta. Kerfin oletus on edelleen 3 mm ja laskenta käyttää lomakkeen kerf-arvoa. `src/cutting-physics.js`:n `cutPiece()` hyväksyy nimellismittojen täsmäsovituksen; erillistä toleranssi- tai kapasiteettivaraa ei ole. Laskennan 0,1 mm:n resoluutio ei takaa tuotannon mittatarkkuutta.
+
+### Ehdotettu malli, ei vielä käytössä
+
+Pidä erillisinä nimellinen kappalemitta, terän todellinen/nimellinen leveys ja käytettävissä olevan tangon pituus sekä niiden mahdolliset turvallisuusvarat:
+
+- kappale: nimellismitta + kappalekohtainen kapasiteettivara;
+- sahaus: kerf + erikseen määritelty kerfin turvallisuusvara;
+- lähde: `stockLength` − mahdollinen `endAllowance` − mahdollinen tankokohtainen turvallisuusvara.
+
+Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei päätetty tuotantoasetus. Se varaisi kapasiteettia eikä käskisi sahaamaan kappaletta 1 mm ylipitkäksi. Myös kerfin ympärille voidaan arvioida oma pieni marginaali. Kappaletoleranssia ei piiloteta keinotekoiseksi esimerkiksi 5 mm:n kerfiksi.
+
+**Ennen toteutusta selvitettävä:** kalibroi varat tuotantohavainnoilla; määrittele soveltuminen uusiin tankoihin ja jäännöksiin, viimeiseen katkaisuun sekä päävaraan. Erota laskennallisesti varattu kapasiteetti toteutuneesta sahahukasta ja fyysisestä jäännöksestä. Nykyisen `cutPiece()`-säännön tai tallennetun suunnitelman tulkinnan muuttaminen vaatii erillisen päätöksen, yhteensopivuusarvion ja täsmäsovitus-/kumuloitumisregressiot.
+
+## Uuden materiaalin saldot ja täydennys
+
+- **Lähde ja päivämäärä:** käyttäjän muistio ”Tuleva tilaus-UI, varastonhallinta ja sahaustoleranssit”, 2026-09-06.
+- **Vahvistettu käyttötarve:** runsaan varaston tarkkaa määrää ei tarvitse pitää jatkuvasti näkyvissä. Vähäinen saldo on tärkeä sekä optimoinnille että täydennystilauksille.
+- **Tavoite:** tuotannossa seurataan todellisia uuden materiaalin kappalesaldoja variantilla `profileType + color`. Prototyypin `unlimited` on hyödyllinen laskentaoletus, mutta ei tunnettu fyysinen saldo eikä riittävä lähtötieto automaattisille hälytyksille.
+- **Nykyinen vaikutus koodiin:** rajalliset `quantity`-saldot ja rajaton materiaali ovat jo tuettuja. Finalisointi vähentää käytetyn uuden materiaalin authoritative post-order-varaston kautta. Erillisiä varastohälytyksiä tai vastaanottotoimintoa ei vielä ole.
+
+### Kaksi alustavaa hälytysrajaa
+
+**Luokitus:** alustava, myöhemmin kalibroitava tuotantosääntö. Yhteiset kokeilurajat ovat `reorderThreshold = 50` ja `criticalStockThreshold = 10`, yksikkönä uuden materiaalin tankojen kappalemäärä per materiaalivariantti.
+
+| Todellinen saldo | Suunniteltu tila |
+| --- | --- |
+| Yli 50 kpl | Normaali |
+| 11–50 kpl | Tilaa lisää |
+| 1–10 kpl | Kriittisen vähän |
+| 0 kpl | Loppu |
+
+50 tangon raja on logistinen ennakkovaroitus, ei optimoinnin käyttöraja. Esimerkiksi 34 tangon saldo antaa optimizerille edelleen 34 tankoa, vaikka käyttöliittymä kehottaa tilaamaan lisää. Hälytys ei muuta saldoa tai pisteytystä.
+
+**Ennen toteutusta selvitettävä:** tuntemattoman/rajattoman saldon esitystapa ja todellisten alkusaldojen kirjaaminen. Rajat eivät ole todistettuja optimeja; myöhemmin ne voivat olla profiili- ja värikohtaisia sekä perustua kulutukseen, toimitusaikaan ja turvavarastoon.
+
+### Saapuvan materiaalin vastaanotto
+
+- **Luokitus:** tuleva käyttötarve, ei vielä toteutettu.
+- Saapunut määrä kirjataan lisäyksenä oikean materiaalivariantin saldoon, ei uuden kokonaissaldon käsin korvaamisena: 7 varastossa + 100 vastaanotettua = 107 tankoa.
+- Vastaanoton on säilyttävä onnistuneesti tallennuksessa; virheellinen syöte tai tallennusvirhe ei saa jättää osittain muuttunutta saldoa.
+- Varastotapahtumien historia voidaan lisätä myöhemmin. Ensimmäinen vastaanottotoiminto ei edellytä tapahtumakirjanpitoa.
+
 ## Tuotannon järjestys ja pakkaaminen
 
 - **Luokitus:** vahvistettu tuotantohavainto, ei vielä aktiivinen score-sääntö
@@ -84,6 +133,14 @@ Ennen mahdollista muutosta selvitä:
 - `maxStackSize` on profiilityyppikohtainen. Tyypillinen arvo on usein 4 tai 6, mutta sitä ei saa tehdä globaaliksi vakioksi ilman tarkempaa tietoa.
 
 ## Tilausten jäljitettävyys
+
+### Tilauksen väri ja manuaalinen syöttö
+
+- **Luokitus:** käyttäjän vahvistama tuotantofakta.
+- **Lähde ja päivämäärä:** muistio ”Tuleva tilaus-UI, varastonhallinta ja sahaustoleranssit”, 2026-09-06.
+- Yksi tilaus on käytännössä yhtä materiaaliväriä, ja normaalissa tilauksessa tarvitaan kaikkia nykyisiä profiilityyppejä. Tämä ei ole vaatimus hylätä osittain täytettyjä tai vain joitakin profiileja sisältäviä tilauksia.
+- **Jo toteutettu:** tilauskortin yhteinen väri, viisi profiiliaccordionia ja pelkät mitta-/määräkentät riveillä. Muistion kuvaama hidas rivikohtainen profiilin ja värin valinta koskee vanhaa UI:ta.
+- `getOrdersFromForm() → normalizeOrderCuts()` tuottaa optimizerin nykyiset `profileType + color + length + quantity` -rivit ja säilyttää `orderId`:n. Tunniste ei ole optimointikriteeri. Tulevan tuloskohdistuksen rajoite kuvataan alla.
 
 ### Yhteinen ylä- ja alakiskosyöttö
 

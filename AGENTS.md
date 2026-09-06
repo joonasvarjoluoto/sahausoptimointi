@@ -58,6 +58,8 @@ Jäännös kuuluu aina materiaalivarianttiin. Nykyinen ryhmittelyavain on `profi
 
 Sahausvaran oletus on 3 mm. `cutPiece()` on sahausfysiikan authoritative sääntö. Älä muuta huomaamatta sitä, milloin terän leveys vähennetään, tai täydellisen loppusovituksen semantiikkaa.
 
+Pidä todellinen kerf, kappalekohtainen mittatoleranssi ja lähteen kapasiteettivarat erillisinä. `DOMAIN_NOTES.md`:n noin 3,4 mm:n terähavainto ja ehdotettu 1 mm/kappale eivät ole nykyisiä oletusasetuksia. Turvallisuusvaraa ei saa piilottaa kerfin kasvattamiseen; 0,1 mm:n laskentatarkkuus ei takaa tuotannon mittatarkkuutta.
+
 Pidä materiaalinäkymä ja tuleva tuotantonäkymä erillään:
 
 - materiaali: `bar`/`source` ja varaston tilasiirtymät;
@@ -111,6 +113,8 @@ Uusi materiaali ja jäännös sisältävät aina värin:
 ```
 
 Rajattomalla uudella lähteellä `quantity` on `null`. Äärellisellä lähteellä se on kokonaisluku vähintään 0; nollamääräistä lähdettä ei saa tarjota optimizerille. `createMaterialInventory()` yhdistää jäännökset nykyisin saman `profileType + color + length` -avaimen alle.
+
+Tulevat varastohälytykset käyttävät todellista saldoa mutta eivät muuta optimizerin saatavuutta tai pisteytystä. Rajaton lähde ei tarkoita tunnettua fyysistä varastosaldoa. Alustavat hälytysrajat ja vastaanottotarve on kuvattu `DOMAIN_NOTES.md`:ssä; ne eivät vielä ole toteutettuja ominaisuuksia.
 
 `PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings` on kalibroitu checkpoint:
 
