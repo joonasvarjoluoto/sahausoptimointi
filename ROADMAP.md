@@ -31,7 +31,8 @@ Valmiina ovat muun muassa:
 - profiiliryhmän yhden oletusrivin tarkistus myös legacy-tallenteille (B-001, testattu 2026-09-06);
 - yhteinen neljän perustestin testipankki ja avointa työtä muuttamaton core-regressioajo (automaattitestit ja käyttäjän selaintarkistus läpäisty 2026-09-06);
 - Node-testiajuri: 29/29 regressioryhmää ja paluukoodi 0 vahvistettu myös käyttäjän VS Coden terminaalissa (2026-09-06);
-- B-003:n tallennettujen profiilinimien korjaus: 90/90 kohdistettua tapausta, laajentunut Node-paketti 30/30 sekä automaattiset selaintestit ja käyttäjän tarkistus läpäisty.
+- B-003:n tallennettujen profiilinimien korjaus: 90/90 kohdistettua tapausta, laajentunut Node-paketti 30/30 sekä automaattiset selaintestit ja käyttäjän tarkistus läpäisty (commit `a8603b2` pushattu);
+- ensimmäinen puhdas core-irrotus: `src/cutting-physics.js` ja yhteensopiva selain-/Node-lataus toteutettu; automaattitestit ja käyttäjän Node-/selaintarkistus läpäisty.
 
 ## Seuraava työvaihe
 
@@ -41,11 +42,11 @@ Node-testiajuri on hyväksytty: `run-regressions.cjs` ajaa saman testipankin ja 
 
 `BACKLOG.md / B-003` on korjattu ja hyväksytty myös käyttäjän tarkistuksessa. Tallennusskeema ja optimizerin käyttäytyminen säilyvät ennallaan; korjaus koskee virheellisten profiilinimien hylkäämistä.
 
-Tämän jälkeen aloitetaan alla kuvattu vaihe 1b yhdestä pienestä, puhtaasta core-alueesta. Vaiheen 2 kohdistetut testit (materiaalin niukkuus, varianttieristys ja kerfin rajat) säilyvät suunnitelmassa: irrotettavan alueen puuttuvat testit lisätään ennen siirtoa, ja laajempaa laatumittausta voidaan jatkaa ensimmäisen irrotuksen jälkeen. Koko sovelluksen pilkkominen ei ole laatumittauksen aloitusehto.
+Vaiheen 1b ensimmäinen irrotus on toteutettu ja hyväksytty käyttäjän testeissä: `cutPiece()` ja sen mitta-apurit sijaitsevat nyt omassa puhtaassa moduulissaan. Seuraava vaihe on materiaalivariantin identiteetin ja varaston muodostuksen riippuvuuksien rajaus seuraavaa pientä siirtoa varten. Vaiheen 2 kohdistetut testit (materiaalin niukkuus, varianttieristys ja kerfin rajat) säilyvät suunnitelmassa, ja laajempaa laatumittausta voidaan nyt jatkaa ensimmäisen irrotuksen rinnalla. Koko sovelluksen pilkkominen ei ole laatumittauksen aloitusehto.
 
 Katselmuksen myöhemmät rakennerajat säilyvät: materiaalivariantin identiteetti keskitetään ennen lisäattribuutteja, materiaaliratkaisu ja tuotanto-operaatiot pidetään erillään, ja monen tilauksen kappalekohdistus säilytetään ennen sahausmittojen ryhmittelyä. Samanlaiset varastojäännökset pysyvät määrällisinä ryhminä; pysyviä yksilö-ID:itä ei tarvita.
 
-Persistenssiauditin default/additional-rivi-invariantti on korjattu ja testattu (B-001). Pienin seuraava toteutus on ensimmäisen core-irrotuksen rajaus ja latausratkaisun suunnitelma. Suorien core-kutsujen vastaava profiilivalidointihavainto on kirjattu erikseen kohtaan `BACKLOG.md / B-004`; sitä ei korjata moduulien siirron sivussa.
+Persistenssiauditin default/additional-rivi-invariantti on korjattu ja testattu (B-001). Ensimmäisen core-irrotuksen hyväksymisen jälkeen pienin luonteva jatko on materiaalivariantin identiteetin ja varaston muodostuksen riippuvuuksien rajaus seuraavaa pientä siirtoa varten. Suorien core-kutsujen profiilivalidointihavainto on kirjattu erikseen kohtaan `BACKLOG.md / B-004`; sitä ei korjata moduulien siirron sivussa.
 
 ## Vaihe 1: testattavuuden perusta
 
@@ -73,8 +74,8 @@ Tämä on etenemissuunnan luonnos, ei lupa koko projektirakenteen vaihtoon yhdel
 
 1. **Node-testiajuri valmiiksi — tehty.** Yhteinen testipankki ja komentoriviajo toimivat nykyisessä rakenteessa.
 2. **Korjaa B-003 erikseen — tehty ja hyväksytty.** Virheen osoittava regressio epäonnistui ennen korjausta ja läpäisee sen jälkeen; myös palautusraja on testattu selaimessa. Korjaus on käyttäytymismuutos, ei osa tiedostojen siirtoa.
-3. **Irrota ensimmäinen pieni puhdas core-alue.** Ensisijainen ehdokas on `cutPiece()` yhdessä tarvitsemiensa 0,1 mm:n mittayksiköiden ja muunnos-/tarkistusapurien kanssa. Älä siirrä samalla koko materiaalidomainia, pisteytystä tai UI:ta. Rajaa riippuvuudet ja moduulien lataustapa ennen toteutusta.
-4. **Varmista ensimmäinen irrotus.** Aja koko Node-regressiopaketti, alueen kohdistetut testit sekä selaimen laskenta-, dev-apuri- ja tallennuksen palautustarkistukset. Vertaa tuloksia ennen siirtoa talletettuun aineistoon.
+3. **Irrota ensimmäinen pieni puhdas core-alue — toteutettu.** `src/cutting-physics.js` sisältää `cutPiece()`-funktion sekä 0,1 mm:n mittayksiköt ja muunnos-/tarkistusapurit. Materiaalidomainia, pisteytystä tai UI:ta ei siirretty samalla.
+4. **Varmista ensimmäinen irrotus — tehty ja hyväksytty.** Node-paketti 31/31, alla kuvatut tarkat vertailut sekä selaimen laskenta-, dev-apuri- ja palautustarkistukset läpäisivät. Käyttäjä vahvisti myös omien testiensä läpäisyn ja pyysi commitia sekä pushia.
 5. **Irrota inventory/material-logiikka pienissä osissa.** Erota varaston muodostus, materiaalilähteet, lähteiden kulutus ja materiaalitilasiirtymät. Jäännösten arvotus ja kustannuskomponentit säilyvät nimettyinä ja selitettävinä; pisteytyksen tiedostorajasta päätetään todellisten riippuvuuksien perusteella.
 6. **Aja samat tarkistukset jokaisen irrotuksen jälkeen.** Älä niputa useita siirtoja yhdeksi testattavaksi loppuvaiheeksi.
 7. **Irrota optimizer vasta domain-/materiaalirajojen selkiydyttyä.** Säilytä hakujärjestys, pisteytys, tasatilanteiden ratkaisu ja tulosrakenne. Legacy-polkuja ei poisteta eikä oteta aktiiviseksi varapoluksi tämän työn yhteydessä.
@@ -96,7 +97,11 @@ Mahdollinen tiedostojako, ei vielä lukittu hakemisto- tai moduulimuotopäätös
 
 Core ei saa riippua `document`-, `window`- tai `localStorage`-rajapinnoista, UI:sta, persistenssin I/O:sta eikä testidatasta. Materiaalikerros voi käyttää domainia, optimizer domainia ja materiaalikerrosta. Selainpuoli ja testit käyttävät näitä samoja toteutuksia; niitä ei kopioida erikseen Nodea varten. Syklisiä riippuvuuksia vältetään. Testidata voi siirtyä omaan tiedostoon pienessä erillisessä vaiheessa, mutta testit eivät ole coren riippuvuus.
 
-Nykyinen `index.html` lataa tavallisen globaalin `app.js`-skriptin, HTML käyttää inline-tapahtumankäsittelijöitä ja Node-ajuri lataa saman tiedoston `vm.Script`-ympäristöön. Siksi ensimmäisen irrotuksen suunnitelmaan kuuluu myös selaimen ja Node-ajurin yhteensopiva latausratkaisu. Säilytä nykyiset dev-apurit ja painikkeet toimivina tarvittaessa ohuilla väliaikaisilla yhteensopivuusrajapinnoilla. Älä lisää rakennusvaihetta, paketinhallintaa tai riippuvuuksia vain tiedostojen pilkkomiseksi.
+Ensimmäisen irrotuksen latausratkaisu: `index.html` lataa tavallisina skripteinä ensin `src/cutting-physics.js`:n ja sitten `app.js`:n. Node-ajuri lataa samat tiedostot samassa järjestyksessä jokaiseen tuoreeseen `vm.Script`-ympäristöön. Sahausmoduuli sulkee toteutuksen `CUTTING_PHYSICS`-rajapinnan taakse ja tukee myös suoraa CommonJS-latausta. `app.js`:n aliasnimet säilyttävät konsoli-/window-kutsut; HTML:n inline-painikkeita tai dev-apureita ei tarvitse muuttaa. Tämä ei lukitse koko sovelluksen lopullista moduulimuotoa eikä lisää rakennusvaihetta, paketinhallintaa tai riippuvuuksia.
+
+Irrotuksen varmistus (2026-09-06): lähtötaso oli 30/30 Node-ryhmää. Ennen siirtoa lisättiin 23 kohdistettua sahausfysiikan testiä; laajennettu 31/31 paketti läpäisi ennen siirtoa ja sen jälkeen. Neljän perustapauksen koko optimointitulos, UI-suunnitelma ja valmiiden töiden lopullinen varasto täsmäsivät commitin `a8603b2` lähteestä ajettuun vertailuun. Lisäksi 475 sahausfysiikan tulos-/virhevertailua täsmäsi. Moduuli testattiin yksin ilman selain- tai Node-isännän rajapintoja sekä suoralla `require()`-latauksella. Ajurin 21 tarkistusta kattoi myös uuden lähteen puuttumisen, syntaksivirheen ja alustusvirheen.
+
+Eristetyssä Edgessä tarkistettiin oikeat laskenta- ja TEHTY-painikkeet sekä uudelleenlataus, neljä fixture-loaderia, core-ajon live-työn muuttamattomuus, aiempi selainregressioajo, värien käsittely ja finalisointi. Persistenssin palautusraja läpäisi 84 virheellistä ja 12 kelvollista nyky-/legacy-tallennetta TEHTY-tiloineen. Käyttäjän omaa Live Server -työtilaa ei käytetty automaattitesteissä. Kerf-semanttiikka, hakujärjestys, pisteytys ja tallennusversiot eivät muuttuneet.
 
 ### Hyväksymisportti jokaiselle irrotukselle
 

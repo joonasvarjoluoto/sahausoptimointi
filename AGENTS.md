@@ -26,8 +26,11 @@ Projekti toimii suoraan selaimessa ilman rakennusvaihetta tai paketinhallintaa:
 
 - `index.html`: mobiiliystävälliset syötteet, työtoiminnot ja tulosalue.
 - `app.js`: käyttöliittymä, materiaalivarasto, optimizerit, pisteytys, renderöinti, dev-testit ja localStorage-työtila.
+- `src/cutting-physics.js`: puhdas `cutPiece()`-sahausfysiikka sekä 0,1 mm:n mittamuunnokset ja tarkkuustarkistus.
 - `style.css`: mobiili ensin -asettelu ja tuloskorttien tilat.
 - `run-regressions.cjs`: kehityksenaikainen Node-testiajuri; ei ladattaessa selaimessa tarvittava tiedosto.
+
+Selain lataa tavallisina skripteinä ensin `src/cutting-physics.js`:n ja sitten `app.js`:n. Node-ajuri käyttää samoja lähteitä samassa järjestyksessä. Sahausmoduulin suljettu `CUTTING_PHYSICS`-rajapinta ei riipu sovelluksesta, DOM:sta, tallennuksesta tai testidatasta; se on myös suoraan `require()`-ladattava. `app.js`:n ohuet aliasnimet säilyttävät nykyiset konsoli- ja `window`-funktiot ilman toteutuksen kopiointia. Koko sovellusta ei ole muutettu ES-moduuleiksi.
 
 Tallennetun työtilan nykyinen versiointi:
 
@@ -164,6 +167,8 @@ Kun Node on saatavilla, aja projektikansiossa `node run-regressions.cjs`. Ajuri 
 
 Pidä ajurin testilista eksplisiittisenä: lisää sinne vain ilman selainta toimivia testejä, joiden paluuarvo on `true` tai tunnetun mittainen PASS/FAIL-taulukko. Päivitä `expectedRows`, jos taulukkomuotoisen testiryhmän tapausmäärä muuttuu. Pelkkä truthy-paluuarvo tai konsoliin tulostettu PASS ei riitä onnistumiseksi. Node-ajo ei korvaa tehtävän vaatimia DOM-, palautus- tai käyttäjän selaintestejä.
 
+`runCuttingPhysicsRegressionTests()` lukitsee 23 mittamuunnos-, desimaaliraja-, nollakerf- ja virheellisen tarkkuuden tapausta muuttamatta avointa työtä. Se täydentää aiempia `runCutPieceBoundaryTests()`- ja `runDecimalExactFitRegressionTest()`-testejä. Pidä dev-testit sahausmoduulin ulkopuolella.
+
 Käytä lisäksi tehtävään sopivia nimettyjä `run...RegressionTest(s)()`-funktioita. Selaimen `loadTestA()`, `loadTestAWithRemnants()`, `loadTestD1()` ja `loadTestProfileIsolation()` vaihtavat avoimen työn syötteet ja tallentavat ne; niiden palauttama `undefined` on normaali. Myös vanha `runAllRegressionTests()` käyttää näitä lomakelatauksia ja muuttaa avointa työtä. `runCurrentOrderSummaryTest()` laskee yhteenvedon nykyisestä lomakkeesta.
 
 Kun korjaat virheen, tee ensin tapaus, joka osoittaa sen. Tarkista muutoksen jälkeen vähintään:
@@ -183,7 +188,7 @@ Perustestit:
 - **Testi A jäännöksillä:** `totalBars = 22`, `newBars = 10`, `remnantBars = 12`, kaikki 12 annettua jäännöstä käytetään ja uusista tangoista syntyy nykyisin 9 säästettävää jäännöstä.
 - **Testi D1:** Pysty 2200 mm × 2, vanha Pysty-jäännös 3900 mm × 1 ja rajaton uusi materiaali. Odotettu tulos on yksi uusi tanko, 2200 mm × 2, noin 1594 mm jäännös ja vanha 3900 mm jäännös käyttämättä.
 
-Aja tehtävän laajuuteen nähden soveltuvat tarkistukset. Käytä `node --check app.js`-syntaksitarkistusta, jos Node on saatavilla, ja `git diff --check`-tarkistusta. Optimointia tai persistenssiä muuttava työ vaatii lisäksi relevantit regressiot ja mahdollisuuksien mukaan selaintestin. Älä väitä selaintestiä tehdyksi, jos sitä ei voitu ajaa.
+Aja tehtävän laajuuteen nähden soveltuvat tarkistukset. Käytä `node --check`-syntaksitarkistusta muuttuneille JavaScript-tiedostoille (nyt `app.js`, `src/cutting-physics.js` ja `run-regressions.cjs`), jos Node on saatavilla, ja `git diff --check`-tarkistusta. Optimointia, persistenssiä tai selainlatausta muuttava työ vaatii lisäksi relevantit regressiot ja mahdollisuuksien mukaan selaintestin. Älä väitä selaintestiä tehdyksi, jos sitä ei voitu ajaa.
 
 ## Toimintavaltuudet ja yhteistyötapa
 

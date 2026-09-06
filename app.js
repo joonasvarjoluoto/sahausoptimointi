@@ -1,3 +1,13 @@
+// var säilyttää vanhojen funktioiden window- ja konsolinimet ilman koodikopiota.
+var {
+    cutPiece,
+    hasSupportedMillimeterPrecision,
+    millimetersToDpUnits,
+    dpUnitsToMillimeters
+} = CUTTING_PHYSICS;
+const { DP_DIMENSION_SCALE } = CUTTING_PHYSICS;
+
+
 const PROFILE_TYPES = Object.freeze({
     uProfile: Object.freeze({
         label: "U-profiili",
@@ -1877,59 +1887,80 @@ function calculatePostOrderMaterialInventory(
 }
 
 
-function cutPiece(remaining, piece, kerf) {
+function runCuttingPhysicsRegressionTests() {
 
-    // Sahausfysiikka lasketaan samoissa 0,1 mm:n
-    // kokonaislukuyksiköissä kuin DP-haku.
-    const remainingUnits =
-        millimetersToDpUnits(remaining);
+    const results = [];
+    const record = (test, passed) => results.push({
+        test: test,
+        result: passed ? "PASS" : "FAIL"
+    });
 
-    const pieceUnits =
-        millimetersToDpUnits(piece);
+    // Kokonaismillimetrien lisäksi lukitaan desimaalirajat ja nollakerf.
+    const cuts = [
+        [1999.9, 2000, 3, false, 1999.9, 0],
+        [2000, 2000, 3, true, 0, 0],
+        [2000.1, 2000, 3, true, 0, 0.1],
+        [2002.9, 2000, 3, true, 0, 2.9],
+        [2003, 2000, 3, true, 0, 3],
+        [2003.1, 2000, 3, true, 0.1, 3],
+        [2000.1, 2000, 0, true, 0.1, 0],
+        [10.5, 8, 2.5, true, 0, 2.5]
+    ];
 
-    const kerfUnits =
-        millimetersToDpUnits(kerf);
-
-    const excessUnits =
-        remainingUnits -
-        pieceUnits;
-
-
-    if (excessUnits < 0) {
-
-        return {
-            possible: false,
-            remaining: remainingUnits /
-                DP_DIMENSION_SCALE,
-            waste: 0
-        };
+    for (const [source, piece, kerf, possible, remaining, waste] of cuts) {
+        const result = cutPiece(source, piece, kerf);
+        record(
+            `Sahaus ${source} / ${piece} / ${kerf}`,
+            result.possible === possible &&
+            result.remaining === remaining &&
+            result.waste === waste &&
+            (!possible || millimetersToDpUnits(source) ===
+                millimetersToDpUnits(piece) +
+                millimetersToDpUnits(result.remaining) +
+                millimetersToDpUnits(result.waste))
+        );
     }
 
-
-    if (excessUnits >= kerfUnits) {
-
-        return {
-            possible: true,
-            remaining:
-                (
-                    excessUnits -
-                    kerfUnits
-                ) /
-                DP_DIMENSION_SCALE,
-            waste:
-                kerfUnits /
-                DP_DIMENSION_SCALE
-        };
+    for (const value of [0, 0.1, 2.5, 1901.1, 4095.9, 6000]) {
+        record(
+            `Mittamuunnos ${value}`,
+            DP_DIMENSION_SCALE === 10 &&
+            hasSupportedMillimeterPrecision(value) &&
+            millimetersToDpUnits(value) === value * 10 &&
+            dpUnitsToMillimeters(millimetersToDpUnits(value)) === value
+        );
     }
 
-
-    return {
-        possible: true,
-        remaining: 0,
-        waste:
-            excessUnits /
-            DP_DIMENSION_SCALE
+    const rejectsPrecision = (operation, value) => {
+        try {
+            operation();
+            return false;
+        } catch (error) {
+            return error instanceof Error && error.message ===
+                "Mitan pitää käyttää enintään 0,1 mm tarkkuutta. " +
+                "Arvoa ei pyöristetty: " + value + " mm.";
+        }
     };
+
+    for (const value of [0.01, 1.11, NaN, Infinity, "3", Number.MAX_SAFE_INTEGER]) {
+        record(
+            `Hylättävä mitta ${String(value)} (${typeof value})`,
+            !hasSupportedMillimeterPrecision(value) &&
+            rejectsPrecision(() => millimetersToDpUnits(value), value)
+        );
+    }
+
+    for (const index of [0, 1, 2]) {
+        const args = [6000, 2000, 3];
+        args[index] = 0.01;
+        record(
+            `Sahaus hylkää liian tarkan argumentin ${index}`,
+            rejectsPrecision(() => cutPiece(...args), 0.01)
+        );
+    }
+
+    console.table(results);
+    return results;
 }
 
 
@@ -2125,42 +2156,6 @@ function runDecimalExactFitRegressionTest() {
 
 
     return results;
-}
-
-
-const DP_DIMENSION_SCALE = 10;
-
-
-function hasSupportedMillimeterPrecision(millimeters) {
-    return Number.isFinite(millimeters) &&
-        Number.isSafeInteger(
-            millimeters * DP_DIMENSION_SCALE
-        );
-}
-
-
-function millimetersToDpUnits(millimeters) {
-
-    const units = millimeters * DP_DIMENSION_SCALE;
-
-
-    if (!hasSupportedMillimeterPrecision(millimeters)) {
-
-        throw new Error(
-            "Mitan pitää käyttää enintään 0,1 mm tarkkuutta. " +
-            "Arvoa ei pyöristetty: " +
-            millimeters +
-            " mm."
-        );
-    }
-
-
-    return units;
-}
-
-
-function dpUnitsToMillimeters(units) {
-    return units / DP_DIMENSION_SCALE;
 }
 
 

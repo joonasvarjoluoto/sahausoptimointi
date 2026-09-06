@@ -7,6 +7,7 @@ const vm = require("node:vm");
 const suites = [
     { name: "runCoreRegressionTests", expectedRows: 4 },
     { name: "runCutPieceBoundaryTests", expectedRows: 5 },
+    { name: "runCuttingPhysicsRegressionTests", expectedRows: 23 },
     { name: "runDecimalExactFitRegressionTest", expectedRows: 2 },
     ...[
         "runUnknownProfileRegressionTest",
@@ -43,16 +44,20 @@ const suites = [
 function main() {
 
     // Toimii myös, kun komento käynnistetään muusta työhakemistosta.
-    const appPath = path.join(__dirname, "app.js");
-    let appScript;
+    // Sama riippuvuusjärjestys kuin index.html:ssä, ei erillistä Node-toteutusta.
+    const sourceFiles = ["src/cutting-physics.js", "app.js"];
+    const scripts = [];
 
-    try {
-        appScript = new vm.Script(fs.readFileSync(appPath, "utf8"), {
-            filename: appPath
-        });
-    } catch (error) {
-        console.error("ERROR app.js: " + error.message);
-        return 1;
+    for (const filename of sourceFiles) {
+        const sourcePath = path.join(__dirname, filename);
+        try {
+            scripts.push(new vm.Script(fs.readFileSync(sourcePath, "utf8"), {
+                filename: sourcePath
+            }));
+        } catch (error) {
+            console.error("ERROR " + filename + ": " + error.message);
+            return 1;
+        }
     }
 
     let passedCount = 0;
@@ -70,7 +75,9 @@ function main() {
             // Tuore ympäristö estää testiryhmien välisen tilavuodon.
             // Ei DOM-/storage-mockeja eikä selaimen tai Node-isännän API:ja.
             const context = vm.createContext({ console: testConsole });
-            appScript.runInContext(context, { timeout: 10000 });
+            for (const script of scripts) {
+                script.runInContext(context, { timeout: 10000 });
+            }
             const result = vm.runInContext(suite.name + "()", context, {
                 timeout: 60000
             });
