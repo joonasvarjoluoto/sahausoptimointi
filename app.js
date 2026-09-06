@@ -375,69 +375,431 @@ function updateStockProfileQuantityAvailability(
         unlimitedCheckbox.checked;
 }
 
-function createCutRow(
-    length = "",
-    quantity = "1",
-    profileType = "verticalProfile",
-    color = ""
-) {
+// UI-osiot eivät muuta materiaaliprofiileja: rails laajenee kahdeksi riviksi.
+const ORDER_PROFILE_SECTIONS = Object.freeze([
+    Object.freeze({ key: "verticalProfile", label: "Pystyprofiili", profiles: ["verticalProfile"] }),
+    Object.freeze({ key: "horizontalProfile", label: "Vaakaprofiili", profiles: ["horizontalProfile"] }),
+    Object.freeze({ key: "uProfile", label: "U-profiili", profiles: ["uProfile"] }),
+    Object.freeze({ key: "closingProfile", label: "Vasteprofiili", profiles: ["closingProfile"] }),
+    Object.freeze({ key: "rails", label: "Ylä- ja alakisko", profiles: ["topRail", "bottomRail"] })
+]);
+const MAX_ORDER_COUNT = 100;
+const MAX_ORDER_NAME_LENGTH = 120;
 
+
+function createOrderInput(id, name = "", color = "", rowsBySection = {}) {
+    return {
+        id: id,
+        name: name,
+        color: color,
+        sections: ORDER_PROFILE_SECTIONS.map(section => ({
+            key: section.key,
+            open: false,
+            rows: (rowsBySection[section.key] ?? []).map(row => ({
+                length: String(row.length), quantity: String(row.quantity)
+            }))
+        }))
+    };
+}
+
+
+function isBlankOrderMeasure(row) {
+    // Pelkkä oletusmäärä ei tee tyhjästä rivistä tilausta. Muokattu määrä
+    // ilman mittaa on sen sijaan keskeneräinen syöte, jota ei saa ohittaa.
+    return row.length === "" && (row.quantity === "" || row.quantity === "1");
+}
+
+
+function normalizeOrderCuts(orders) {
+    return orders.flatMap(order => order.sections.flatMap(section => {
+        const definition = ORDER_PROFILE_SECTIONS.find(item => item.key === section.key);
+        if (!definition) {
+            throw new Error("Tuntematon tilauksen profiiliosio.");
+        }
+        return section.rows.filter(row => !isBlankOrderMeasure(row)).flatMap(row =>
+            definition.profiles.map(profileType => ({
+                orderId: order.id,
+                profileType: profileType,
+                color: order.color === "" ? null : order.color,
+                length: Number(row.length),
+                quantity: Number(row.quantity)
+            }))
+        );
+    }));
+}
+
+
+function isValidStoredOrders(orders) {
+    if (!Array.isArray(orders) || orders.length > MAX_ORDER_COUNT) {
+        return false;
+    }
+    const ids = new Set();
+    let expandedRows = 0;
+    const isNumericField = value => typeof value === "string" &&
+        value.length <= 32 && (value === "" ||
+            (/^-?(?:\d+|\d*\.\d+)(?:e[+-]?\d+)?$/i.test(value) &&
+                Number.isFinite(Number(value))));
+
+    for (const order of orders) {
+        if (!isPlainObject(order) ||
+            typeof order.id !== "string" || !/^[a-zA-Z0-9_-]{1,80}$/.test(order.id) ||
+            ids.has(order.id) ||
+            typeof order.name !== "string" || order.name.length > MAX_ORDER_NAME_LENGTH ||
+            !(order.color === "" || isSupportedMaterialColor(order.color)) ||
+            !Array.isArray(order.sections) ||
+            order.sections.length !== ORDER_PROFILE_SECTIONS.length) {
+            return false;
+        }
+        ids.add(order.id);
+        for (let index = 0; index < ORDER_PROFILE_SECTIONS.length; index++) {
+            const section = order.sections[index];
+            const definition = ORDER_PROFILE_SECTIONS[index];
+            if (!isPlainObject(section) || section.key !== definition.key ||
+                typeof section.open !== "boolean" ||
+                !Array.isArray(section.rows) ||
+                section.rows.length > MAX_STORED_FORM_ROW_COUNT) {
+                return false;
+            }
+            expandedRows += section.rows.length * definition.profiles.length;
+            if (expandedRows > MAX_STORED_FORM_ROW_COUNT) {
+                return false;
+            }
+            for (const row of section.rows) {
+                if (!isPlainObject(row) || !isNumericField(row.length) ||
+                    !isNumericField(row.quantity)) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+
+function runOrderInputRegressionTests() {
+    const results = [];
+    const record = (test, passed) => results.push({
+        test: test, result: passed ? "PASS" : "FAIL"
+    });
+    const row = (length, quantity) => ({ length: String(length), quantity: String(quantity) });
+    const cut = (orderId, profileType, color, length, quantity) => ({
+        orderId, profileType, color, length, quantity
+    });
+    const gray = createOrderInput("gray-order", "Tilaus 12345", "gray", {
+        verticalProfile: [row(2240, 6)]
+    });
+    const cases = [
+        { name: "Yksi harmaa pystymitta", orders: [gray],
+            expected: [cut("gray-order", "verticalProfile", "gray", 2240, 6)] },
+        { name: "Kaksi pystymittaa", orders: [
+            createOrderInput("two", "", "gray", { verticalProfile: [row(2240, 6), row(2180, 4)] })
+        ], expected: [cut("two", "verticalProfile", "gray", 2240, 6),
+            cut("two", "verticalProfile", "gray", 2180, 4)] },
+        { name: "Tilausten värieristys", orders: [gray,
+            createOrderInput("black-order", "", "black", { verticalProfile: [row(2240, 2)] })
+        ], expected: [cut("gray-order", "verticalProfile", "gray", 2240, 6),
+            cut("black-order", "verticalProfile", "black", 2240, 2)] },
+        { name: "Yksi kiskomitta on kaksi fyysistä profiilia", orders: [
+            createOrderInput("rails", "", "white", { rails: [row(3290, 2)] })
+        ], expected: [cut("rails", "topRail", "white", 3290, 2),
+            cut("rails", "bottomRail", "white", 3290, 2)] },
+        { name: "Useat kiskomitat", orders: [
+            createOrderInput("rails", "", "gray", { rails: [row(3290, 2), row(2460, 1)] })
+        ], expected: [cut("rails", "topRail", "gray", 3290, 2),
+            cut("rails", "bottomRail", "gray", 3290, 2),
+            cut("rails", "topRail", "gray", 2460, 1),
+            cut("rails", "bottomRail", "gray", 2460, 1)] },
+        { name: "Tyhjät osiot", orders: [createOrderInput("empty", "", "gray")], expected: [] },
+        { name: "Tyhjä mittarivi oletusmäärällä ohitetaan", orders: [
+            createOrderInput("empty", "", "gray", { verticalProfile: [row("", 1)], rails: [row("", "")] })
+        ], expected: [] },
+        { name: "Pelkkää muokattua määrää ei ohiteta", orders: [
+            createOrderInput("partial", "", "gray", { verticalProfile: [row("", 5)] })
+        ], expected: [cut("partial", "verticalProfile", "gray", 0, 5)] },
+        { name: "Samanväristen tilausten tunnisteet säilyvät", orders: [gray,
+            createOrderInput("second", "Tilaus 12345", "gray", { verticalProfile: [row(2240, 6)] })
+        ], expected: [cut("gray-order", "verticalProfile", "gray", 2240, 6),
+            cut("second", "verticalProfile", "gray", 2240, 6)] },
+        { name: "Muut profiilit ja desimaali", orders: [
+            createOrderInput("other", "", "gray", {
+                horizontalProfile: [row(760.5, 4)], uProfile: [row(2200, 2)],
+                closingProfile: [row(2200, 2)]
+            })
+        ], expected: [cut("other", "horizontalProfile", "gray", 760.5, 4),
+            cut("other", "uProfile", "gray", 2200, 2),
+            cut("other", "closingProfile", "gray", 2200, 2)] }
+    ];
+    for (const test of cases) {
+        const before = JSON.stringify(test.orders);
+        const actual = normalizeOrderCuts(test.orders);
+        record(test.name, JSON.stringify(actual) === JSON.stringify(test.expected) &&
+            JSON.stringify(normalizeOrderCuts(test.orders)) === JSON.stringify(actual) &&
+            JSON.stringify(test.orders) === before && isValidStoredOrders(test.orders));
+    }
+    for (const test of createDevelopmentTestCases()) {
+        const orders = createDevelopmentOrdersFromCuts(test.cuts);
+        const inventory = createMaterialInventory(test.materialAvailability);
+        const previous = optimizeOrderByProfileTypeWithInventory(
+            test.cuts, inventory, test.kerf, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS);
+        const adapted = optimizeOrderByProfileTypeWithInventory(
+            normalizeOrderCuts(orders), inventory, test.kerf, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS);
+        record("Sama koko optimointitulos: " + test.id,
+            JSON.stringify(previous) === JSON.stringify(adapted));
+    }
+    console.table(results);
+    return results.every(result => result.result === "PASS");
+}
+
+
+function runStoredOrderValidationRegressionTests() {
+    const results = [];
+    const record = (test, passed) => results.push({ test, result: passed ? "PASS" : "FAIL" });
+    const valid = createStoredPlanSemanticRegressionState();
+    record("Skeema 4 hyväksytään", valid.schemaVersion === 4 && isValidStoredWorkState(valid));
+    record("Skeema 3 ei palaudu uuteen käyttöliittymään",
+        !isValidStoredWorkState({ ...valid, schemaVersion: 3 }));
+    const mutations = [
+        state => { delete state.orders; },
+        state => { state.orders = {}; },
+        state => { state.orders.push(JSON.parse(JSON.stringify(state.orders[0]))); },
+        state => { state.orders[0].id = ""; },
+        state => { state.orders[0].id = "<script>"; },
+        state => { state.orders[0].name = {}; },
+        state => { state.orders[0].name = "x".repeat(MAX_ORDER_NAME_LENGTH + 1); },
+        state => { state.orders[0].color = "unknown"; },
+        state => { state.orders[0].color = null; },
+        state => { state.orders[0].sections.pop(); },
+        state => { state.orders[0].sections[0].key = "constructor"; },
+        state => { state.orders[0].sections[0].key = "topRail"; },
+        state => { state.orders[0].sections[0].open = "true"; },
+        state => { state.orders[0].sections[0].rows = [null]; },
+        state => { state.orders[0].sections[0].rows[0].length = 2200; },
+        state => { state.orders[0].sections[0].rows[0].length = "<img>"; },
+        state => { state.orders[0].sections[0].rows[0].length = "1."; },
+        state => { state.orders[0].sections[0].rows[0].length = "Infinity"; },
+        state => { state.orders[0].sections[0].rows[0].quantity = []; },
+        state => { state.orders = Array.from({ length: MAX_ORDER_COUNT + 1 },
+            (_, index) => createOrderInput("order-" + index)); },
+        state => { state.orders[0].sections[0].rows =
+            Array.from({ length: MAX_STORED_FORM_ROW_COUNT + 1 }, () => ({ length: "", quantity: "1" })); },
+        state => { state.orders[0].sections[4].rows =
+            Array.from({ length: 501 }, () => ({ length: "", quantity: "1" })); }
+    ];
+    mutations.forEach((mutate, index) => {
+        const state = JSON.parse(JSON.stringify(valid));
+        mutate(state);
+        const before = JSON.stringify(state);
+        record("Virheellinen tilausrakenne " + (index + 1),
+            !isValidStoredWorkState(state) &&
+            !isValidStoredWorkState({ ...state, generatedPlan: null }) &&
+            JSON.stringify(state) === before);
+    });
+    for (const [field, value] of [["length", "0"], ["length", "-1"], ["length", "2200.01"],
+        ["quantity", "0"], ["quantity", "1.5"], ["quantity", "9007199254740992"]]) {
+        const state = JSON.parse(JSON.stringify(valid));
+        state.orders[0].sections[0].rows[0][field] = value;
+        record("Virheellinen laskettu mitta/määrä: " + field + "=" + value,
+            !isValidStoredWorkState(state) &&
+            isValidStoredWorkState({ ...state, generatedPlan: null }));
+    }
+    const blank = JSON.parse(JSON.stringify(valid));
+    blank.orders[0].sections[4].rows.push({ length: "", quantity: "1" });
+    blank.orders[0].name = '<img src=x onerror="alert(1)">';
+    blank.orders[0].sections[0].open = true;
+    blank.completedBarIds = ["bar-1"];
+    record("Nimi, tyhjä kiskorivi ja accordion eivät muuta suunnitelmaa",
+        isValidStoredWorkState(blank));
+    blank.orders[0].sections[4].rows[0].length = "2000";
+    record("Lisätty kiskopari vaatii myös molemmat profiilit suunnitelmaan",
+        !isValidStoredWorkState(blank));
+    const limit = [createOrderInput("limit", "", "gray", {
+        rails: Array.from({ length: 500 }, () => ({ length: "", quantity: "1" }))
+    })];
+    record("500 kiskoriviä vastaa 1000 sahattavaa riviä", isValidStoredOrders(limit));
+    console.table(results);
+    return results.every(result => result.result === "PASS");
+}
+
+
+function runOrderInputUiRegressionTests() {
+    const order = createOrderInput("ui-test", '<img src=x onerror="alert(1)">', "black", {
+        verticalProfile: [{ length: "2240", quantity: "6" }, { length: "2180", quantity: "4" }],
+        rails: [{ length: "3290", quantity: "2" }]
+    });
+    order.sections[0].open = true;
+    const container = document.createElement("div");
+    container.append(createOrderCard(order));
+    const restored = getOrdersFromForm(container);
+    const passed = JSON.stringify(restored) === JSON.stringify([order]) &&
+        container.querySelectorAll("details").length === 5 &&
+        container.querySelectorAll("select").length === 1 &&
+        container.querySelectorAll("img, script, .cut-profile-type, .cut-color").length === 0 &&
+        container.querySelector(".order-section-count").textContent === "2 mittaa / 10 kpl" &&
+        normalizeOrderCuts(restored).length === 4;
+    console.table([{ test: "Tilauskortin turvallinen DOM-roundtrip", result: passed ? "PASS" : "FAIL" }]);
+    return passed;
+}
+
+
+function getOrdersFromForm(container = document.getElementById("cutList")) {
+    return [...container.querySelectorAll(".order-card")].map(card => ({
+        id: card.dataset.orderId,
+        name: card.querySelector(".order-name").value,
+        color: card.querySelector(".order-color").value,
+        sections: [...card.querySelectorAll(".order-profile-section")].map(section => ({
+            key: section.dataset.sectionKey,
+            open: section.open,
+            rows: [...section.querySelectorAll(".order-measure-row")].map(row => ({
+                length: row.querySelector(".cut-length").value,
+                quantity: row.querySelector(".cut-quantity").value
+            }))
+        }))
+    }));
+}
+
+
+function updateOrderSectionSummary(section) {
+    const rows = [...section.querySelectorAll(".order-measure-row")];
+    const filled = rows.filter(row => row.querySelector(".cut-length").value !== "");
+    const count = filled.reduce((sum, row) => {
+        const quantity = Number(row.querySelector(".cut-quantity").value);
+        return sum + (Number.isSafeInteger(quantity) && quantity > 0 ? quantity : 0);
+    }, 0);
+    const suffix = section.dataset.sectionKey === "rails" ? " kpl / kisko" : " kpl";
+    section.querySelector(".order-section-count").textContent =
+        filled.length === 0 ? "Ei mittoja" : filled.length + " mittaa / " + count + suffix;
+}
+
+
+function createOrderMeasureRow(length = "", quantity = "1") {
     const row = document.createElement("div");
-
-    row.className = "cut-row";
-
+    row.className = "order-measure-row";
     row.innerHTML = `
         <label class="form-field">
-            <span>Profiilityyppi</span>
-            <select class="cut-profile-type">
-                ${createProfileTypeOptions(profileType)}
-            </select>
+            <span>Mitta (mm)</span>
+            <input class="cut-length" type="number" min="0.1" step="0.1"
+                inputmode="decimal" placeholder="Mitta">
         </label>
-
-        <label class="form-field">
-            <span>Väri</span>
-            <select
-                class="cut-color"
-                aria-label="Sahattavan kappaleen väri"
-            >
-                ${createMaterialColorOptions(color)}
-            </select>
-        </label>
-
-        <label class="form-field">
-            <span>Kappaleen pituus (mm)</span>
-            <input
-                class="cut-length"
-                type="number"
-                step="0.1"
-                inputmode="decimal"
-                placeholder="Mitta"
-            >
-        </label>
-
         <label class="form-field">
             <span>Määrä (kpl)</span>
-            <input
-                class="cut-quantity"
-                type="number"
-                step="1"
-                inputmode="numeric"
-                placeholder="Kpl"
-            >
+            <input class="cut-quantity" type="number" min="1" step="1"
+                inputmode="numeric" placeholder="Kpl">
         </label>
-
-        <button
-            class="remove-cut-button"
-            type="button"
-            onclick="removeCut(this)"
-        >
-            POISTA
-        </button>
+        <button class="remove-cut-button" type="button">POISTA MITTA</button>
     `;
-
     row.querySelector(".cut-length").value = String(length);
     row.querySelector(".cut-quantity").value = String(quantity);
+    row.querySelector("button").addEventListener("click", () => {
+        const section = row.closest(".order-profile-section");
+        row.remove();
+        updateOrderSectionSummary(section);
+        handleOrderInputChange();
+        section.querySelector(".add-cut-button").focus();
+    });
     return row;
+}
+
+
+function createOrderCard(order) {
+    const card = document.createElement("article");
+    card.className = "order-card";
+    card.dataset.orderId = order.id;
+    // Käyttäjän nimeä tai tunnistetta ei sijoiteta HTML-merkkijonoon.
+    card.innerHTML = `
+        <div class="order-header">
+            <label class="form-field">
+                <span>Tilauksen tunnus / nimi</span>
+                <input class="order-name" type="text" placeholder="Esim. Tilaus 12345">
+            </label>
+            <label class="form-field">
+                <span>Tilauksen väri</span>
+                <select class="order-color"></select>
+            </label>
+        </div>
+    `;
+    const name = card.querySelector(".order-name");
+    name.maxLength = MAX_ORDER_NAME_LENGTH;
+    name.value = order.name;
+    card.querySelector(".order-color").innerHTML = createMaterialColorOptions(order.color);
+
+    for (const sectionData of order.sections) {
+        const definition = ORDER_PROFILE_SECTIONS.find(item => item.key === sectionData.key);
+        const section = document.createElement("details");
+        section.className = "order-profile-section";
+        section.dataset.sectionKey = sectionData.key;
+        section.open = sectionData.open;
+        const summary = document.createElement("summary");
+        const label = document.createElement("span");
+        label.textContent = definition.label;
+        const count = document.createElement("span");
+        count.className = "order-section-count";
+        summary.append(label, count);
+        const content = document.createElement("div");
+        content.className = "order-section-content";
+        const list = document.createElement("div");
+        list.className = "order-measure-list";
+        list.append(...sectionData.rows.map(row =>
+            createOrderMeasureRow(row.length, row.quantity)));
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "add-cut-button";
+        add.textContent = "+ LISÄÄ MITTA";
+        add.addEventListener("click", () => {
+            const orders = getOrdersFromForm();
+            const size = orders.reduce((sum, item) => sum + item.sections.reduce(
+                (rows, group, index) => rows + group.rows.length *
+                    ORDER_PROFILE_SECTIONS[index].profiles.length, 0), 0);
+            if (size + definition.profiles.length > MAX_STORED_FORM_ROW_COUNT) {
+                window.alert("Työssä voi olla enintään 1000 sahattavaa riviä. Kiskopari lasketaan kahdeksi.");
+                return;
+            }
+            const row = createOrderMeasureRow();
+            list.append(row);
+            updateOrderSectionSummary(section);
+            handleOrderInputChange();
+            row.querySelector(".cut-length").focus();
+        });
+        content.append(list, add);
+        section.append(summary, content);
+        card.append(section);
+        updateOrderSectionSummary(section);
+        section.addEventListener("toggle", () => {
+            // Accordionin avaaminen ei muuta sahaustilausta tai TEHTY-tilaa.
+            if (card.isConnected) {
+                saveCurrentWorkState();
+            }
+        });
+    }
+    const remove = document.createElement("button");
+    remove.className = "remove-cut-button order-remove-button";
+    remove.type = "button";
+    remove.textContent = "POISTA TILAUS";
+    remove.addEventListener("click", () => {
+        if (!window.confirm("Poistetaanko tilaus ja kaikki sen mittarivit? Sahaussuunnitelma on laskettava uudelleen.")) {
+            return;
+        }
+        card.remove();
+        handleOrderInputChange();
+        document.getElementById("addOrderButton").focus();
+    });
+    card.append(remove);
+    return card;
+}
+
+
+function addOrder() {
+    const orders = getOrdersFromForm();
+    if (orders.length >= MAX_ORDER_COUNT) {
+        window.alert("Työssä voi olla enintään " + MAX_ORDER_COUNT + " tilausta.");
+        return;
+    }
+    const card = createOrderCard(createOrderInput(
+        "order-" + (globalThis.crypto?.randomUUID?.() ??
+            Date.now().toString(36) + "-" + Math.random().toString(36).slice(2))
+    ));
+    document.getElementById("cutList").append(card);
+    handleOrderInputChange();
+    card.querySelector(".order-name").focus();
 }
 
 function createRemnantRow(
@@ -533,55 +895,8 @@ function removeRemnant(button) {
 }
 
 
-function addCut() {
-
-    const cutList = document.getElementById("cutList");
-
-    cutList.appendChild(createCutRow());
-    handleOrderInputChange();
-}
-
-
-function removeCut(button) {
-
-    const row = button.parentElement;
-
-    row.remove();
-    handleOrderInputChange();
-}
-
-
 function getCutsFromForm() {
-
-    const profileTypeInputs =
-        document.querySelectorAll(".cut-profile-type");
-
-    const lengthInputs =
-        document.querySelectorAll(".cut-length");
-
-    const quantityInputs =
-        document.querySelectorAll(".cut-quantity");
-
-    const colorInputs =
-        document.querySelectorAll(".cut-color");
-
-    const cuts = [];
-
-    for (let i = 0; i < lengthInputs.length; i++) {
-
-        const length = Number(lengthInputs[i].value);
-        const quantity = Number(quantityInputs[i].value);
-        const color = colorInputs[i].value;
-
-        cuts.push({
-            profileType: profileTypeInputs[i].value,
-            color: color === "" ? null : color,
-            length: length,
-            quantity: quantity
-        });
-    }
-
-    return cuts;
+    return normalizeOrderCuts(getOrdersFromForm());
 }
 
 function getMaterialAvailabilityFromForm() {
@@ -8239,9 +8554,20 @@ function runStoredProfileTypeValidationRegressionTests() {
             stock.color = stock.profileType === profileType ? "black" : "gray";
             stock.unlimited = stock.profileType !== profileType;
         }
-        state.inputRows[0].profileType = profileType;
+        const isRail = profileType === "topRail" || profileType === "bottomRail";
+        state.orders = [createOrderInput("regression", "", "black", {
+            [isRail ? "rails" : profileType]: [{ length: "2200", quantity: "1" }]
+        })];
         state.remnantRows[0].profileType = profileType;
         state.generatedPlan.bars[0].profileType = profileType;
+        if (isRail) {
+            const other = profileType === "topRail" ? "bottomRail" : "topRail";
+            state.stockProfileRows.find(row => row.profileType === other).color = "black";
+            state.generatedPlan.bars.push({
+                ...state.generatedPlan.bars[0],
+                id: "bar-2", number: 2, profileType: other
+            });
+        }
 
         const before = JSON.stringify(state);
         const passed = isValidStoredWorkState(state) &&
@@ -8267,11 +8593,11 @@ function runStoredProfileTypeValidationRegressionTests() {
             validate: state => isValidStoredStockProfileRows(state.stockProfileRows)
         },
         {
-            name: "inputRows",
+            name: "orders.sections",
             set: (state, profileType) => {
-                state.inputRows[0].profileType = profileType;
+                state.orders[0].sections[0].key = profileType;
             },
-            validate: state => isValidStoredInputRows(state.inputRows)
+            validate: state => isValidStoredOrders(state.orders)
         },
         {
             name: "remnantRows",
@@ -8366,14 +8692,9 @@ function runStoredWorkStateColorRegressionTest() {
                 quantity: "1"
             }
         ],
-        inputRows: [
-            {
-                profileType: "verticalProfile",
-                color: "black",
-                length: "2200",
-                quantity: "1"
-            }
-        ],
+        orders: [createOrderInput("regression", "", "black", {
+            verticalProfile: [{ length: "2200", quantity: "1" }]
+        })],
         generatedPlan: {
             complete: true,
             bars: [
@@ -8411,10 +8732,7 @@ function runStoredWorkStateColorRegressionTest() {
             state.remnantRows.map(
                 ({ color, ...row }) => row
             ),
-        inputRows:
-            state.inputRows.map(
-                ({ color, ...row }) => row
-            ),
+        orders: state.orders.map(order => ({ ...order, color: "" })),
         generatedPlan: {
             ...state.generatedPlan,
             bars: state.generatedPlan.bars.map(
@@ -8433,9 +8751,9 @@ function runStoredWorkStateColorRegressionTest() {
     const invalidColorStates = [
         {
             ...state,
-            inputRows: [
+            orders: [
                 {
-                    ...state.inputRows[0],
+                    ...state.orders[0],
                     color: 1
                 }
             ]
@@ -8480,7 +8798,7 @@ function runStoredWorkStateColorRegressionTest() {
     console.table([
         {
             test:
-                "Suunnitelma vaatii ratkaistut värit mutta legacy-luonnos säilyy yhteensopivana",
+                "Suunnitelma vaatii ratkaistut värit mutta väritön luonnos säilyy yhteensopivana",
             result:
                 passed ? "PASS" : "FAIL",
             coloredState:
@@ -9170,14 +9488,9 @@ function runWorkFinalizationRegressionTest() {
                 quantity: String(remnant.quantity)
             })
         ),
-        inputRows: [
-            {
-                profileType: "verticalProfile",
-                color: "black",
-                length: "2200",
-                quantity: "1"
-            }
-        ],
+        orders: [createOrderInput("regression", "", "black", {
+            verticalProfile: [{ length: "2200", quantity: "1" }]
+        })],
         generatedPlan: null,
         completedBarIds: []
     };
@@ -9288,14 +9601,9 @@ function runWorkFinalizationPersistenceRegressionTest() {
         remainingItems: []
     };
 
-    const inputRows = [
-        {
-            profileType: "verticalProfile",
-            color: "black",
-            length: "4500",
-            quantity: "1"
-        }
-    ];
+    const orders = [createOrderInput("regression", "", "black", {
+        verticalProfile: [{ length: "4500", quantity: "1" }]
+    })];
 
     const postOrderInventory =
         calculatePostOrderMaterialInventory(
@@ -9323,7 +9631,7 @@ function runWorkFinalizationPersistenceRegressionTest() {
         kerf: "3",
         stockProfileRows: preFinalizationStockProfileRows,
         remnantRows: [],
-        inputRows: inputRows,
+        orders: orders,
         generatedPlan: completedPlan,
         completedBarIds: ["bar-1"]
     };
@@ -10376,7 +10684,7 @@ function getRemnantStatusLabel(remnantStatus) {
 
 
 const WORK_STORAGE_KEY = "sahausoptimointi.currentWork";
-const WORK_STATE_SCHEMA_VERSION = 3;
+const WORK_STATE_SCHEMA_VERSION = 4;
 const WORK_STATE_ENGINE_VERSION = "material-v0.3";
 const MAX_STORED_FORM_ROW_COUNT = 1000;
 
@@ -10708,12 +11016,10 @@ function createStoredPlanVerificationContext(state) {
     }
 
 
-    const cuts = state.inputRows.map(row => ({
-        profileType: row.profileType,
-        color: row.color ?? null,
-        length: Number(row.length),
-        quantity: Number(row.quantity)
-    }));
+    const cuts = normalizeOrderCuts(state.orders);
+    if (state.orders.some(order => !isSupportedMaterialColor(order.color))) {
+        throw new Error("Tallennetun suunnitelman tilauksen väri puuttuu.");
+    }
 
 
     for (const cut of cuts) {
@@ -10829,7 +11135,7 @@ function isValidStoredWorkState(state) {
             state.stockProfileRows
         ) ||
         !isValidStoredInputRows(state.remnantRows) ||
-        !isValidStoredInputRows(state.inputRows) ||
+        !isValidStoredOrders(state.orders) ||
         !Array.isArray(state.completedBarIds)
     ) {
         return false;
@@ -10894,14 +11200,9 @@ function createStoredPlanSemanticRegressionState() {
             }
         ],
 
-        inputRows: [
-            {
-                profileType: "verticalProfile",
-                color: "black",
-                length: "2200",
-                quantity: "1"
-            }
-        ],
+        orders: [createOrderInput("regression", "", "black", {
+            verticalProfile: [{ length: "2200", quantity: "1" }]
+        })],
 
         generatedPlan: {
             complete: true,
@@ -10943,7 +11244,7 @@ function cloneStoredPlanSemanticRegressionState() {
 
 function addSecondStoredPlanRegressionBar(state) {
 
-    state.inputRows[0].quantity = "2";
+    state.orders[0].sections[0].rows[0].quantity = "2";
     state.stockProfileRows.find(row =>
         row.profileType === "verticalProfile"
     ).quantity = "2";
@@ -10991,9 +11292,10 @@ function runStoredPlanSemanticValidationRegressionTests() {
         row.quantity = "";
     }
 
+    validIncompleteDraftState.orders[0].color = "";
     for (const row of [
         ...validIncompleteDraftState.remnantRows,
-        ...validIncompleteDraftState.inputRows
+        ...validIncompleteDraftState.orders[0].sections[0].rows
     ]) {
         row.color = null;
         row.length = "";
@@ -11029,19 +11331,9 @@ function runStoredPlanSemanticValidationRegressionTests() {
         {
             name: "Fyysisesti mahdoton sahausjärjestys hylätään",
             mutate: state => {
-                state.inputRows = [
-                    {
-                        profileType: "verticalProfile",
-                        color: "black",
-                        length: "5000",
-                        quantity: "1"
-                    },
-                    {
-                        profileType: "verticalProfile",
-                        color: "black",
-                        length: "1000",
-                        quantity: "1"
-                    }
+                state.orders[0].sections[0].rows = [
+                    { length: "5000", quantity: "1" },
+                    { length: "1000", quantity: "1" }
                 ];
 
                 const bar = state.generatedPlan.bars[0];
@@ -11064,7 +11356,7 @@ function runStoredPlanSemanticValidationRegressionTests() {
         {
             name: "Varastosta puuttuva materiaalivariantti hylätään",
             mutate: state => {
-                state.inputRows[0].color = "white";
+                state.orders[0].color = "white";
                 state.generatedPlan.bars[0].color = "white";
             }
         },
@@ -11172,26 +11464,6 @@ function runStoredPlanSemanticValidationRegressionTests() {
 }
 
 
-function getInputRowsForStorage() {
-
-    return [...document.querySelectorAll("#cutList .cut-row")].map(
-        row => ({
-            profileType:
-                row.querySelector(".cut-profile-type").value,
-
-            color:
-                normalizeStoredColor(
-                    row.querySelector(".cut-color").value
-                ),
-
-            length:
-                row.querySelector(".cut-length").value,
-
-            quantity:
-                row.querySelector(".cut-quantity").value
-        })
-    );
-}
 
 
 function getRemnantRowsForStorage() {
@@ -11324,8 +11596,8 @@ function createWorkStateSnapshot({
     remnantRows =
         getRemnantRowsForStorage(),
 
-    inputRows =
-        getInputRowsForStorage(),
+    orders =
+        getOrdersFromForm(),
 
     generatedPlan =
         currentGeneratedPlan,
@@ -11343,7 +11615,7 @@ function createWorkStateSnapshot({
         kerf: kerf,
         stockProfileRows: stockProfileRows,
         remnantRows: remnantRows,
-        inputRows: inputRows,
+        orders: orders,
         generatedPlan: generatedPlan,
         completedBarIds: completedBarIdsForStorage
     };
@@ -11403,7 +11675,7 @@ function resetWorkToDefaults() {
     const cutList =
         document.getElementById("cutList");
 
-    cutList.replaceChildren(createCutRow());
+    cutList.replaceChildren(createOrderCard(createOrderInput("order-1")));
 
     currentGeneratedPlan = null;
     resetCompletedBarState();
@@ -11465,6 +11737,11 @@ function restoreSavedWorkState() {
     if (!isValidStoredWorkState(state)) {
         removeSavedWorkState();
         resetWorkToDefaults();
+        const message = document.getElementById("result");
+        message.className = "work-state-message";
+        message.textContent = state?.schemaVersion === 3
+            ? "Syöttöliittymä uudistui. Vanha testityö poistettiin ja aloitettiin tyhjä työ."
+            : "Tallennettua työtä ei voitu palauttaa. Aloitettiin tyhjä työ.";
         return false;
     }
 
@@ -11507,16 +11784,7 @@ function restoreSavedWorkState() {
     cutList.replaceChildren();
 
 
-    for (const inputRow of state.inputRows) {
-        cutList.appendChild(
-            createCutRow(
-                inputRow.length,
-                inputRow.quantity,
-                inputRow.profileType,
-                normalizeMaterialColorForSelect(inputRow.color)
-            )
-        );
-    }
+    cutList.append(...state.orders.map(createOrderCard));
 
 
     currentGeneratedPlan = state.generatedPlan;
@@ -11592,6 +11860,10 @@ function runStoredPlanRestoreBoundaryRegressionTest() {
 
 
 function handleOrderInputChange() {
+
+    for (const section of document.querySelectorAll(".order-profile-section")) {
+        updateOrderSectionSummary(section);
+    }
 
     workInputRevision++;
 
@@ -12152,6 +12424,16 @@ async function calculate() {
 
     const validationErrors = [];
 
+    for (const [index, order] of getOrdersFromForm().entries()) {
+        if (!isSupportedMaterialColor(order.color)) {
+            validationErrors.push("Tilaus " + (index + 1) + ": valitse väri.");
+        }
+    }
+    if ([...document.querySelectorAll("#cutList input[type=number]")]
+        .some(input => input.validity.badInput)) {
+        validationErrors.push("Tarkista tilauksen keskeneräinen numeroarvo.");
+    }
+
     validationErrors.push(
         ...getMaterialColorValidationErrors(
             cuts,
@@ -12239,7 +12521,7 @@ async function calculate() {
 
 
         if (
-            !Number.isInteger(cut.quantity) ||
+            !Number.isSafeInteger(cut.quantity) ||
             cut.quantity <= 0
         ) {
 
@@ -12386,9 +12668,9 @@ async function calculate() {
 
 function initializeWorkPersistence() {
 
-    for (const colorSelect of document.querySelectorAll(".cut-color")) {
-        colorSelect.innerHTML = createMaterialColorOptions();
-    }
+    document.getElementById("cutList").replaceChildren(
+        createOrderCard(createOrderInput("order-1"))
+    );
 
     createDefaultStockProfileRows();
 
@@ -12402,7 +12684,7 @@ function initializeWorkPersistence() {
                 ".remnant-length, " +
                 ".remnant-quantity, " +
                 ".cut-length, " +
-                ".cut-quantity"
+                ".cut-quantity, .order-name"
             )
         ) {
             handleOrderInputChange();
@@ -12418,8 +12700,7 @@ function initializeWorkPersistence() {
                 ".stock-profile-color, " +
                 ".remnant-profile-type, " +
                 ".remnant-color, " +
-                ".cut-profile-type, " +
-                ".cut-color"
+                ".order-color"
             )
         ) {
             handleOrderInputChange();
@@ -13726,12 +14007,46 @@ function createDevelopmentTestCases() {
 }
 
 
+// Testiloadereiden adapteri, ei vanhojen tallenteiden migraatio.
+function createDevelopmentOrdersFromCuts(cuts) {
+    const byColor = new Map();
+    for (const cut of cuts) {
+        const color = cut.color ?? "gray";
+        if (!byColor.has(color)) {
+            byColor.set(color, createOrderInput("test-order-" + (byColor.size + 1), "", color));
+        }
+        if (cut.profileType === "bottomRail") {
+            continue;
+        }
+        const key = cut.profileType === "topRail" ? "rails" : cut.profileType;
+        const section = byColor.get(color).sections.find(item => item.key === key);
+        if (!section) {
+            throw new Error("Testilatauksen profiilityyppi on tuntematon.");
+        }
+        section.rows.push({ length: String(cut.length), quantity: String(cut.quantity) });
+    }
+    const railTotals = profile => {
+        const totals = new Map();
+        for (const cut of cuts.filter(row => row.profileType === profile)) {
+            const key = JSON.stringify([cut.color ?? "gray", Number(cut.length)]);
+            totals.set(key, (totals.get(key) ?? 0) + Number(cut.quantity));
+        }
+        return JSON.stringify([...totals].sort());
+    };
+    if (railTotals("topRail") !== railTotals("bottomRail")) {
+        throw new Error("Testilataus vaatii samat ylä- ja alakiskon mitat ja määrät.");
+    }
+    return [...byColor.values()];
+}
+
+
 function loadDevelopmentTestCase(
     cuts,
     remnants = [],
     settings = {}
 ) {
 
+    const orders = createDevelopmentOrdersFromCuts(cuts);
     document.getElementById("stockLength").value =
         String(settings.stockLength ?? 6000);
 
@@ -13767,14 +14082,7 @@ function loadDevelopmentTestCase(
     document
         .getElementById("cutList")
         .replaceChildren(
-            ...cuts.map(cut =>
-                createCutRow(
-                    cut.length,
-                    cut.quantity,
-                    cut.profileType,
-                    cut.color ?? "gray"
-                )
-            )
+            ...orders.map(createOrderCard)
         );
 
 

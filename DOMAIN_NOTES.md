@@ -85,9 +85,19 @@ Ennen mahdollista muutosta selvitä:
 
 ## Tilausten jäljitettävyys
 
+### Yhteinen ylä- ja alakiskosyöttö
+
+- **Luokitus:** käyttäjän vahvistama tuotantosääntö
+- **Lähde ja päivämäärä:** tilauspohjaisen Sahattavat-UI:n tehtävänanto, 2026-09-06
+- **Havainto:** yhden tilauksen ylä- ja alakiskoilla on samat mitat ja samat kappalemäärät.
+- **Nykyinen vaikutus koodiin:** yhteinen `rails`-UI-osio laajenee adapterissa erillisiksi `topRail`- ja `bottomRail`-riveiksi. Fyysisiä profiilityyppejä tai niiden materiaalivarastoja ei yhdistetä. Aukkokohtaista mallia ei vielä ole.
+
+### Tuleva tuotantokohdistus
+
 - **Luokitus:** tavoiteltu tuotantovaatimus
 - Tilaus ei ole optimizerille jakamaton kokonaisuus; eri tilausten kappaleita voidaan myöhemmin yhdistellä materiaalin kannalta.
 - Jokaisessa kappaleessa pitää säilyttää `orderId` ja `openingId`, jotta sahaus, merkintä, pakkaus ja asennus voidaan yhdistää oikeaan tilaukseen ja aukkoon.
+- Tilaus-UI:n ensimmäisessä toteutuksessa `orderId` säilyy tilauskortissa, tallenteessa ja adapterin cut-riveissä. Optimizerin ryhmitellyssä tuloksessa ei vielä ole kappalekohtaista tilauskohdistusta, eikä `openingId`:tä luoda ilman aukkokohtaista syöttömallia.
 - Rolling-horizon-uudelleenoptimointi on sallittu, kun osa työstä on tehty tai varasto ja tulevat tilaukset muuttuvat.
 
 ## Uuden merkinnän malli

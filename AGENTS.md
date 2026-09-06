@@ -34,7 +34,7 @@ Selain lataa tavallisina skripteinä ensin `src/cutting-physics.js`:n ja sitten 
 
 Tallennetun työtilan nykyinen versiointi:
 
-- `WORK_STATE_SCHEMA_VERSION = 3`
+- `WORK_STATE_SCHEMA_VERSION = 4`
 - `WORK_STATE_ENGINE_VERSION = "material-v0.3"`
 
 Kun skeema tai moottorin yhteensopivuus muuttuu, arvioi versionnosto ja päivitä dokumentaatio samassa rajatussa työssä.
@@ -80,7 +80,7 @@ Käyttöliittymän aktiivinen polku on inventory-aware:
 → `adaptMaterialOptimizationForUi()`
 → `renderCuttingPlan()`
 
-`optimizeOrderByProfileTypeWithInventory()` optimoi profiilityypit erikseen ja yhdistää tulokset lopuksi. Tämä on nykyisen single-order-prototyypin tarkoituksellinen rajaus.
+`optimizeOrderByProfileTypeWithInventory()` optimoi profiilityypit erikseen ja yhdistää tulokset lopuksi. Se käsittelee yhden laskentaerän kysynnän; käyttöliittymän tilauskortit eivät ole optimizerin erillisiä hakutiloja tai optimointikriteerejä.
 
 `optimizeOrderInventoryBeamDP()` kantaa tilassa jäljellä olevat tilauskappaleet ja materiaalilähteet. Tila-avain huomioi äärellisten lähteiden jäljellä olevat määrät. `consumeMaterialSource()` ei saa mutatoida muiden beam-haarojen lähteitä.
 
@@ -151,13 +151,19 @@ Beam-haun tulosta ei saa väittää globaaliksi optimiksi ilman käsin tehtyä t
 
 Raakalista, Jäännökset ja Sahattavat pidetään käyttöliittymässä erillisinä. Tankokortissa näkyvät profiilityyppi, materiaalilähde, lähdepituus, sahattavat kappaleet, syntyvä jäännös ja sahahukka. Osittaista ratkaisua ei saa näyttää valmiina sahaussuunnitelmana.
 
+Sahattavat syötetään tilauskortteina: pysyvä sisäinen `id`, käyttäjän vapaamuotoinen `name`, yksi yhteinen väri ja viisi profiiliaccordionia. Mittariveillä on vain mitta ja määrä. `getOrdersFromForm() → normalizeOrderCuts()` tuottaa nykyisen `profileType + color + length + quantity` -syötteen sekä `orderId`:n. Tunniste ei riipu muokattavasta nimestä. Se säilyy tilausdatassa ja normalisoiduissa syöteriveissä, mutta nykyinen optimizer ryhmittelee kappaleet ilman tilauskohtaista tuloskohdistusta; tätä ei saa väittää valmiiksi tuotannon jäljitettävyydeksi.
+
+`rails` on vain UI-osion avain: jokainen mittarivi laajenee täsmälleen yhdeksi `topRail`- ja yhdeksi `bottomRail`-riviksi samalla värillä, mitalla ja määrällä. Materiaaliprofiilit pysyvät erillisinä. Tyhjä mitta ja tyhjä/oletusmäärä 1 eivät tuota kysyntää; muokattu määrä ilman mittaa hylätään laskennassa. Accordionin avaus/sulkeminen tallentuu muuttamatta suunnitelmaa tai TEHTY-tilaa. Tilausten ja mittarivien muokkaus mitätöi suunnitelman; tilauksen poisto vahvistetaan.
+
 `TEHTY`-merkintä on palautettava käyttöliittymätila eikä muuta materiaalivarastoa. Varasto muuttuu vain työn finalisoinnissa `calculatePostOrderMaterialInventory()`-tuloksen perusteella.
 
 Finalisointi noudattaa persistoi-ensin/commitoi-sitten-järjestystä: lopullinen snapshot kirjoitetaan onnistuneesti ennen varasto-DOM:n vaihtamista ja suunnitelman tyhjentämistä. Epäonnistunut tallennus ei saa muuttaa live-työtä.
 
 Tallennettu suunnitelma validoidaan rakenteellisesti, semanttisesti ja sahausfysiikan kannalta ennen DOM-palautusta. Persistoiduilla lomakeriveillä on 1000 rivin raja, ja tallennettujen stock-varianttien duplikaatit tarkistetaan UI:n kanonisoidulla värillä. Jokaisella profiiliryhmällä pitää olla täsmälleen yksi oletusrivi. Validointi ja palautus käyttävät samaa legacy-sääntöä: jos `additional` puuttuu, profiilin ensimmäinen rivi on oletusrivi ja myöhemmät lisärivejä.
 
-Tallennettujen raakalista-, sahattava- ja jäännösrivien sekä suunnitelman tankojen profiilinimen pitää olla `PROFILE_TYPES`-olion oma avain. Prototyypistä peritty ominaisuus, kuten `constructor` tai `toString`, ei ole kelvollinen profiili.
+Tallennettujen raakalista- ja jäännösrivien sekä suunnitelman tankojen profiilinimen pitää olla `PROFILE_TYPES`-olion oma avain. Tilauskorteilla on täsmälleen viisi tunnettua osiota määrätyssä järjestyksessä. Prototyypistä peritty ominaisuus, kuten `constructor` tai `toString`, ei ole kelvollinen profiili tai osio.
+
+Skeema 4 tallentaa `orders`-rakenteen, ei rinnakkaista `inputRows`-kopiota. Tallenteen semanttinen validointi muodostaa kysynnän samalla adapterilla kuin UI. Enintään 100 tilausta, 120 merkkiä nimessä ja yhteensä 1000 laajennettua mittariviä sallitaan; kiskorivi lasketaan kahdeksi myös luonnoksessa. Tunnisteet ovat yksilöllisiä, värit tuettuja tai luonnoksessa tyhjiä, osioiden avausarvot booleaneja ja numeroiden lomakearvot merkkijonoja. Luonnos saa sisältää vielä korjattavia numeroarvoja; laskettu suunnitelma vaatii kelvollisen kysynnän. Käyttäjän luvalla skeeman 3 kuvitteellisia testitöitä ei migroida: vanha tallenne poistuu palautuksessa, työ nollataan ja käyttäjälle näytetään ilmoitus. Moottoriversio säilyy ennallaan.
 
 ## Testaus
 
@@ -168,6 +174,8 @@ Kun Node on saatavilla, aja projektikansiossa `node run-regressions.cjs`. Ajuri 
 Pidä ajurin testilista eksplisiittisenä: lisää sinne vain ilman selainta toimivia testejä, joiden paluuarvo on `true` tai tunnetun mittainen PASS/FAIL-taulukko. Päivitä `expectedRows`, jos taulukkomuotoisen testiryhmän tapausmäärä muuttuu. Pelkkä truthy-paluuarvo tai konsoliin tulostettu PASS ei riitä onnistumiseksi. Node-ajo ei korvaa tehtävän vaatimia DOM-, palautus- tai käyttäjän selaintestejä.
 
 `runCuttingPhysicsRegressionTests()` lukitsee 23 mittamuunnos-, desimaaliraja-, nollakerf- ja virheellisen tarkkuuden tapausta muuttamatta avointa työtä. Se täydentää aiempia `runCutPieceBoundaryTests()`- ja `runDecimalExactFitRegressionTest()`-testejä. Pidä dev-testit sahausmoduulin ulkopuolella.
+
+`runOrderInputRegressionTests()` tarkistaa tilausadapterin, kiskoparit, tunnisteet ja neljän perustapauksen täsmälleen samat optimointitulokset. `runStoredOrderValidationRegressionTests()` tarkistaa skeeman 4 rakenteen ja kysynnän sekä skeeman 3 hylkäyksen. Nämä kuuluvat Node-ajurin 33 ryhmään. Selaimen `runOrderInputUiRegressionTests()` testaa irrotetun tilauskortin turvallisen DOM-roundtripin muuttamatta avointa työtä. Fixture-loaderit käyttävät `createDevelopmentOrdersFromCuts()`-adapteria; eriävät ylä-/alakiskolistat hylätään ennen lomakkeen muuttamista. Tämä ei rajoita suoria core-testejä eikä ole tallennemigraatio.
 
 Käytä lisäksi tehtävään sopivia nimettyjä `run...RegressionTest(s)()`-funktioita. Selaimen `loadTestA()`, `loadTestAWithRemnants()`, `loadTestD1()` ja `loadTestProfileIsolation()` vaihtavat avoimen työn syötteet ja tallentavat ne; niiden palauttama `undefined` on normaali. Myös vanha `runAllRegressionTests()` käyttää näitä lomakelatauksia ja muuttaa avointa työtä. `runCurrentOrderSummaryTest()` laskee yhteenvedon nykyisestä lomakkeesta.
 

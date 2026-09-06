@@ -180,6 +180,89 @@ h2 {
     color: #495865;
 }
 
+/* Tilauskortti pitää värin yhteisenä ja näyttää vain avatut profiiliosiot. */
+.order-card {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #c7dbea;
+    border-radius: 10px;
+    background: #f8fbff;
+}
+
+.order-header,
+.order-measure-list {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.order-header {
+    margin-bottom: 16px;
+}
+
+.order-profile-section {
+    border-top: 1px solid #c7dbea;
+}
+
+.order-profile-section summary {
+    min-height: 64px;
+    padding: 12px 4px;
+    cursor: pointer;
+    font-weight: 750;
+    overflow-wrap: anywhere;
+    touch-action: manipulation;
+}
+
+.order-profile-section summary:focus-visible {
+    outline: 3px solid rgba(18, 92, 167, 0.4);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.order-section-count {
+    display: block;
+    margin-left: 20px;
+    color: #495865;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.order-section-content {
+    padding: 4px 0 16px;
+}
+
+.order-measure-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px 0;
+    border-top: 1px solid #c7dbea;
+    align-items: end;
+}
+
+.order-measure-row .remove-cut-button {
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.order-remove-button {
+    margin-top: 16px;
+}
+
+@media (min-width: 500px) {
+    .order-header {
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    }
+
+    .order-measure-row {
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) auto;
+    }
+
+    .order-measure-row .remove-cut-button {
+        grid-column: auto;
+    }
+}
+
 .stock-profile-availability {
     margin-top: 20px;
 }
@@ -765,6 +848,7 @@ input[type="number"]:disabled {
 
 
     input[type="number"],
+    input[type="text"],
     select {
         border-color: #56616c;
         background: #11171c;
@@ -830,6 +914,20 @@ input[type="number"]:disabled {
     .cuts-panel .cut-row {
         border-color: #334c61;
         background: #15202a;
+    }
+
+    .order-card {
+        border-color: #334c61;
+        background: #15202a;
+    }
+
+    .order-profile-section,
+    .order-measure-row {
+        border-color: #334c61;
+    }
+
+    .order-section-count {
+        color: #a7b2bc;
     }
 
     .bar-cut {

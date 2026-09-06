@@ -70,66 +70,15 @@
                 <span>Sahattavat kappaleet</span>
             </h2>
 
-            <div id="cutList">
+            <p class="section-description">
+                Lisää tilaus, valitse sen väri ja syötä mitat profiiliosioihin.
+                Ylä- ja alakiskon mitat syötetään vain kerran.
+            </p>
 
-                <div class="cut-row">
-                    <label class="form-field">
-                        <span>Profiilityyppi</span>
-                        <select class="cut-profile-type">
-                            <option value="uProfile">
-                                U-profiili
-                            </option>
+            <div id="cutList"></div>
 
-                            <option value="verticalProfile" selected>
-                                Pystyprofiili
-                            </option>
-
-                            <option value="closingProfile">
-                                Vasteprofiili
-                            </option>
-
-                            <option value="horizontalProfile">
-                                Vaakaprofiili
-                            </option>
-
-                            <option value="topRail">
-                                Yläkisko
-                            </option>
-
-                            <option value="bottomRail">
-                                Alakisko
-                            </option>
-                        </select>
-                    </label>
-
-                    <label class="form-field">
-                        <span>Väri</span>
-                        <select
-                            class="cut-color"
-                            aria-label="Sahattavan kappaleen väri"
-                        ></select>
-                    </label>
-
-                    <label class="form-field">
-                        <span>Kappaleen pituus (mm)</span>
-                        <input class="cut-length" type="number" step="0.1" inputmode="decimal" placeholder="Mitta">
-                    </label>
-
-                    <label class="form-field">
-                        <span>Määrä (kpl)</span>
-                        <input class="cut-quantity" type="number" value="1" step="1" inputmode="numeric"
-                            placeholder="Kpl">
-                    </label>
-
-                    <button class="remove-cut-button" type="button" onclick="removeCut(this)">
-                        POISTA
-                    </button>
-                </div>
-
-            </div>
-
-            <button class="add-cut-button" type="button" onclick="addCut()">
-                + LISÄÄ MITTA
+            <button id="addOrderButton" class="add-cut-button" type="button" onclick="addOrder()">
+                + LISÄÄ TILAUS
             </button>
         </section>
 

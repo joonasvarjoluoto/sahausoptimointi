@@ -15,7 +15,7 @@ Ei-kiireelliset yksittäiset virheet ja parannukset kuuluvat `BACKLOG.md`:hen. T
 
 ## Nykyinen checkpoint
 
-Sovellus on mobiiliystävällinen, selaimessa toimiva single-order-prototyyppi. Aktiivinen optimizeri huomioi profiilityypin ja värin materiaalivarianttina, rajallisen tai rajattoman uuden materiaalin sekä olemassa olevat jäännökset.
+Sovellus on mobiiliystävällinen, selaimessa toimiva yhden laskentaerän prototyyppi. Sahattavat voidaan syöttää useana tilauskorttina; aktiivinen optimizeri käsittelee niiden yhteisen kysynnän ja huomioi profiilityypin ja värin materiaalivarianttina, rajallisen tai rajattoman uuden materiaalin sekä olemassa olevat jäännökset. Tämä ei vielä toteuta tilausten tuotantokohdistusta tai rolling-horizon-optimointia.
 
 Valmiina ovat muun muassa:
 
@@ -32,9 +32,16 @@ Valmiina ovat muun muassa:
 - yhteinen neljän perustestin testipankki ja avointa työtä muuttamaton core-regressioajo (automaattitestit ja käyttäjän selaintarkistus läpäisty 2026-09-06);
 - Node-testiajuri: 29/29 regressioryhmää ja paluukoodi 0 vahvistettu myös käyttäjän VS Coden terminaalissa (2026-09-06);
 - B-003:n tallennettujen profiilinimien korjaus: 90/90 kohdistettua tapausta, laajentunut Node-paketti 30/30 sekä automaattiset selaintestit ja käyttäjän tarkistus läpäisty (commit `a8603b2` pushattu);
-- ensimmäinen puhdas core-irrotus: `src/cutting-physics.js` ja yhteensopiva selain-/Node-lataus toteutettu; automaattitestit ja käyttäjän Node-/selaintarkistus läpäisty.
+- ensimmäinen puhdas core-irrotus: `src/cutting-physics.js` ja yhteensopiva selain-/Node-lataus toteutettu; automaattitestit ja käyttäjän Node-/selaintarkistus läpäisty;
+- tilauspohjainen Sahattavat-UI, yhteinen kiskosyöttö ja skeema 4 toteutettu; Node 33/33, automaattiset selaintestit ja käyttäjän tarkistus läpäisty.
 
 ## Seuraava työvaihe
+
+Käyttäjän pyynnöstä materiaalimoduulien irrotuksen edelle otettiin tilauspohjainen Sahattavat-UI. Käyttäjä vahvisti testien läpäisyn ja seitsemän cut-rivin oikean muodostumisen kahdesta erivärisestä tilauksesta omine tunnisteineen. Laajaa moduulirefaktorointia tai optimizerimuutoksia ei yhdistetty UI-työhön. Seuraava pieni vaihe on materiaalivariantin identiteetin ja varaston muodostuksen riippuvuuksien rajaus ennen seuraavaa moduulisiirtoa.
+
+Skeema nostettiin 3 → 4: tallennetaan tilausten tunnisteet, nimet, värit ja accordionien mittarivit/avaustilat. Käyttäjä vahvisti vanhojen töiden olevan kuvitteellista testidataa ja hyväksyi tyhjästä aloittamisen; migraatiota tai vanhan UI:n rinnakkaistukea ei toteuteta. Vanha tallenne poistuu uuden sivun palautuksessa ilmoituksen kanssa. Moottoriversio `material-v0.3` säilyy.
+
+Varmistus: 14 adapteritapausta (mukana neljän perustapauksen koko optimointituloksen vertailu), 33 uuden tallenteen validointitapausta ja koko Node-ajuri 33/33. Eristetyssä Edgessä testattiin todellinen monivärinen tilaus- ja kiskosyöttö, laskenta, TEHTY, accordionin tilan tallennus, uudelleenlataus, poistojen vahvistus/peruminen, virheelliset syötteet, korruptit tallenteet, skeemavaihdos sekä finalisoinnin epäonnistuminen ja onnistunut uusintayritys. Mobiiliasettelu tarkistettiin leveyksillä 320/375/760 px ja myös tumma teema katsottiin. Käyttäjän omaa selainprofiilia ei käytetty.
 
 Arkkitehtuurikatselmus ja ensimmäinen rajattu refaktorointi on tehty. Core-optimointi toimii jo ilman DOM:ia; ensimmäinen testattavuuden este oli perustestien kytkentä avointa työtä muuttaviin lomakelatauksiin. Yhteiset testitiedot ja `runCoreRegressionTests()`-ajo on hyväksytty myös käyttäjän selaintarkistuksessa.
 
@@ -42,11 +49,11 @@ Node-testiajuri on hyväksytty: `run-regressions.cjs` ajaa saman testipankin ja 
 
 `BACKLOG.md / B-003` on korjattu ja hyväksytty myös käyttäjän tarkistuksessa. Tallennusskeema ja optimizerin käyttäytyminen säilyvät ennallaan; korjaus koskee virheellisten profiilinimien hylkäämistä.
 
-Vaiheen 1b ensimmäinen irrotus on toteutettu ja hyväksytty käyttäjän testeissä: `cutPiece()` ja sen mitta-apurit sijaitsevat nyt omassa puhtaassa moduulissaan. Seuraava vaihe on materiaalivariantin identiteetin ja varaston muodostuksen riippuvuuksien rajaus seuraavaa pientä siirtoa varten. Vaiheen 2 kohdistetut testit (materiaalin niukkuus, varianttieristys ja kerfin rajat) säilyvät suunnitelmassa, ja laajempaa laatumittausta voidaan nyt jatkaa ensimmäisen irrotuksen rinnalla. Koko sovelluksen pilkkominen ei ole laatumittauksen aloitusehto.
+Vaiheen 1b ensimmäinen irrotus on toteutettu ja hyväksytty käyttäjän testeissä: `cutPiece()` ja sen mitta-apurit sijaitsevat nyt omassa puhtaassa moduulissaan. Tilaus-UI:n hyväksymisen jälkeen rakennekehityksen luonteva jatko on materiaalivariantin identiteetin ja varaston muodostuksen riippuvuuksien rajaus seuraavaa pientä siirtoa varten. Vaiheen 2 kohdistetut testit (materiaalin niukkuus, varianttieristys ja kerfin rajat) säilyvät suunnitelmassa, ja laajempaa laatumittausta voidaan jatkaa irrotusten rinnalla. Koko sovelluksen pilkkominen ei ole laatumittauksen aloitusehto.
 
 Katselmuksen myöhemmät rakennerajat säilyvät: materiaalivariantin identiteetti keskitetään ennen lisäattribuutteja, materiaaliratkaisu ja tuotanto-operaatiot pidetään erillään, ja monen tilauksen kappalekohdistus säilytetään ennen sahausmittojen ryhmittelyä. Samanlaiset varastojäännökset pysyvät määrällisinä ryhminä; pysyviä yksilö-ID:itä ei tarvita.
 
-Persistenssiauditin default/additional-rivi-invariantti on korjattu ja testattu (B-001). Ensimmäisen core-irrotuksen hyväksymisen jälkeen pienin luonteva jatko on materiaalivariantin identiteetin ja varaston muodostuksen riippuvuuksien rajaus seuraavaa pientä siirtoa varten. Suorien core-kutsujen profiilivalidointihavainto on kirjattu erikseen kohtaan `BACKLOG.md / B-004`; sitä ei korjata moduulien siirron sivussa.
+Persistenssiauditin default/additional-rivi-invariantti on korjattu ja testattu (B-001). Suorien core-kutsujen profiilivalidointihavainto on kirjattu erikseen kohtaan `BACKLOG.md / B-004`; sitä ei korjata tilaus-UI:n tai moduulien siirron sivussa.
 
 ## Vaihe 1: testattavuuden perusta
 
