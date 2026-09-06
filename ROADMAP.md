@@ -29,13 +29,16 @@ Valmiina ovat muun muassa:
 - tallennetun suunnitelman semanttinen ja fyysinen validointi;
 - persistoidun raakalistan riviraja ja kanoninen varianttiduplikaattien tarkistus;
 - profiiliryhmän yhden oletusrivin tarkistus myös legacy-tallenteille (B-001, testattu 2026-09-06);
-- yhteinen neljän perustestin testipankki ja avointa työtä muuttamaton core-regressioajo (automaattitestit ja käyttäjän selaintarkistus läpäisty 2026-09-06).
+- yhteinen neljän perustestin testipankki ja avointa työtä muuttamaton core-regressioajo (automaattitestit ja käyttäjän selaintarkistus läpäisty 2026-09-06);
+- Node-testiajuri: 29/29 regressioryhmää ja paluukoodi 0 vahvistettu myös käyttäjän VS Coden terminaalissa (2026-09-06).
 
 ## Seuraava työvaihe
 
 Arkkitehtuurikatselmus ja ensimmäinen rajattu refaktorointi on tehty. Core-optimointi toimii jo ilman DOM:ia; ensimmäinen testattavuuden este oli perustestien kytkentä avointa työtä muuttaviin lomakelatauksiin. Yhteiset testitiedot ja `runCoreRegressionTests()`-ajo on hyväksytty myös käyttäjän selaintarkistuksessa.
 
-Tämän jälkeen pienin jatkoaskel on erillinen Node-testiajuri, joka käyttää samaa testipankkia, kokoaa relevantit puhtaat regressiot ja palauttaa virhetilanteessa epäonnistuneen exit-koodin. Se ei vaadi paketinhallintaa, uusia riippuvuuksia tai koko `app.js`:n pilkkomista.
+Node-testiajuri on hyväksytty: `run-regressions.cjs` ajaa saman testipankin ja valitut puhtaat regressiot. Käyttäjä vahvisti VS Coden terminaalissa tuloksen `Regressioryhmät: 29/29 läpäisty` ja paluukoodin 0. Paketinhallintaa, uusia riippuvuuksia tai `app.js`:n pilkkomista ei tarvittu.
+
+Seuraava työvaihe on vaiheen 2 kohdistettu testipankin laajennus: materiaalin niukkuus, varianttieristys ja kerfin rajatapaukset. Aloita pienistä kiinteistä tapauksista, joiden odotukset voi perustella käsin. Hakua tai score-parametreja ei muuteta samalla.
 
 Katselmuksen myöhemmät rakennerajat säilyvät: materiaalivariantin identiteetti keskitetään ennen lisäattribuutteja, materiaaliratkaisu ja tuotanto-operaatiot pidetään erillään, ja monen tilauksen kappalekohdistus säilytetään ennen sahausmittojen ryhmittelyä. Samanlaiset varastojäännökset pysyvät määrällisinä ryhminä; pysyviä yksilö-ID:itä ei tarvita.
 
@@ -48,6 +51,8 @@ Tavoite on vähentää käsin syötettävien tilausten määrää ja tehdä regr
 Ensimmäinen rajattu toteutus (2026-09-06): `createDevelopmentTestCases()` sisältää neljän perustestin syötteet ja odotukset. `runCoreRegressionTests()` ajaa ne ilman lomakkeen tai tallennuksen muuttamista; vanhat selainapurit säilyvät yhteisen testidatan käyttäjinä. Testipankki on tässä vaiheessa edelleen `app.js`:ssä.
 
 Automaattinen varmistus: kaikkien neljän tapauksen tarkat sahaustulokset vastaavat ennen refaktorointia talletettua vertailuaineistoa. Node- ja eristetty Edge-ajo läpäisivät testit. Selainajossa myös lomake, suunnitelma, TEHTY-merkinnät ja localStorage säilyivät ennallaan. Uusi testiajo hylkäsi tarkoituksella rikotut kappale-/materiaalitaseet, lähdemäärät, sahausfysiikan, mutaatiot ja epädeterministisen tuloksen.
+
+Node-ajuri (2026-09-06): `run-regressions.cjs` kokoaa 29 testiryhmää, eristää ne toisistaan ja palauttaa epäonnistumisesta paluukoodin 1. Normaali ajo läpäisi kaikki ryhmät myös toisesta työhakemistosta. Lisäksi 18 erillistä ajuritarkistusta kattoi paluuarvojen tulkinnan, virheestä jatkamisen, tuoreet testiympäristöt, aikakatkaisun sekä puuttuvan tai syntaksiltaan virheellisen lähteen. Aikakatkaisun virhepolku testattiin lyhennetyllä aikarajalla. Sovelluksen lähdekoodia tai selainpolkua ei muutettu tässä vaiheessa.
 
 - Erota DOM:sta riippumattomat regressiot selkeäksi testipankiksi.
 - Säilytä nykyiset selaimen dev-apurit, kunnes korvaava käyttöpolku on valmis.

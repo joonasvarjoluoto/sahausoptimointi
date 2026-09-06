@@ -27,6 +27,7 @@ Projekti toimii suoraan selaimessa ilman rakennusvaihetta tai paketinhallintaa:
 - `index.html`: mobiiliystävälliset syötteet, työtoiminnot ja tulosalue.
 - `app.js`: käyttöliittymä, materiaalivarasto, optimizerit, pisteytys, renderöinti, dev-testit ja localStorage-työtila.
 - `style.css`: mobiili ensin -asettelu ja tuloskorttien tilat.
+- `run-regressions.cjs`: kehityksenaikainen Node-testiajuri; ei ladattaessa selaimessa tarvittava tiedosto.
 
 Tallennetun työtilan nykyinen versiointi:
 
@@ -156,6 +157,10 @@ Tallennettu suunnitelma validoidaan rakenteellisesti, semanttisesti ja sahausfys
 ## Testaus
 
 Projektissa ei vielä ole varsinaista testikehystä. Turvallinen perustestiajo on `runCoreRegressionTests()`: se ajaa A:n, A:n jäännöksillä, D1:n ja profiilieristyksen ilman DOM- tai localStorage-käsittelyä. Se tarkistaa checkpoint-odotukset, riippumattoman tulosvalidoinnin, sahausfysiikan, syötteiden mutatoimattomuuden ja deterministisen toiston. `createDevelopmentTestCases()` tuottaa sekä tämän ajon että selainloaderien tuoreet lähtötiedot.
+
+Kun Node on saatavilla, aja projektikansiossa `node run-regressions.cjs`. Ajuri käyttää vain Noden sisäänrakennettuja moduuleja ja ajaa perustestit sekä erikseen listatut puhtaat regressiot. Jokainen testiryhmä saa tuoreen ympäristön ilman DOM:ia tai localStoragea. Onnistuminen palauttaa paluukoodin 0; epäonnistunut tulos, poikkeus, aikakatkaisu tai lähdetiedoston latausvirhe palauttaa 1. Ajuri jatkaa muihin ryhmiin yksittäisen ryhmän epäonnistuessa ja tulostaa virheen erittelyn. Ryhmäkohtainen aikaraja on 60 sekuntia.
+
+Pidä ajurin testilista eksplisiittisenä: lisää sinne vain ilman selainta toimivia testejä, joiden paluuarvo on `true` tai tunnetun mittainen PASS/FAIL-taulukko. Päivitä `expectedRows`, jos taulukkomuotoisen testiryhmän tapausmäärä muuttuu. Pelkkä truthy-paluuarvo tai konsoliin tulostettu PASS ei riitä onnistumiseksi. Node-ajo ei korvaa tehtävän vaatimia DOM-, palautus- tai käyttäjän selaintestejä.
 
 Käytä lisäksi tehtävään sopivia nimettyjä `run...RegressionTest(s)()`-funktioita. Selaimen `loadTestA()`, `loadTestAWithRemnants()`, `loadTestD1()` ja `loadTestProfileIsolation()` vaihtavat avoimen työn syötteet ja tallentavat ne; niiden palauttama `undefined` on normaali. Myös vanha `runAllRegressionTests()` käyttää näitä lomakelatauksia ja muuttaa avointa työtä. `runCurrentOrderSummaryTest()` laskee yhteenvedon nykyisestä lomakkeesta.
 
