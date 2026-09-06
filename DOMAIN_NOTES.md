@@ -57,6 +57,15 @@ Ennen mahdollista muutosta selvitä:
 - Materiaalikustannus on yleensä työajan säästöä tärkeämpi.
 - Avatut 6000 mm tangot halutaan käyttää tehokkaasti ilman tarpeetonta jäännösvaraston kasvua.
 
+## Samanlaisten jäännösten vaihtokelpoisuus
+
+- **Luokitus:** vahvistettu tuotantofakta
+- **Lähde ja päivämäärä:** käyttäjän tarkennus, 2026-09-06
+- **Havainto:** esimerkiksi viisi harmaata 1600 mm Pystyprofiilin jäännöstä ovat keskenään samanarvoisia ja vaihtokelpoisia. Tuotannolle ei ole merkitystä, mikä näistä fyysisistä kappaleista valitaan.
+- **Nykyinen vaikutus koodiin:** nykyinen `profileType + color + length` -ryhmittely ja `quantity` vastaavat tätä tarvetta. Pysyviä yksilöllisiä varastotunnuksia ei tarvita; tarkennus ei muuta laskentaa.
+- **Vaikutus myöhempään suunnitteluun:** identtisten lähteiden pelkkä keskinäinen vaihto ei saa muodostaa erillisiä optimointivaihtoehtoja. Työkohtaisia lähdeviitteitä voidaan käyttää sahausoperaatioiden ja valmistumisen seurantaan. Tällainen viite saa säilyä työn tallennuksessa, mutta se ei tarkoita pysyvää fyysisen varastokappaleen tunnusta.
+- **Ennen toteutusta selvitettävä:** tuotanto-operaatioiden malli voi erottaa kesken työn lähteet, joiden jäljellä oleva pituus, sijoitus tai jatkoleikkaukset eroavat. Samanlaisessa tilassa olevat lähteet voidaan edelleen käsitellä ryhmänä. Mahdollisten myöhempien materiaaliattribuuttien vaikutus vaihtokelpoisuuteen päätetään erikseen.
+
 ## Jäännösten tuleva arvo
 
 - **Luokitus:** avoin mallinnuskysymys

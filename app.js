@@ -13472,34 +13472,193 @@ if (typeof document !== "undefined") {
 }
 
 
+function createDevelopmentTestCases() {
+
+    const testACuts = [
+        { profileType: "uProfile", length: 2180, quantity: 2 },
+        { profileType: "uProfile", length: 2240, quantity: 3 },
+        { profileType: "uProfile", length: 2310, quantity: 2 },
+
+        { profileType: "verticalProfile", length: 2180, quantity: 4 },
+        { profileType: "verticalProfile", length: 2240, quantity: 6 },
+        { profileType: "verticalProfile", length: 2310, quantity: 4 },
+
+        { profileType: "horizontalProfile", length: 760, quantity: 4 },
+        { profileType: "horizontalProfile", length: 820, quantity: 6 },
+        { profileType: "horizontalProfile", length: 910, quantity: 4 },
+
+        { profileType: "topRail", length: 2460, quantity: 1 },
+        { profileType: "topRail", length: 3290, quantity: 1 },
+        { profileType: "topRail", length: 3870, quantity: 1 },
+
+        { profileType: "bottomRail", length: 2460, quantity: 1 },
+        { profileType: "bottomRail", length: 3290, quantity: 1 },
+        { profileType: "bottomRail", length: 3870, quantity: 1 }
+    ];
+
+    const tests = [
+        {
+            id: "testA",
+            name: "Testi A ilman jäännöksiä",
+            cuts: testACuts,
+            remnants: [],
+            expected: {
+                complete: true,
+                feasibilityStatus: "feasible",
+                totalBars: 17,
+                newBars: 17,
+                remnantBars: 0,
+                reusableGeneratedRemnants: 13,
+                barsByProfile: {
+                    uProfile: 4,
+                    verticalProfile: 7,
+                    closingProfile: 0,
+                    horizontalProfile: 2,
+                    topRail: 2,
+                    bottomRail: 2
+                },
+                remainingItems: []
+            }
+        },
+        {
+            id: "testAWithRemnants",
+            name: "Testi A jäännöksillä",
+            cuts: testACuts,
+            remnants: [
+                { profileType: "uProfile", length: 2350, quantity: 1 },
+                { profileType: "uProfile", length: 4550, quantity: 1 },
+                { profileType: "verticalProfile", length: 2300, quantity: 2 },
+                { profileType: "verticalProfile", length: 4700, quantity: 1 },
+                { profileType: "horizontalProfile", length: 1700, quantity: 2 },
+                { profileType: "horizontalProfile", length: 2750, quantity: 1 },
+                { profileType: "topRail", length: 3400, quantity: 1 },
+                { profileType: "topRail", length: 4100, quantity: 1 },
+                { profileType: "bottomRail", length: 3350, quantity: 1 },
+                { profileType: "bottomRail", length: 4000, quantity: 1 }
+            ],
+            expected: {
+                complete: true,
+                feasibilityStatus: "feasible",
+                totalBars: 22,
+                newBars: 10,
+                remnantBars: 12,
+                reusableGeneratedRemnants: 9,
+                remainingItems: []
+            }
+        },
+        {
+            id: "testD1",
+            name: "Testi D1",
+            cuts: [
+                { profileType: "verticalProfile", length: 2200, quantity: 2 }
+            ],
+            remnants: [
+                { profileType: "verticalProfile", length: 3900, quantity: 1 }
+            ],
+            expected: {
+                complete: true,
+                feasibilityStatus: "feasible",
+                totalBars: 1,
+                newBars: 1,
+                remnantBars: 0,
+                reusableGeneratedRemnants: 1,
+                newBarRemaining: 1594,
+                remainingItems: []
+            }
+        },
+        {
+            id: "profileIsolation",
+            name: "Profiilityyppien eristys",
+            cuts: [
+                { profileType: "verticalProfile", length: 2500, quantity: 1 }
+            ],
+            remnants: [
+                { profileType: "horizontalProfile", length: 2500, quantity: 1 }
+            ],
+            expected: {
+                complete: false,
+                feasibilityStatus: "infeasible",
+                totalBars: 0,
+                newBars: 0,
+                remnantBars: 0,
+                reusableGeneratedRemnants: 0,
+                remainingItems: [
+                    {
+                        profileType: "verticalProfile",
+                        color: "gray",
+                        length: 2500,
+                        quantity: 1
+                    }
+                ]
+            }
+        }
+    ];
+
+    // Jokainen kutsu ja testitapaus omistaa myös sisäiset rivinsä.
+    // Lomakelataus ja core-testit käyttävät samoja lähtötietoja.
+    return tests.map(test => ({
+        id: test.id,
+        name: test.name,
+        cuts: test.cuts.map(cut => ({ ...cut, color: "gray" })),
+        kerf: 3,
+        materialAvailability: {
+            stockLength: 6000,
+            newStock: Object.keys(PROFILE_TYPES).map(profileType => {
+                const unavailable =
+                    test.id === "profileIsolation" &&
+                    profileType === "verticalProfile";
+
+                return {
+                    profileType: profileType,
+                    color: "gray",
+                    unlimited: !unavailable,
+                    quantity: unavailable ? 0 : null
+                };
+            }),
+            remnants: test.remnants.map(remnant => ({
+                ...remnant,
+                color: "gray"
+            }))
+        },
+        expected: test.expected
+    }));
+}
+
+
 function loadDevelopmentTestCase(
     cuts,
-    remnants = []
+    remnants = [],
+    settings = {}
 ) {
 
     document.getElementById("stockLength").value =
-        "6000";
+        String(settings.stockLength ?? 6000);
 
     document.getElementById("kerf").value =
-        "3";
+        String(settings.kerf ?? 3);
 
 
     document
         .getElementById("stockProfileList")
         .replaceChildren(
             ...Object.keys(PROFILE_TYPES).map(
-                profileType =>
-                    createStockProfileGroup(
+                profileType => {
+                    const stock = settings.newStock?.find(
+                        item => item.profileType === profileType
+                    );
+
+                    return createStockProfileGroup(
                         profileType,
                         [
                             {
-                                quantity: "1",
-                                unlimited: true,
-                                color: "gray",
+                                quantity: String(stock?.quantity ?? 1),
+                                unlimited: stock?.unlimited ?? true,
+                                color: stock?.color ?? "gray",
                                 additional: false
                             }
                         ]
-                    )
+                    );
+                }
             )
         );
 
@@ -13512,7 +13671,7 @@ function loadDevelopmentTestCase(
                     cut.length,
                     cut.quantity,
                     cut.profileType,
-                    "gray"
+                    cut.color ?? "gray"
                 )
             )
         );
@@ -13526,7 +13685,7 @@ function loadDevelopmentTestCase(
                     remnant.length,
                     remnant.quantity,
                     remnant.profileType,
-                    "gray"
+                    remnant.color ?? "gray"
                 )
             )
         );
@@ -13536,146 +13695,203 @@ function loadDevelopmentTestCase(
 }
 
 
-function loadTestA() {
+function loadNamedDevelopmentTestCase(testId) {
+
+    const test = createDevelopmentTestCases().find(
+        item => item.id === testId
+    );
+
+    if (test === undefined) {
+        throw new Error("Tuntematon testitapaus: " + testId);
+    }
 
     loadDevelopmentTestCase(
-        [
-            { profileType: "uProfile", length: 2180, quantity: 2 },
-            { profileType: "uProfile", length: 2240, quantity: 3 },
-            { profileType: "uProfile", length: 2310, quantity: 2 },
-
-            { profileType: "verticalProfile", length: 2180, quantity: 4 },
-            { profileType: "verticalProfile", length: 2240, quantity: 6 },
-            { profileType: "verticalProfile", length: 2310, quantity: 4 },
-
-            { profileType: "horizontalProfile", length: 760, quantity: 4 },
-            { profileType: "horizontalProfile", length: 820, quantity: 6 },
-            { profileType: "horizontalProfile", length: 910, quantity: 4 },
-
-            { profileType: "topRail", length: 2460, quantity: 1 },
-            { profileType: "topRail", length: 3290, quantity: 1 },
-            { profileType: "topRail", length: 3870, quantity: 1 },
-
-            { profileType: "bottomRail", length: 2460, quantity: 1 },
-            { profileType: "bottomRail", length: 3290, quantity: 1 },
-            { profileType: "bottomRail", length: 3870, quantity: 1 }
-        ]
+        test.cuts,
+        test.materialAvailability.remnants,
+        {
+            ...test.materialAvailability,
+            kerf: test.kerf
+        }
     );
+}
+
+
+function loadTestA() {
+
+    loadNamedDevelopmentTestCase("testA");
 }
 
 
 function loadTestAWithRemnants() {
 
-    loadDevelopmentTestCase(
-        [
-            { profileType: "uProfile", length: 2180, quantity: 2 },
-            { profileType: "uProfile", length: 2240, quantity: 3 },
-            { profileType: "uProfile", length: 2310, quantity: 2 },
-
-            { profileType: "verticalProfile", length: 2180, quantity: 4 },
-            { profileType: "verticalProfile", length: 2240, quantity: 6 },
-            { profileType: "verticalProfile", length: 2310, quantity: 4 },
-
-            { profileType: "horizontalProfile", length: 760, quantity: 4 },
-            { profileType: "horizontalProfile", length: 820, quantity: 6 },
-            { profileType: "horizontalProfile", length: 910, quantity: 4 },
-
-            { profileType: "topRail", length: 2460, quantity: 1 },
-            { profileType: "topRail", length: 3290, quantity: 1 },
-            { profileType: "topRail", length: 3870, quantity: 1 },
-
-            { profileType: "bottomRail", length: 2460, quantity: 1 },
-            { profileType: "bottomRail", length: 3290, quantity: 1 },
-            { profileType: "bottomRail", length: 3870, quantity: 1 }
-        ],
-
-        [
-            { profileType: "uProfile", length: 2350, quantity: 1 },
-            { profileType: "uProfile", length: 4550, quantity: 1 },
-
-            { profileType: "verticalProfile", length: 2300, quantity: 2 },
-            { profileType: "verticalProfile", length: 4700, quantity: 1 },
-
-            { profileType: "horizontalProfile", length: 1700, quantity: 2 },
-            { profileType: "horizontalProfile", length: 2750, quantity: 1 },
-
-            { profileType: "topRail", length: 3400, quantity: 1 },
-            { profileType: "topRail", length: 4100, quantity: 1 },
-
-            { profileType: "bottomRail", length: 3350, quantity: 1 },
-            { profileType: "bottomRail", length: 4000, quantity: 1 }
-        ]
-    );
+    loadNamedDevelopmentTestCase("testAWithRemnants");
 }
 
 
 function loadTestD1() {
 
-    loadDevelopmentTestCase(
-        [
-            {
-                profileType: "verticalProfile",
-                length: 2200,
-                quantity: 2
-            }
-        ],
-
-        [
-            {
-                profileType: "verticalProfile",
-                length: 3900,
-                quantity: 1
-            }
-        ]
-    );
+    loadNamedDevelopmentTestCase("testD1");
 }
 
 
 function loadTestProfileIsolation() {
 
-    loadDevelopmentTestCase(
-        [
-            {
-                profileType: "verticalProfile",
-                length: 2500,
-                quantity: 1
+    loadNamedDevelopmentTestCase("profileIsolation");
+}
+
+
+function summarizeDevelopmentOptimization(
+    optimization,
+    scoreSettings
+) {
+
+    return {
+        complete: optimization.complete,
+        feasibilityStatus: optimization.feasibilityStatus,
+        totalBars: optimization.barCount,
+        newBars: optimization.bars.filter(
+            bar => bar.source === "new"
+        ).length,
+        remnantBars: optimization.bars.filter(
+            bar => bar.source === "remnant"
+        ).length,
+        reusableGeneratedRemnants: optimization.bars.filter(
+            bar =>
+                bar.source === "new" &&
+                bar.remaining > 0 &&
+                evaluateRemnantDisposition(
+                    bar.remaining,
+                    scoreSettings
+                ).disposition === "reusable"
+        ).length,
+        newBarRemaining:
+            optimization.bars.length === 1 &&
+            optimization.bars[0].source === "new"
+                ? optimization.bars[0].remaining
+                : null,
+        barsByProfile: Object.fromEntries(
+            Object.keys(PROFILE_TYPES).map(profileType => [
+                profileType,
+                optimization.bars.filter(
+                    bar => bar.profileType === profileType
+                ).length
+            ])
+        ),
+        remainingItems: optimization.remainingItems
+    };
+}
+
+
+function runCoreRegressionTests(showOutput = true) {
+
+    const results = [];
+
+    for (const test of createDevelopmentTestCases()) {
+        try {
+            const inputBefore = JSON.stringify(test);
+            const inventory = createMaterialInventory(
+                test.materialAvailability
+            );
+            const inventoryBefore = JSON.stringify(inventory);
+            const options = {
+                ...PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS,
+                scoreSettings: {
+                    ...PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings
+                }
+            };
+            const optionsBefore = JSON.stringify(options);
+            const runs = [];
+
+            for (let repeat = 0; repeat < 2; repeat++) {
+                const optimization = optimizeOrderByProfileTypeWithInventory(
+                    test.cuts,
+                    inventory,
+                    test.kerf,
+                    options
+                );
+
+                // Tarkista alkuperäiset syötteet ennen validointia: myös
+                // validoijan vertailuaineiston on pysyttävä muuttumattomana.
+                if (
+                    JSON.stringify(test) !== inputBefore ||
+                    JSON.stringify(inventory) !== inventoryBefore ||
+                    JSON.stringify(options) !== optionsBefore
+                ) {
+                    throw new Error("Testisyöte, varasto tai asetukset muuttuivat.");
+                }
+
+                verifyOptimizationResult(test.cuts, inventory, optimization);
+                verifyStoredPlanSawPhysics(
+                    adaptMaterialOptimizationForUi(optimization, options.scoreSettings),
+                    test.kerf
+                );
+
+                // Säilytä ensimmäinen tulos arvona, jotta seuraava ajo ei
+                // voi peittää mutaatiota muuttamalla samaa tulosoliota.
+                runs.push({
+                    snapshot: JSON.stringify(optimization),
+                    summary: summarizeDevelopmentOptimization(
+                        optimization,
+                        options.scoreSettings
+                    )
+                });
             }
-        ],
 
-        [
-            {
-                profileType: "horizontalProfile",
-                length: 2500,
-                quantity: 1
+            if (
+                JSON.stringify(test) !== inputBefore ||
+                JSON.stringify(inventory) !== inventoryBefore ||
+                JSON.stringify(options) !== optionsBefore
+            ) {
+                throw new Error("Testisyöte, varasto tai asetukset muuttuivat.");
             }
-        ]
-    );
 
+            const actual = runs[0].summary;
+            const deterministic = runs[0].snapshot === runs[1].snapshot;
+            const failures = Object.entries(test.expected)
+                .filter(([key, expected]) =>
+                    JSON.stringify(actual[key]) !== JSON.stringify(expected)
+                )
+                .map(([key, expected]) =>
+                    key + ": odotettu " + JSON.stringify(expected) +
+                    ", saatiin " + JSON.stringify(actual[key])
+                );
 
-    const verticalStockRow =
-        document.querySelector(
-            '.stock-profile-group[data-profile-type="verticalProfile"] ' +
-            ".stock-profile-row"
+            if (!deterministic) {
+                failures.push("Saman syötteen toisto tuotti eri tuloksen.");
+            }
+
+            results.push({
+                test: test.name,
+                result: failures.length === 0 ? "PASS" : "FAIL",
+                complete: actual.complete,
+                totalBars: actual.totalBars,
+                newBars: actual.newBars,
+                remnantBars: actual.remnantBars,
+                reusableGeneratedRemnants: actual.reusableGeneratedRemnants,
+                verified: true,
+                inputsUnchanged: true,
+                deterministic: deterministic,
+                failures: failures
+            });
+        } catch (error) {
+            results.push({
+                test: test.name,
+                result: "ERROR",
+                error: error.message
+            });
+        }
+    }
+
+    if (showOutput) {
+        console.table(results);
+        console.log(
+            "Core-regressiot: " +
+            results.filter(result => result.result === "PASS").length +
+            "/" + results.length + " läpäisty"
         );
+    }
 
-    const unlimitedCheckbox =
-        verticalStockRow.querySelector(
-            ".stock-profile-unlimited-checkbox"
-        );
-
-    const quantityInput =
-        verticalStockRow.querySelector(
-            ".stock-profile-quantity"
-        );
-
-
-    unlimitedCheckbox.checked = false;
-
-    quantityInput.disabled = false;
-    quantityInput.value = "0";
-
-
-    handleOrderInputChange();
+    return results;
 }
 
 
@@ -13717,33 +13933,17 @@ function runCurrentOrderSummaryTest(showOutput = true) {
 
     if (showOutput) {
 
-        console.table([
-            {
-                totalBars:
-                    optimization.barCount,
+        const summary = summarizeDevelopmentOptimization(
+            optimization,
+            testScoreSettings
+        );
 
-                newBars:
-                    optimization.bars.filter(
-                        bar => bar.source === "new"
-                    ).length,
-
-                remnantBars:
-                    optimization.bars.filter(
-                        bar => bar.source === "remnant"
-                    ).length,
-
-                reusableGeneratedRemnants:
-                    optimization.bars.filter(
-                        bar =>
-                            bar.source === "new" &&
-                            bar.remaining > 0 &&
-                            evaluateRemnantDisposition(
-                                bar.remaining,
-                                testScoreSettings
-                            ).disposition === "reusable"
-                    ).length
-            }
-        ]);
+        console.table([{
+            totalBars: summary.totalBars,
+            newBars: summary.newBars,
+            remnantBars: summary.remnantBars,
+            reusableGeneratedRemnants: summary.reusableGeneratedRemnants
+        }]);
     }
 
 
@@ -13752,60 +13952,10 @@ function runCurrentOrderSummaryTest(showOutput = true) {
 
 function runAllRegressionTests() {
 
-    const tests = [
-        {
-            name: "Testi A ilman jäännöksiä",
-            load: loadTestA,
-
-            expected: {
-                complete: true,
-                totalBars: 17,
-                newBars: 17,
-                remnantBars: 0,
-                reusableGeneratedRemnants: 13
-            }
-        },
-
-        {
-            name: "Testi A jäännöksillä",
-            load: loadTestAWithRemnants,
-
-            expected: {
-                complete: true,
-                totalBars: 22,
-                newBars: 10,
-                remnantBars: 12,
-                reusableGeneratedRemnants: 9
-            }
-        },
-
-        {
-            name: "Testi D1",
-            load: loadTestD1,
-
-            expected: {
-                complete: true,
-                totalBars: 1,
-                newBars: 1,
-                remnantBars: 0,
-                reusableGeneratedRemnants: 1,
-                newBarRemaining: 1594
-            }
-        },
-
-        {
-            name: "Profiilityyppien eristys",
-            load: loadTestProfileIsolation,
-
-            expected: {
-                complete: false,
-                totalBars: 0,
-                newBars: 0,
-                remnantBars: 0,
-                reusableGeneratedRemnants: 0
-            }
-        }
-    ];
+    const tests = createDevelopmentTestCases().map(test => ({
+        ...test,
+        load: () => loadNamedDevelopmentTestCase(test.id)
+    }));
 
 
     const results = [];
@@ -13822,37 +13972,10 @@ function runAllRegressionTests() {
                 runCurrentOrderSummaryTest(false);
 
 
-            const actual = {
-                totalBars:
-                    optimization.barCount,
-
-                newBars:
-                    optimization.bars.filter(
-                        bar => bar.source === "new"
-                    ).length,
-
-                remnantBars:
-                    optimization.bars.filter(
-                        bar => bar.source === "remnant"
-                    ).length,
-
-                reusableGeneratedRemnants:
-                    optimization.bars.filter(
-                        bar =>
-                            bar.source === "new" &&
-                            bar.remaining > 0 &&
-                            evaluateRemnantDisposition(
-                                bar.remaining,
-                                PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
-                                    .scoreSettings
-                            ).disposition === "reusable"
-                    ).length,
-                newBarRemaining:
-                    optimization.bars.length === 1 &&
-                        optimization.bars[0].source === "new"
-                        ? optimization.bars[0].remaining
-                        : null
-            };
+            const actual = summarizeDevelopmentOptimization(
+                optimization,
+                PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings
+            );
 
 
             const passed =

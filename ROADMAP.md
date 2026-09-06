@@ -28,23 +28,26 @@ Valmiina ovat muun muassa:
 - finalisoinnin persistoi-ensin/commitoi-sitten-turva;
 - tallennetun suunnitelman semanttinen ja fyysinen validointi;
 - persistoidun raakalistan riviraja ja kanoninen varianttiduplikaattien tarkistus;
-- profiiliryhmän yhden oletusrivin tarkistus myös legacy-tallenteille (B-001, testattu 2026-09-06).
+- profiiliryhmän yhden oletusrivin tarkistus myös legacy-tallenteille (B-001, testattu 2026-09-06);
+- yhteinen neljän perustestin testipankki ja avointa työtä muuttamaton core-regressioajo (automaattitestit ja käyttäjän selaintarkistus läpäisty 2026-09-06).
 
 ## Seuraava työvaihe
 
-Ennen suurempaa algoritmilaajennusta tehdään nykyisen single-order-rakenteen arkkitehtuurikatselmus. Katselmuksessa rajataan:
+Arkkitehtuurikatselmus ja ensimmäinen rajattu refaktorointi on tehty. Core-optimointi toimii jo ilman DOM:ia; ensimmäinen testattavuuden este oli perustestien kytkentä avointa työtä muuttaviin lomakelatauksiin. Yhteiset testitiedot ja `runCoreRegressionTests()`-ajo on hyväksytty myös käyttäjän selaintarkistuksessa.
 
-1. mitkä vastuut kuuluvat core-optimoinnille;
-2. miten material variant laajenee myöhempiin attribuutteihin;
-3. millainen rajapinta tarvitaan materiaalitilasiirtymien ja tuotannon `cut operation` -operaatioiden väliin;
-4. mitkä nykyisen `app.js`:n DOM-riippuvuudet estävät automaattista testausta;
-5. mikä on pienin turvallinen ensimmäinen refaktorointi ilman käyttäytymisen muutosta.
+Tämän jälkeen pienin jatkoaskel on erillinen Node-testiajuri, joka käyttää samaa testipankkia, kokoaa relevantit puhtaat regressiot ja palauttaa virhetilanteessa epäonnistuneen exit-koodin. Se ei vaadi paketinhallintaa, uusia riippuvuuksia tai koko `app.js`:n pilkkomista.
+
+Katselmuksen myöhemmät rakennerajat säilyvät: materiaalivariantin identiteetti keskitetään ennen lisäattribuutteja, materiaaliratkaisu ja tuotanto-operaatiot pidetään erillään, ja monen tilauksen kappalekohdistus säilytetään ennen sahausmittojen ryhmittelyä. Samanlaiset varastojäännökset pysyvät määrällisinä ryhminä; pysyviä yksilö-ID:itä ei tarvita.
 
 Persistenssiauditin default/additional-rivi-invariantti on korjattu ja testattu (B-001). Työssä havaittu erillinen profiilinimen jäsenyystarkistuksen virhe on kirjattu kohtaan `BACKLOG.md / B-003`; se käsitellään omana rajattuna korjauksenaan.
 
 ## Vaihe 1: testattavuuden perusta
 
 Tavoite on vähentää käsin syötettävien tilausten määrää ja tehdä regressioista toistettavia.
+
+Ensimmäinen rajattu toteutus (2026-09-06): `createDevelopmentTestCases()` sisältää neljän perustestin syötteet ja odotukset. `runCoreRegressionTests()` ajaa ne ilman lomakkeen tai tallennuksen muuttamista; vanhat selainapurit säilyvät yhteisen testidatan käyttäjinä. Testipankki on tässä vaiheessa edelleen `app.js`:ssä.
+
+Automaattinen varmistus: kaikkien neljän tapauksen tarkat sahaustulokset vastaavat ennen refaktorointia talletettua vertailuaineistoa. Node- ja eristetty Edge-ajo läpäisivät testit. Selainajossa myös lomake, suunnitelma, TEHTY-merkinnät ja localStorage säilyivät ennallaan. Uusi testiajo hylkäsi tarkoituksella rikotut kappale-/materiaalitaseet, lähdemäärät, sahausfysiikan, mutaatiot ja epädeterministisen tuloksen.
 
 - Erota DOM:sta riippumattomat regressiot selkeäksi testipankiksi.
 - Säilytä nykyiset selaimen dev-apurit, kunnes korvaava käyttöpolku on valmis.

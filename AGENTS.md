@@ -155,7 +155,9 @@ Tallennettu suunnitelma validoidaan rakenteellisesti, semanttisesti ja sahausfys
 
 ## Testaus
 
-Projektissa ei vielä ole varsinaista testikehystä. Käytä `app.js`:n nimettyjä `run...RegressionTest(s)()`-funktioita sekä selaimen dev-apureita, kuten `loadTestA()`, `loadTestAWithRemnants()`, `loadTestD1()` ja `runCurrentOrderSummaryTest()`. DOM:ia muuttavan apurin palauttama `undefined` on normaali.
+Projektissa ei vielä ole varsinaista testikehystä. Turvallinen perustestiajo on `runCoreRegressionTests()`: se ajaa A:n, A:n jäännöksillä, D1:n ja profiilieristyksen ilman DOM- tai localStorage-käsittelyä. Se tarkistaa checkpoint-odotukset, riippumattoman tulosvalidoinnin, sahausfysiikan, syötteiden mutatoimattomuuden ja deterministisen toiston. `createDevelopmentTestCases()` tuottaa sekä tämän ajon että selainloaderien tuoreet lähtötiedot.
+
+Käytä lisäksi tehtävään sopivia nimettyjä `run...RegressionTest(s)()`-funktioita. Selaimen `loadTestA()`, `loadTestAWithRemnants()`, `loadTestD1()` ja `loadTestProfileIsolation()` vaihtavat avoimen työn syötteet ja tallentavat ne; niiden palauttama `undefined` on normaali. Myös vanha `runAllRegressionTests()` käyttää näitä lomakelatauksia ja muuttaa avointa työtä. `runCurrentOrderSummaryTest()` laskee yhteenvedon nykyisestä lomakkeesta.
 
 Kun korjaat virheen, tee ensin tapaus, joka osoittaa sen. Tarkista muutoksen jälkeen vähintään:
 
