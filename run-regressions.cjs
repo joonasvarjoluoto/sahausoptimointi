@@ -13,6 +13,7 @@ const suites = [
         "runOrderInputRegressionTests",
         "runStoredOrderValidationRegressionTests",
         "runUnknownProfileRegressionTest",
+        "runCoreProfileTypeValidationRegressionTests",
         "runClosingProfileRegressionTest",
         "runMaterialVariantIsolationRegressionTest",
         "runMixedMaterialVariantRegressionTest",

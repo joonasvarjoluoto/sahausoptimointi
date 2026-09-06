@@ -98,6 +98,16 @@ function isSupportedMaterialColor(color) {
 }
 
 
+function isSupportedProfileType(profileType) {
+
+    return typeof profileType === "string" &&
+        Object.prototype.hasOwnProperty.call(
+            PROFILE_TYPES,
+            profileType
+        );
+}
+
+
 function createMaterialColorOptions(selectedColor = null) {
 
     const normalizedColor =
@@ -209,7 +219,7 @@ function createStockProfileVariantRow(
         </label>
 
         ${additional
-        ? `
+            ? `
             <button
                 class="remove-cut-button stock-profile-remove-button"
                 type="button"
@@ -218,8 +228,8 @@ function createStockProfileVariantRow(
                 POISTA
             </button>
         `
-        : ""
-    }
+            : ""
+        }
     `;
 
     const quantityInput =
@@ -489,45 +499,63 @@ function runOrderInputRegressionTests() {
         verticalProfile: [row(2240, 6)]
     });
     const cases = [
-        { name: "Yksi harmaa pystymitta", orders: [gray],
-            expected: [cut("gray-order", "verticalProfile", "gray", 2240, 6)] },
-        { name: "Kaksi pystymittaa", orders: [
-            createOrderInput("two", "", "gray", { verticalProfile: [row(2240, 6), row(2180, 4)] })
-        ], expected: [cut("two", "verticalProfile", "gray", 2240, 6),
-            cut("two", "verticalProfile", "gray", 2180, 4)] },
-        { name: "Tilausten värieristys", orders: [gray,
-            createOrderInput("black-order", "", "black", { verticalProfile: [row(2240, 2)] })
-        ], expected: [cut("gray-order", "verticalProfile", "gray", 2240, 6),
-            cut("black-order", "verticalProfile", "black", 2240, 2)] },
-        { name: "Yksi kiskomitta on kaksi fyysistä profiilia", orders: [
-            createOrderInput("rails", "", "white", { rails: [row(3290, 2)] })
-        ], expected: [cut("rails", "topRail", "white", 3290, 2),
-            cut("rails", "bottomRail", "white", 3290, 2)] },
-        { name: "Useat kiskomitat", orders: [
-            createOrderInput("rails", "", "gray", { rails: [row(3290, 2), row(2460, 1)] })
-        ], expected: [cut("rails", "topRail", "gray", 3290, 2),
+        {
+            name: "Yksi harmaa pystymitta", orders: [gray],
+            expected: [cut("gray-order", "verticalProfile", "gray", 2240, 6)]
+        },
+        {
+            name: "Kaksi pystymittaa", orders: [
+                createOrderInput("two", "", "gray", { verticalProfile: [row(2240, 6), row(2180, 4)] })
+            ], expected: [cut("two", "verticalProfile", "gray", 2240, 6),
+            cut("two", "verticalProfile", "gray", 2180, 4)]
+        },
+        {
+            name: "Tilausten värieristys", orders: [gray,
+                createOrderInput("black-order", "", "black", { verticalProfile: [row(2240, 2)] })
+            ], expected: [cut("gray-order", "verticalProfile", "gray", 2240, 6),
+            cut("black-order", "verticalProfile", "black", 2240, 2)]
+        },
+        {
+            name: "Yksi kiskomitta on kaksi fyysistä profiilia", orders: [
+                createOrderInput("rails", "", "white", { rails: [row(3290, 2)] })
+            ], expected: [cut("rails", "topRail", "white", 3290, 2),
+            cut("rails", "bottomRail", "white", 3290, 2)]
+        },
+        {
+            name: "Useat kiskomitat", orders: [
+                createOrderInput("rails", "", "gray", { rails: [row(3290, 2), row(2460, 1)] })
+            ], expected: [cut("rails", "topRail", "gray", 3290, 2),
             cut("rails", "bottomRail", "gray", 3290, 2),
             cut("rails", "topRail", "gray", 2460, 1),
-            cut("rails", "bottomRail", "gray", 2460, 1)] },
+            cut("rails", "bottomRail", "gray", 2460, 1)]
+        },
         { name: "Tyhjät osiot", orders: [createOrderInput("empty", "", "gray")], expected: [] },
-        { name: "Tyhjä mittarivi oletusmäärällä ohitetaan", orders: [
-            createOrderInput("empty", "", "gray", { verticalProfile: [row("", 1)], rails: [row("", "")] })
-        ], expected: [] },
-        { name: "Pelkkää muokattua määrää ei ohiteta", orders: [
-            createOrderInput("partial", "", "gray", { verticalProfile: [row("", 5)] })
-        ], expected: [cut("partial", "verticalProfile", "gray", 0, 5)] },
-        { name: "Samanväristen tilausten tunnisteet säilyvät", orders: [gray,
-            createOrderInput("second", "Tilaus 12345", "gray", { verticalProfile: [row(2240, 6)] })
-        ], expected: [cut("gray-order", "verticalProfile", "gray", 2240, 6),
-            cut("second", "verticalProfile", "gray", 2240, 6)] },
-        { name: "Muut profiilit ja desimaali", orders: [
-            createOrderInput("other", "", "gray", {
-                horizontalProfile: [row(760.5, 4)], uProfile: [row(2200, 2)],
-                closingProfile: [row(2200, 2)]
-            })
-        ], expected: [cut("other", "horizontalProfile", "gray", 760.5, 4),
+        {
+            name: "Tyhjä mittarivi oletusmäärällä ohitetaan", orders: [
+                createOrderInput("empty", "", "gray", { verticalProfile: [row("", 1)], rails: [row("", "")] })
+            ], expected: []
+        },
+        {
+            name: "Pelkkää muokattua määrää ei ohiteta", orders: [
+                createOrderInput("partial", "", "gray", { verticalProfile: [row("", 5)] })
+            ], expected: [cut("partial", "verticalProfile", "gray", 0, 5)]
+        },
+        {
+            name: "Samanväristen tilausten tunnisteet säilyvät", orders: [gray,
+                createOrderInput("second", "Tilaus 12345", "gray", { verticalProfile: [row(2240, 6)] })
+            ], expected: [cut("gray-order", "verticalProfile", "gray", 2240, 6),
+            cut("second", "verticalProfile", "gray", 2240, 6)]
+        },
+        {
+            name: "Muut profiilit ja desimaali", orders: [
+                createOrderInput("other", "", "gray", {
+                    horizontalProfile: [row(760.5, 4)], uProfile: [row(2200, 2)],
+                    closingProfile: [row(2200, 2)]
+                })
+            ], expected: [cut("other", "horizontalProfile", "gray", 760.5, 4),
             cut("other", "uProfile", "gray", 2200, 2),
-            cut("other", "closingProfile", "gray", 2200, 2)] }
+            cut("other", "closingProfile", "gray", 2200, 2)]
+        }
     ];
     for (const test of cases) {
         const before = JSON.stringify(test.orders);
@@ -578,12 +606,18 @@ function runStoredOrderValidationRegressionTests() {
         state => { state.orders[0].sections[0].rows[0].length = "1."; },
         state => { state.orders[0].sections[0].rows[0].length = "Infinity"; },
         state => { state.orders[0].sections[0].rows[0].quantity = []; },
-        state => { state.orders = Array.from({ length: MAX_ORDER_COUNT + 1 },
-            (_, index) => createOrderInput("order-" + index)); },
-        state => { state.orders[0].sections[0].rows =
-            Array.from({ length: MAX_STORED_FORM_ROW_COUNT + 1 }, () => ({ length: "", quantity: "1" })); },
-        state => { state.orders[0].sections[4].rows =
-            Array.from({ length: 501 }, () => ({ length: "", quantity: "1" })); }
+        state => {
+            state.orders = Array.from({ length: MAX_ORDER_COUNT + 1 },
+                (_, index) => createOrderInput("order-" + index));
+        },
+        state => {
+            state.orders[0].sections[0].rows =
+                Array.from({ length: MAX_STORED_FORM_ROW_COUNT + 1 }, () => ({ length: "", quantity: "1" }));
+        },
+        state => {
+            state.orders[0].sections[4].rows =
+                Array.from({ length: 501 }, () => ({ length: "", quantity: "1" }));
+        }
     ];
     mutations.forEach((mutate, index) => {
         const state = JSON.parse(JSON.stringify(valid));
@@ -595,7 +629,7 @@ function runStoredOrderValidationRegressionTests() {
             JSON.stringify(state) === before);
     });
     for (const [field, value] of [["length", "0"], ["length", "-1"], ["length", "2200.01"],
-        ["quantity", "0"], ["quantity", "1.5"], ["quantity", "9007199254740992"]]) {
+    ["quantity", "0"], ["quantity", "1.5"], ["quantity", "9007199254740992"]]) {
         const state = JSON.parse(JSON.stringify(valid));
         state.orders[0].sections[0].rows[0][field] = value;
         record("Virheellinen laskettu mitta/määrä: " + field + "=" + value,
@@ -1103,10 +1137,7 @@ function validateMaterialAvailability(
 
     for (const stock of newStock) {
 
-        if (
-            typeof stock.profileType !== "string" ||
-            PROFILE_TYPES[stock.profileType] === undefined
-        ) {
+        if (!isSupportedProfileType(stock.profileType)) {
             throw new Error(
                 "Uuden tangon profiilityyppi on virheellinen."
             );
@@ -1185,10 +1216,7 @@ function validateMaterialAvailability(
 
     for (const remnant of remnants) {
 
-        if (
-            typeof remnant.profileType !== "string" ||
-            PROFILE_TYPES[remnant.profileType] === undefined
-        ) {
+        if (!isSupportedProfileType(remnant.profileType)) {
             throw new Error(
                 "Jäännöksen profiilityyppi on virheellinen."
             );
@@ -1395,10 +1423,7 @@ function getMaterialSourcesForProfile(
     );
 
 
-    if (
-        typeof profileType !== "string" ||
-        PROFILE_TYPES[profileType] === undefined
-    ) {
+    if (!isSupportedProfileType(profileType)) {
         throw new Error(
             "Materiaalilähteiden profiilityyppi on virheellinen."
         );
@@ -1727,10 +1752,7 @@ function calculateMaterialUsage(
             bar.color ?? null;
 
 
-        if (
-            typeof profileType !== "string" ||
-            PROFILE_TYPES[profileType] === undefined
-        ) {
+        if (!isSupportedProfileType(profileType)) {
             throw new Error(
                 "Sahaussuunnitelman tangon profiilityyppi on virheellinen."
             );
@@ -7158,10 +7180,7 @@ function validateCutProfileTypes(cuts) {
 
     for (const cut of cuts) {
 
-        if (
-            typeof cut.profileType !== "string" ||
-            PROFILE_TYPES[cut.profileType] === undefined
-        ) {
+        if (!isSupportedProfileType(cut.profileType)) {
 
             throw new Error(
                 "Tuntematon profiilityyppi: " +
@@ -7425,6 +7444,161 @@ function runUnknownProfileRegressionTest() {
 
 
     return passed;
+}
+
+
+function runCoreProfileTypeValidationRegressionTests() {
+
+    const results = [];
+
+    const record = (test, passed) => {
+        results.push({
+            test: test,
+            result: passed ? "PASS" : "FAIL"
+        });
+    };
+
+    const throws = callback => {
+        try {
+            callback();
+            return false;
+        } catch {
+            return true;
+        }
+    };
+
+    const validAvailability = {
+        stockLength: 6000,
+        newStock: Object.keys(PROFILE_TYPES).map(
+            profileType => ({
+                profileType: profileType,
+                color: "gray",
+                quantity: null,
+                unlimited: true
+            })
+        ),
+        remnants: []
+    };
+
+    const validCuts = Object.keys(PROFILE_TYPES).map(
+        profileType => ({
+            profileType: profileType,
+            color: "gray",
+            length: 1000,
+            quantity: 1
+        })
+    );
+
+
+    record(
+        "Kuusi sallittua profiilityyppiä hyväksytään",
+        (() => {
+            try {
+                validateCutProfileTypes(validCuts);
+                validateMaterialAvailability(validAvailability);
+                return true;
+            } catch {
+                return false;
+            }
+        })()
+    );
+
+
+    for (const invalidProfileType of [
+        "constructor",
+        "toString",
+        "unsupportedProfile"
+    ]) {
+
+        record(
+            "Cut hylkää profiilin " + invalidProfileType,
+            throws(() =>
+                validateCutProfileTypes([
+                    {
+                        profileType: invalidProfileType,
+                        color: "gray",
+                        length: 1000,
+                        quantity: 1
+                    }
+                ])
+            )
+        );
+    }
+
+
+    record(
+        "Uusi materiaali hylkää perityn profiilinimen",
+        throws(() =>
+            validateMaterialAvailability({
+                ...validAvailability,
+                newStock: [
+                    ...validAvailability.newStock,
+                    {
+                        profileType: "constructor",
+                        color: "gray",
+                        quantity: null,
+                        unlimited: true
+                    }
+                ]
+            })
+        )
+    );
+
+
+    record(
+        "Jäännös hylkää perityn profiilinimen",
+        throws(() =>
+            validateMaterialAvailability({
+                ...validAvailability,
+                remnants: [
+                    {
+                        profileType: "constructor",
+                        color: "gray",
+                        length: 1500,
+                        quantity: 1
+                    }
+                ]
+            })
+        )
+    );
+
+
+    const materialInventory =
+        createMaterialInventory(validAvailability);
+
+
+    record(
+        "Materiaalilähteiden haku hylkää perityn profiilinimen",
+        throws(() =>
+            getMaterialSourcesForProfile(
+                materialInventory,
+                "constructor",
+                "gray"
+            )
+        )
+    );
+
+
+    record(
+        "Optimizer hylkää constructor-cut-rivin",
+        throws(() =>
+            optimizeOrderByProfileTypeWithInventory(
+                [
+                    {
+                        profileType: "constructor",
+                        color: "gray",
+                        length: 1000,
+                        quantity: 1
+                    }
+                ],
+                materialInventory,
+                3
+            )
+        )
+    );
+
+
+    return results;
 }
 
 
@@ -11585,25 +11759,25 @@ function restoreStockProfileRows(
 
 function createWorkStateSnapshot({
     stockLength =
-        document.getElementById("stockLength").value,
+    document.getElementById("stockLength").value,
 
     kerf =
-        document.getElementById("kerf").value,
+    document.getElementById("kerf").value,
 
     stockProfileRows =
-        getStockProfileRowsForStorage(),
+    getStockProfileRowsForStorage(),
 
     remnantRows =
-        getRemnantRowsForStorage(),
+    getRemnantRowsForStorage(),
 
     orders =
-        getOrdersFromForm(),
+    getOrdersFromForm(),
 
     generatedPlan =
-        currentGeneratedPlan,
+    currentGeneratedPlan,
 
     completedBarIdsForStorage =
-        [...completedBarIds]
+    [...completedBarIds]
 } = {}) {
 
     return {
@@ -14175,7 +14349,7 @@ function summarizeDevelopmentOptimization(
         ).length,
         newBarRemaining:
             optimization.bars.length === 1 &&
-            optimization.bars[0].source === "new"
+                optimization.bars[0].source === "new"
                 ? optimization.bars[0].remaining
                 : null,
         barsByProfile: Object.fromEntries(
