@@ -51,9 +51,20 @@ Tuotantofaktat ja alustavat luvut ovat `DOMAIN_NOTES.md`:ssä. Tämä päivitys 
 
 ## Seuraava työvaihe
 
-Käyttäjän pyynnöstä materiaalimoduulien irrotuksen edelle otettiin tilauspohjainen Sahattavat-UI. Käyttäjä vahvisti testien läpäisyn ja seitsemän cut-rivin oikean muodostumisen kahdesta erivärisestä tilauksesta omine tunnisteineen. Laajaa moduulirefaktorointia tai optimizerimuutoksia ei yhdistetty UI-työhön. Seuraava pieni vaihe on materiaalivariantin identiteetin ja varaston muodostuksen riippuvuuksien rajaus ennen seuraavaa moduulisiirtoa.
+Käyttäjän pyynnöstä materiaalimoduulien irrotuksen edelle otettiin tilauspohjainen Sahattavat-UI. Käyttäjä vahvisti testien läpäisyn ja seitsemän cut-rivin oikean muodostumisen kahdesta erivärisestä tilauksesta omine tunnisteineen. Laajaa moduulirefaktorointia tai optimizerimuutoksia ei yhdistetty UI-työhön. Käyttäjän 2026-09-07 muistiinpanojen perusteella seuraava pieni toteutus on U-listojen ja yhteisten kiskorivien oletuskappalemäärän muuttaminen 2:ksi. Samalla varmistetaan tyhjien rivien tunnistus, kiskoparien määrät sekä tallennus ja palautus. Muutos on kirjattu, ei vielä toteutettu.
 
-Uusi tuotantomuistio ei muuta tätä välitöntä työvaihetta. Sen uudet ominaisuudet on koottu vaiheeseen 1c: niitä voidaan tehdä materiaalirajojen selkiydyttyä pieninä erillisinä töinä ilman koko moduulijaon valmistumista. Toleranssimallia ei lykätä myöhempään score-viritykseen, jos sovellusta ollaan ottamassa oikeaan tuotantoon.
+Syyskuun 6. päivän tuotantomuistion varasto- ja toleranssiominaisuudet on koottu vaiheeseen 1c: niitä voidaan tehdä materiaalirajojen selkiydyttyä pieninä erillisinä töinä ilman koko moduulijaon valmistumista. Toleranssimallia ei lykätä myöhempään score-viritykseen, jos sovellusta ollaan ottamassa oikeaan tuotantoon.
+
+### Päivitetty kehitysjärjestys (2026-09-07)
+
+Materiaalin ensisijaisuus säilyy. Nippusahaus ja tilausten putkitus nostetaan vaiheen 3 laajojen materiaalivaihtoehtojen ja pitkän aikavälin arvokalibroinnin edelle. Alla olevat vaihenumerot ovat aiheiden tunnisteita; toteutusjärjestys noudattaa tätä tarkennusta:
+
+1. Toteuta yllä rajattu oletuskappalemäärän muutos omana työnään. Käyttäjän tarkennuksen mukaan kiskorivin määrä on yhteiskappalemäärä: 2 = 1 alakisko + 1 yläkisko. Tämä vaatii oletusarvon lisäksi adapterin määrän puolittamisen, parillisen määrän validoinnin, fixture-muunnoksen ja regressioiden päivityksen sekä tallennettujen vanhojen määrien yhteensopivuusratkaisun. Tarkennus on kirjattu, ei vielä toteutettu.
+2. Rajaa tuotanto-operaatioiden ja kappaleiden tilauskohdistuksen pienin malli nykyisen materiaaliratkaisun päälle. Tarkenna tilausten putkituksen työnkulku ja tavoitemittari. Tee vain tämän edellyttämät materiaalirajojen selkeytykset; koko moduulijako tai laaja Pareto-haku ei ole aloitusehto.
+3. Etene vaiheen 4 nippusahaukseen ja tilausten putkitukseen pieninä testattavina vaiheina. Turvallinen nippuyhteensopivuus, profiilikohtainen kapasiteetti ja tilauskohdistus ovat toteutuksen edellytyksiä. Vaiheen 2 oikeellisuus- ja laatutarkistukset kulkevat mukana.
+4. Kun sahausjärjestys ja mittavasteen siirtojen määrä voidaan laskea, arvioi erillinen työaikakustannus käyttäjän luvuilla: noin 10 s/siirto, 12 €/h ja keskimäärin 7 €/m. Lähteet, epävarmuudet ja yksikkövertailu ovat `DOMAIN_NOTES.md`:ssä. Pisteytystä ei muutettu muistiinpanopäivityksessä.
+
+Laajemman tuotanto-ominaisuuden toteutus aloitetaan rajatulla suunnitelmalla ja hyväksynnällä projektin toimintatapojen mukaisesti.
 
 Skeema nostettiin 3 → 4: tallennetaan tilausten tunnisteet, nimet, värit ja accordionien mittarivit/avaustilat. Käyttäjä vahvisti vanhojen töiden olevan kuvitteellista testidataa ja hyväksyi tyhjästä aloittamisen; migraatiota tai vanhan UI:n rinnakkaistukea ei toteuteta. Vanha tallenne poistuu uuden sivun palautuksessa ilmoituksen kanssa. Moottoriversio `material-v0.3` säilyy.
 
@@ -196,10 +207,10 @@ Materiaaliratkaisun päälle rakennetaan erillinen tuotantonäkymä:
 - sahausnippu saa muuttua leikkausten välillä;
 - turvallisuusyhteensopivuus mallinnetaan sääntönä eikä kovakoodattuna profiilien identtisyysvertailuna;
 - `maxStackSize` on profiilityyppikohtainen;
-- stopparin siirrot ja samanaikainen sahaus ovat ensimmäiset tuotantokriteerit;
-- väri, WIP, pakkaaminen ja työjärjestys ovat myöhempiä pehmeitä kriteereitä.
+- nippusahaus ja tilausten putkitus ovat ensimmäiset tuotantokehityksen tavoitteet; mittavasteen siirrot tuottavat myöhemmin erillisen työaikakustannuksen;
+- putkituksen vaatima työjärjestys ja tilauskohdistus rajataan ensimmäiseen toteutukseen; väri ja pakkaamisen muut preferenssit voidaan lisätä myöhemmin.
 
-Tämän jälkeen voidaan lisätä 5–10 tilauksen rolling-horizon-yhteisoptimointi. Kappaleissa säilytetään `orderId` ja `openingId`. Myöhemmin mukaan voidaan ottaa kiireellisyys, deadline, asentajien tarpeet ja materiaalin niukkuus.
+Tilausten putkituksen tarkka merkitys rajataan ensin; 5–10 tilauksen rolling-horizon-yhteisoptimointi on mahdollinen myöhempi laajennus, ei putkituksen automaattinen määritelmä. Kappaleissa säilytetään `orderId` ja aukkokohtaisen mallin myötä `openingId`. Myöhemmin mukaan voidaan ottaa kiireellisyys, deadline, asentajien tarpeet ja materiaalin niukkuus.
 
 ## Vaihe 5: parametrien viritys ja tuotantodata
 

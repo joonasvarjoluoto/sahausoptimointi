@@ -146,7 +146,7 @@ Noudata tätä järjestystä, ellei käyttäjä muuta sitä:
 2. **Materiaalitalous:** minimoi todellinen uuden materiaalin kustannus huomioiden jäännökset, hukka ja varaston pirstaloituminen.
 3. **Jäännösten järkevä käyttö:** olemassa oleva jäännös ei ole ehdoton greedy-valinta, jos kokonaisratkaisu huononee.
 4. **Varaston muoto:** koskematon pitkä tanko on joustavampi kuin sama pituus useana lyhyenä jäännöksenä.
-5. **Tuotantotehokkuus:** stopparin siirrot ja samanaikainen sahaus ovat tärkeimmät myöhemmät tuotantokriteerit; materiaalikustannus on nyt ensisijainen.
+5. **Tuotantotehokkuus:** nippusahaus ja tilausten putkitus on nostettu kehitysjärjestyksessä ylemmäs käyttäjän päätöksellä 2026-09-07. Materiaalikustannus säilyy ensisijaisena. Mittavasteen siirrot huomioidaan myöhemmin eriteltynä työaikakustannuksena; käytä termiä mittavaste aiemman stopparin/stopperin sijaan. Kustannusarviot ja avoimet rajaukset ovat `DOMAIN_NOTES.md`:ssä.
 6. **Deterministisyys ja selitettävyys:** sama syöte tuottaa saman tuloksen, ja kustannusvaikutukset voidaan eritellä.
 
 Beam-haun tulosta ei saa väittää globaaliksi optimiksi ilman käsin tehtyä todistusta tai täsmäratkaisijaa. Käytä tarvittaessa ilmaisuja `heuristinen`, `paras tutkituista vaihtoehdoista` tai `optimum todistettu täsmäratkaisijalla`.
@@ -158,6 +158,8 @@ Raakalista, Jäännökset ja Sahattavat pidetään käyttöliittymässä erillis
 Sahattavat syötetään tilauskortteina: pysyvä sisäinen `id`, käyttäjän vapaamuotoinen `name`, yksi yhteinen väri ja viisi profiiliaccordionia. Mittariveillä on vain mitta ja määrä. `getOrdersFromForm() → normalizeOrderCuts()` tuottaa nykyisen `profileType + color + length + quantity` -syötteen sekä `orderId`:n. Tunniste ei riipu muokattavasta nimestä. Se säilyy tilausdatassa ja normalisoiduissa syöteriveissä, mutta nykyinen optimizer ryhmittelee kappaleet ilman tilauskohtaista tuloskohdistusta; tätä ei saa väittää valmiiksi tuotannon jäljitettävyydeksi.
 
 `rails` on vain UI-osion avain: jokainen mittarivi laajenee täsmälleen yhdeksi `topRail`- ja yhdeksi `bottomRail`-riviksi samalla värillä, mitalla ja määrällä. Materiaaliprofiilit pysyvät erillisinä. Tyhjä mitta ja tyhjä/oletusmäärä 1 eivät tuota kysyntää; muokattu määrä ilman mittaa hylätään laskennassa. Accordionin avaus/sulkeminen tallentuu muuttamatta suunnitelmaa tai TEHTY-tilaa. Tilausten ja mittarivien muokkaus mitätöi suunnitelman; tilauksen poisto vahvistetaan.
+
+**Päätetty tuleva kiskosyötteen muutos (2026-09-07), ei vielä toteutettu:** ”Määrä (kpl)” tarkoittaa ala- ja yläkiskojen yhteismäärää, oletuksena 2 = 1 alakisko + 1 yläkisko. Yllä kuvattu nykyinen adapteri kopioi vielä määrän molemmille profiileille. Toteutuksessa määrä puolitetaan kummallekin profiilille ja vaaditaan positiivinen parillinen kokonaismäärä; tyhjien rivien käsittely, fixturet, regressiot ja vanhojen tallenteiden määrien merkitys huomioidaan samassa työssä. Katso `DOMAIN_NOTES.md` ja `ROADMAP.md`.
 
 `TEHTY`-merkintä on palautettava käyttöliittymätila eikä muuta materiaalivarastoa. Varasto muuttuu vain työn finalisoinnissa `calculatePostOrderMaterialInventory()`-tuloksen perusteella.
 

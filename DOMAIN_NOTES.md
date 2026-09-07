@@ -38,12 +38,24 @@ Ennen mahdollista muutosta selvitä:
 - Noin yksi metri hukkaprofiilia vastaa suuruusluokaltaan noin puolen tunnin palkkaa.
 - Käytä tätä vain materiaalin ja työajan painotusten suuntaa antavana kalibrointina. Älä kovakoodaa suhdetta ennen euro- ja profiilityyppikohtaista tarkennusta.
 
+### Mittavasteen siirto ja kustannusten tarkennus (2026-09-07)
+
+- **Lähde:** käyttäjän projektimuistiinpanot, 2026-09-07.
+- **Terminologia:** käytetään sanaa mittavaste; aiempi ”stopperi/stoppari” tarkoitti samaa laitteen osaa.
+- **Karkea arvio:** mittavasteen siirto kestää ehkä 10 sekuntia.
+- **Käyttäjän ilmoittama palkka:** 12 €/h. Tämä ei vielä määritä työnantajan kokonaiskustannusta.
+- **Keskimääräinen materiaalihinta:** 7 €/m; profiili- ja värikohtaisia hintoja ei ole määritelty.
+- **Johdettu vertailu:** 10 s × 12 €/h / 3600 s/h ≈ 0,0333 € per siirto. Hinnalla 7 €/m tämä vastaa noin 4,8 mm uutta profiilia. Yksi metri vastaa noin 35 minuutin palkkaa ja tarkentaa aiempaa puolen tunnin suuruusluokka-arviota.
+- **Päätetty suunta:** optimointia jatketaan materiaali edellä. Mittavasteen siirtoaika voidaan myöhemmin huomioida eriteltynä työaikakustannuksena pisteytyksessä.
+- **Nykyinen vaikutus koodiin:** ei muutosta. Nykyiseen materiaalipisteytykseen ei lisätä euroja sellaisenaan eikä arvioita muuteta automaattisesti score-parametreiksi.
+- **Ennen toteutusta selvitettävä:** siirtojen laskenta todellisesta sahausjärjestyksestä, ensimmäisen asetuksen käsittely, ajan vaihtelu ja palkkakustannuksen soveltamisala. Materiaalikustannus ja työaika muunnetaan vertailukelpoisiin yksiköihin ja raportoidaan erikseen; regressioilla varmistetaan materiaalin ensisijaisuus.
+
 ## Raakatangon fyysiset ominaisuudet
 
 - **Luokitus:** vahvistettu tuotantohavainto
 - Uuden tangon tavallinen pituus on 6000 mm.
 - Tangon toisessa päässä on noin 8 mm ripustusreikä.
-- Tangot asetetaan sahalle ehjä pää vasemmalla stopparia vasten ja reiällinen, huonompi pää oikealle.
+- Tangot asetetaan sahalle ehjä pää vasemmalla mittavastetta vasten ja reiällinen, huonompi pää oikealle.
 - Nykyinen laskenta käyttää silti yleistä `stockLength`-syötettä eikä vähennä kiinteää päävaraa.
 - Tuleva malli voi tarvita esimerkiksi `usableLength`- ja `endAllowance`-kentät.
 
@@ -98,6 +110,8 @@ Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei p
 
 ## Tuotannon järjestys ja pakkaaminen
 
+- **Prioriteettipäätös 2026-09-07:** käyttäjä nosti nippusahauksen ja tilausten putkituksen kehitysjärjestyksessä ylemmäs. Materiaali säilyy ensisijaisena. Putkituksen tarkka työnkulku ja tavoitemittari rajataan ennen toteutusta; sitä ei oleteta automaattisesti rolling-horizon-yhteisoptimoinniksi.
+
 - **Luokitus:** vahvistettu tuotantohavainto, ei vielä aktiivinen score-sääntö
 - Pysty- ja Vaakaprofiilit kannattaa sahata peräkkäin ja mieluiten aikaisin, jotta kokoonpano voi alkaa.
 - U-listoja tarvitaan vasta asennuksessa, joten ne voidaan sahata myöhemmin ja varastoida erikseen.
@@ -148,6 +162,16 @@ Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei p
 - **Lähde ja päivämäärä:** tilauspohjaisen Sahattavat-UI:n tehtävänanto, 2026-09-06
 - **Havainto:** yhden tilauksen ylä- ja alakiskoilla on samat mitat ja samat kappalemäärät.
 - **Nykyinen vaikutus koodiin:** yhteinen `rails`-UI-osio laajenee adapterissa erillisiksi `topRail`- ja `bottomRail`-riveiksi. Fyysisiä profiilityyppejä tai niiden materiaalivarastoja ei yhdistetä. Aukkokohtaista mallia ei vielä ole.
+
+### U-listojen ja kiskojen oletuskappalemäärä
+
+- **Luokitus:** käyttäjän päättämä tuleva UI-muutos.
+- **Lähde ja päivämäärä:** käyttäjän projektimuistiinpanot, 2026-09-07.
+- Uusia sahattavia mittarivejä lisättäessä U-listan oletusmääräksi tulee 2.
+- **Käyttäjän tarkennus 2026-09-07:** yhteisen ”Ala- ja yläkisko” -rivin ”Määrä (kpl)” tarkoittaa kiskojen yhteiskappalemäärää. Oletusarvo 2 tarkoittaa 1 alakiskoa ja 1 yläkiskoa; 4 tarkoittaa 2 alakiskoa ja 2 yläkiskoa. Kiskot sahataan aina pareittain. Tämä oikaisee aiemman virheellisen tulkinnan kahdesta kappaleesta kumpaakin profiilia.
+- **Nykyinen vaikutus koodiin:** ei vielä toteutettu; `createOrderMeasureRow()` käyttää oletusta 1. Muiden profiilien oletuksia tai jo syötettyjä määriä ei muuteta.
+- **Toteutuksessa varmistettava:** uuden tilauksen alku- ja lisärivit, tyhjän mitan ohittaminen uuden oletusmäärän kanssa, muokatun määrän validointi sekä tallennus ja palautus. Nykyinen tyhjän rivin tunnistus hyväksyy vain tyhjän määrän tai määrän 1, joten pelkkä kentän oletusarvon vaihto ei riitä.
+- **Määrän uusi merkitys:** adapteri jakaa kiskorivin kokonaismäärän kahdella kummallekin profiilille. Kelvollinen täytetty kiskorivi vaatii positiivisen parillisen kokonaismäärän. Nykyinen adapteri kopioi määrän sellaisenaan molemmille profiileille, joten myös adapteri, fixture-muunnos ja regressiot on päivitettävä. Tallennettujen vanhojen määrien merkitys on säilytettävä erikseen määriteltävällä yhteensopivuusratkaisulla; skeeman/version tarve arvioidaan ennen toteutusta.
 
 ### Tuleva tuotantokohdistus
 
