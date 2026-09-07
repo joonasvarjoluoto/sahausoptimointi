@@ -57,6 +57,8 @@ Syyskuun 6. päivän tuotantomuistion varasto- ja toleranssiominaisuudet on koot
 
 ### Päivitetty kehitysjärjestys (2026-09-07)
 
+**Oletusmäärätyön tilanne 2026-09-07:** U-profiilin osuus on toteutettu: uusi mittarivi saa määrän 2, tyhjä U-rivi ohitetaan myös uudella oletuksella ja vanhat määrät säilyvät. Seuraava jäljellä oleva vaihe on alla kuvattu kiskosyötteen kokonaismäärämuutos. U-profiilin parillisuuden pakottamista ei lisätty. Node-ajossa muutoskohtaiset testit läpäisevät; koko ajossa on ennestään testiajurin paluuarvo-ongelma B-005. Selaintesti estyi paikallisen tiedostosivun URL-käytäntöön.
+
 Materiaalin ensisijaisuus säilyy. Nippusahaus ja tilausten putkitus nostetaan vaiheen 3 laajojen materiaalivaihtoehtojen ja pitkän aikavälin arvokalibroinnin edelle. Alla olevat vaihenumerot ovat aiheiden tunnisteita; toteutusjärjestys noudattaa tätä tarkennusta:
 
 1. Toteuta yllä rajattu oletuskappalemäärän muutos omana työnään. Käyttäjän tarkennuksen mukaan kiskorivin määrä on yhteiskappalemäärä: 2 = 1 alakisko + 1 yläkisko. Tämä vaatii oletusarvon lisäksi adapterin määrän puolittamisen, parillisen määrän validoinnin, fixture-muunnoksen ja regressioiden päivityksen sekä tallennettujen vanhojen määrien yhteensopivuusratkaisun. Tarkennus on kirjattu, ei vielä toteutettu.

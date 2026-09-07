@@ -171,6 +171,8 @@ Tallennettujen raakalista- ja jäännösrivien sekä suunnitelman tankojen profi
 
 Skeema 4 tallentaa `orders`-rakenteen, ei rinnakkaista `inputRows`-kopiota. Tallenteen semanttinen validointi muodostaa kysynnän samalla adapterilla kuin UI. Enintään 100 tilausta, 120 merkkiä nimessä ja yhteensä 1000 laajennettua mittariviä sallitaan; kiskorivi lasketaan kahdeksi myös luonnoksessa. Tunnisteet ovat yksilöllisiä, värit tuettuja tai luonnoksessa tyhjiä, osioiden avausarvot booleaneja ja numeroiden lomakearvot merkkijonoja. Luonnos saa sisältää vielä korjattavia numeroarvoja; laskettu suunnitelma vaatii kelvollisen kysynnän. Käyttäjän luvalla skeeman 3 kuvitteellisia testitöitä ei migroida: vanha tallenne poistuu palautuksessa, työ nollataan ja käyttäjälle näytetään ilmoitus. Moottoriversio säilyy ennallaan.
 
+U-profiilin uusien mittarivien oletusmäärä on 2 (2026-09-07). Tyhjä U-mitta määrällä 2 ohitetaan adapterissa samoin kuin vanha tyhjä oletusrivi määrällä 1. Täytetyn rivin määrää ei muuteta eikä parittomia määriä estetä tässä UI-muutoksessa. Muiden osioiden oletus on edelleen 1; kiskojen yhteismäärän muutos on tuleva työ.
+
 ## Testaus
 
 Projektissa ei vielä ole varsinaista testikehystä. Turvallinen perustestiajo on `runCoreRegressionTests()`: se ajaa A:n, A:n jäännöksillä, D1:n ja profiilieristyksen ilman DOM- tai localStorage-käsittelyä. Se tarkistaa checkpoint-odotukset, riippumattoman tulosvalidoinnin, sahausfysiikan, syötteiden mutatoimattomuuden ja deterministisen toiston. `createDevelopmentTestCases()` tuottaa sekä tämän ajon että selainloaderien tuoreet lähtötiedot.

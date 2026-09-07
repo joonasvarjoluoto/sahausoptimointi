@@ -167,10 +167,12 @@ Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei p
 
 - **Luokitus:** käyttäjän päättämä tuleva UI-muutos.
 - **Lähde ja päivämäärä:** käyttäjän projektimuistiinpanot, 2026-09-07.
-- Uusia sahattavia mittarivejä lisättäessä U-listan oletusmääräksi tulee 2.
+- **Toteutettu 2026-09-07:** uusia U-profiilin mittarivejä lisättäessä oletusmäärä on 2. `getDefaultOrderQuantity()` määrittää oletuksen myös tyhjän rivin tunnistukselle.
+- **Käyttäjän vahvistama tuotantofakta, 2026-09-07:** U-profiili asennetaan oviaukon molemmille pystysivuille, joten sitä sahataan aina parillisina määrinä. Oletusmäärä 2 tarkoittaa kahta U-profiilin kappaletta; määrää ei puoliteta adapterissa kuten yhteisessä kiskosyötössä.
+- **Avoin vaikutus validointiin:** oletusmäärä 2 on päätetty. Parittomien U-profiilimäärien mahdollinen estäminen rajataan erikseen ennen toteutusta; tuotantohavainto ei yksin muuta nykyistä core-validointia tai testitapausten kysyntää.
 - **Käyttäjän tarkennus 2026-09-07:** yhteisen ”Ala- ja yläkisko” -rivin ”Määrä (kpl)” tarkoittaa kiskojen yhteiskappalemäärää. Oletusarvo 2 tarkoittaa 1 alakiskoa ja 1 yläkiskoa; 4 tarkoittaa 2 alakiskoa ja 2 yläkiskoa. Kiskot sahataan aina pareittain. Tämä oikaisee aiemman virheellisen tulkinnan kahdesta kappaleesta kumpaakin profiilia.
-- **Nykyinen vaikutus koodiin:** ei vielä toteutettu; `createOrderMeasureRow()` käyttää oletusta 1. Muiden profiilien oletuksia tai jo syötettyjä määriä ei muuteta.
-- **Toteutuksessa varmistettava:** uuden tilauksen alku- ja lisärivit, tyhjän mitan ohittaminen uuden oletusmäärän kanssa, muokatun määrän validointi sekä tallennus ja palautus. Nykyinen tyhjän rivin tunnistus hyväksyy vain tyhjän määrän tai määrän 1, joten pelkkä kentän oletusarvon vaihto ei riitä.
+- **Nykyinen vaikutus koodiin:** U-profiilin oletus 2 on toteutettu, kiskosyötteen muutos odottaa toteutusta. Muiden profiilien oletuksia tai jo syötettyjä määriä ei muutettu. U-profiilin tyhjä mitta määrällä 2 ohitetaan; myös vanha tyhjä oletusrivi määrällä 1 hyväksytään. Muokattu määrä 4 ilman mittaa hylätään laskennassa. Tallennusskeema ja moottoriversio säilyvät.
+- **Varmistus:** U-profiilin oletus, adapterin tyhjät ja täytetyt rivit sekä tallennetun suunnitelman validointi katetaan regressioilla. Selaimen palautusta ja lisäyspainiketta ei voitu testata: käytettävissä oleva selain esti paikallisen tiedostosivun avaamisen.
 - **Määrän uusi merkitys:** adapteri jakaa kiskorivin kokonaismäärän kahdella kummallekin profiilille. Kelvollinen täytetty kiskorivi vaatii positiivisen parillisen kokonaismäärän. Nykyinen adapteri kopioi määrän sellaisenaan molemmille profiileille, joten myös adapteri, fixture-muunnos ja regressiot on päivitettävä. Tallennettujen vanhojen määrien merkitys on säilytettävä erikseen määriteltävällä yhteensopivuusratkaisulla; skeeman/version tarve arvioidaan ennen toteutusta.
 
 ### Tuleva tuotantokohdistus

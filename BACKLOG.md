@@ -25,6 +25,14 @@ Prioriteetit:
 
 ## Avoimet havainnot
 
+### B-005 — Core-profiilitestien paluuarvo ei vastaa Node-ajurin määritystä
+
+- **Tila:** vahvistettu 2026-09-07 myös commitin `838158d` lähteistä ennen U-profiilin oletusmuutosta.
+- **Prioriteetti:** keskitaso
+- **Alue:** `run-regressions.cjs`, testiryhmän paluuarvon tarkistus.
+- **Havainto:** `runCoreProfileTypeValidationRegressionTests()` palauttaa kahdeksan PASS/FAIL-riviä, mutta ryhmä on ajurin boolean-listassa ilman `expectedRows`-arvoa. Kaikki kahdeksan tapausta läpäisevät, mutta `result === true` hylkää taulukon ja koko ajo päättyy tulokseen 33/34 sekä paluukoodiin 1.
+- **Hyväksymiskriteeri:** ryhmä määritetään eksplisiittisesti kahdeksan rivin taulukoksi; väärä rivimäärä tai yksikin FAIL hylätään edelleen. Korjausta ei yhdistetty U-profiilin oletusmäärämuutokseen.
+
 ### B-002 — Osittaisten inventory-beam-tilojen heuristinen järjestys
 
 - **Tila:** havaittu ja dokumentoitu

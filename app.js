@@ -413,10 +413,17 @@ function createOrderInput(id, name = "", color = "", rowsBySection = {}) {
 }
 
 
-function isBlankOrderMeasure(row) {
+function getDefaultOrderQuantity(sectionKey) {
+    return sectionKey === "uProfile" ? "2" : "1";
+}
+
+
+function isBlankOrderMeasure(row, sectionKey) {
     // Pelkkä oletusmäärä ei tee tyhjästä rivistä tilausta. Muokattu määrä
     // ilman mittaa on sen sijaan keskeneräinen syöte, jota ei saa ohittaa.
-    return row.length === "" && (row.quantity === "" || row.quantity === "1");
+    // Myös aiemmin tallennettu tyhjä rivi oletuksella 1 säilyy tyhjänä.
+    return row.length === "" && (row.quantity === "" || row.quantity === "1" ||
+        row.quantity === getDefaultOrderQuantity(sectionKey));
 }
 
 
@@ -426,7 +433,7 @@ function normalizeOrderCuts(orders) {
         if (!definition) {
             throw new Error("Tuntematon tilauksen profiiliosio.");
         }
-        return section.rows.filter(row => !isBlankOrderMeasure(row)).flatMap(row =>
+        return section.rows.filter(row => !isBlankOrderMeasure(row, section.key)).flatMap(row =>
             definition.profiles.map(profileType => ({
                 orderId: order.id,
                 profileType: profileType,
@@ -492,6 +499,8 @@ function runOrderInputRegressionTests() {
         test: test, result: passed ? "PASS" : "FAIL"
     });
     const row = (length, quantity) => ({ length: String(length), quantity: String(quantity) });
+    record("Vain U-profiilin uusi oletusmäärä on 2", ORDER_PROFILE_SECTIONS.every(section =>
+        getDefaultOrderQuantity(section.key) === (section.key === "uProfile" ? "2" : "1")));
     const cut = (orderId, profileType, color, length, quantity) => ({
         orderId, profileType, color, length, quantity
     });
@@ -530,6 +539,32 @@ function runOrderInputRegressionTests() {
             cut("rails", "bottomRail", "gray", 2460, 1)]
         },
         { name: "Tyhjät osiot", orders: [createOrderInput("empty", "", "gray")], expected: [] },
+        {
+            name: "U-profiilin uusi ja vanha tyhjä oletusrivi ohitetaan", orders: [
+                createOrderInput("u-blank", "", "gray", {
+                    uProfile: [row("", 2), row("", 1), row("", "")]
+                })
+            ], expected: []
+        },
+        {
+            name: "U-profiilin täytetty määrä säilyy myös vanhassa tallenteessa", orders: [
+                createOrderInput("u-filled", "", "gray", {
+                    uProfile: [row(2200, 2), row(2100, 1), row(2000, 4)]
+                })
+            ], expected: [cut("u-filled", "uProfile", "gray", 2200, 2),
+                cut("u-filled", "uProfile", "gray", 2100, 1),
+                cut("u-filled", "uProfile", "gray", 2000, 4)]
+        },
+        {
+            name: "Muiden profiilien määrä 2 ja U-profiilin muokattu määrä vaativat mitan", orders: [
+                createOrderInput("partial-defaults", "", "gray", {
+                    verticalProfile: [row("", 2)], uProfile: [row("", 4)], rails: [row("", 2)]
+                })
+            ], expected: [cut("partial-defaults", "verticalProfile", "gray", 0, 2),
+                cut("partial-defaults", "uProfile", "gray", 0, 4),
+                cut("partial-defaults", "topRail", "gray", 0, 2),
+                cut("partial-defaults", "bottomRail", "gray", 0, 2)]
+        },
         {
             name: "Tyhjä mittarivi oletusmäärällä ohitetaan", orders: [
                 createOrderInput("empty", "", "gray", { verticalProfile: [row("", 1)], rails: [row("", "")] })
@@ -643,6 +678,17 @@ function runStoredOrderValidationRegressionTests() {
     blank.completedBarIds = ["bar-1"];
     record("Nimi, tyhjä kiskorivi ja accordion eivät muuta suunnitelmaa",
         isValidStoredWorkState(blank));
+    for (const quantity of ["1", "2", ""]) {
+        const withBlankU = JSON.parse(JSON.stringify(valid));
+        withBlankU.orders[0].sections[2].rows.push({ length: "", quantity });
+        record("Tyhjä U-rivi säilyttää tallennetun suunnitelman: " + quantity,
+            isValidStoredWorkState(JSON.parse(JSON.stringify(withBlankU))));
+    }
+    const withPartialU = JSON.parse(JSON.stringify(valid));
+    withPartialU.orders[0].sections[2].rows.push({ length: "", quantity: "4" });
+    record("U-rivin muokattu määrä ilman mittaa hylkää suunnitelman",
+        !isValidStoredWorkState(withPartialU) &&
+        isValidStoredWorkState({ ...withPartialU, generatedPlan: null }));
     blank.orders[0].sections[4].rows[0].length = "2000";
     record("Lisätty kiskopari vaatii myös molemmat profiilit suunnitelmaan",
         !isValidStoredWorkState(blank));
@@ -787,7 +833,7 @@ function createOrderCard(order) {
                 window.alert("Työssä voi olla enintään 1000 sahattavaa riviä. Kiskopari lasketaan kahdeksi.");
                 return;
             }
-            const row = createOrderMeasureRow();
+            const row = createOrderMeasureRow("", getDefaultOrderQuantity(sectionData.key));
             list.append(row);
             updateOrderSectionSummary(section);
             handleOrderInputChange();
