@@ -16,7 +16,7 @@ Jos dokumentti ja nykyinen lähdekoodi ovat ristiriidassa, tarkista ensin lähde
 
 Tämä on oppimisprojekti, jossa rakennetaan selaimessa toimivaa sahausoptimointia alumiiniprofiileille. Tavallinen uuden tangon pituus ja käyttöliittymän oletus on 6000 mm, mutta laskennan pitää käyttää nykyistä `stockLength`-syötettä, ellei tehtävässä erikseen päätetä lukita pituutta.
 
-Tavoite ei ole vain vähentää sahahukkaa. Ratkaisun pitää huomioida erillisinä ja selitettävinä ainakin uuden materiaalin käyttö, olemassa olevat jäännökset, syntyvien jäännösten arvo, sahahukka ja varaston pirstaloituminen. Työaika ja sahausjärjestys tulevat myöhemmin. Kustannuskomponentteja ei saa piilottaa yhteen perustelemattomaan kokonaispisteeseen.
+Tavoite ei ole vain vähentää sahahukkaa. Ratkaisun pitää huomioida erillisinä ja selitettävinä ainakin uuden materiaalin käyttö, olemassa olevat jäännökset, syntyvien jäännösten arvo, sahahukka ja varaston pirstaloituminen. Erillinen tuotantoscheduler muodostaa nyt sahausjärjestyksen; työaikakustannukset tulevat myöhemmin. Kustannuskomponentteja ei saa piilottaa yhteen perustelemattomaan kokonaispisteeseen.
 
 Oppiminen on yhtä tärkeää kuin toimiva tulos. Perustele olennaiset oletukset, algoritmimuutokset ja testit käyttäjälle ymmärrettävästi.
 
@@ -27,10 +27,14 @@ Projekti toimii suoraan selaimessa ilman rakennusvaihetta tai paketinhallintaa:
 - `index.html`: mobiiliystävälliset syötteet, työtoiminnot ja tulosalue.
 - `app.js`: käyttöliittymä, materiaalivarasto, optimizerit, pisteytys, renderöinti, dev-testit ja localStorage-työtila.
 - `src/cutting-physics.js`: puhdas `cutPiece()`-sahausfysiikka sekä 0,1 mm:n mittamuunnokset ja tarkkuustarkistus.
+- `src/production-planning.js`: puhdas kokonaisia tilauksia valitseva batch-selector, kappalekohdistus ja dependency-aware nippusahausscheduler.
+- `src/production-integration.js`: tuotantokerroksen lomake-, materiaali-, renderöinti- ja persistenssisovittimet.
+- `production-regressions.js`: puhtaat tuotantoregressiot; Node-ajurin eksplisiittinen testiryhmä.
+- `run-production-ui-regressions.cjs`: calculate-/restore-/finalize-ohjauksen testikaksoisajo, ei todellinen selaintesti.
 - `style.css`: mobiili ensin -asettelu ja tuloskorttien tilat.
 - `run-regressions.cjs`: kehityksenaikainen Node-testiajuri; ei ladattaessa selaimessa tarvittava tiedosto.
 
-Selain lataa tavallisina skripteinä ensin `src/cutting-physics.js`:n ja sitten `app.js`:n. Node-ajuri käyttää samoja lähteitä samassa järjestyksessä. Sahausmoduulin suljettu `CUTTING_PHYSICS`-rajapinta ei riipu sovelluksesta, DOM:sta, tallennuksesta tai testidatasta; se on myös suoraan `require()`-ladattava. `app.js`:n ohuet aliasnimet säilyttävät nykyiset konsoli- ja `window`-funktiot ilman toteutuksen kopiointia. Koko sovellusta ei ole muutettu ES-moduuleiksi.
+Selain lataa tavallisina skripteinä `src/cutting-physics.js`, `src/production-planning.js`, `src/production-integration.js` ja `app.js` tässä järjestyksessä. Node-ajuri käyttää samoja lähteitä samassa järjestyksessä. Sahausmoduulin suljettu `CUTTING_PHYSICS`-rajapinta ei riipu sovelluksesta, DOM:sta, tallennuksesta tai testidatasta; se on myös suoraan `require()`-ladattava. `app.js`:n ohuet aliasnimet säilyttävät nykyiset konsoli- ja `window`-funktiot ilman toteutuksen kopiointia. Koko sovellusta ei ole muutettu ES-moduuleiksi.
 
 Tallennetun työtilan nykyinen versiointi:
 
@@ -72,23 +76,39 @@ Tarkemmat tuotantohavainnot ja keskeneräiset talousoletukset ovat `DOMAIN_NOTES
 Käyttöliittymän aktiivinen polku on inventory-aware:
 
 `calculate()`
-→ `getCutsFromForm()`
+→ `getCutsFromForm()` / `getOrdersFromForm()`
 → `getMaterialAvailabilityFromForm()`
 → `createMaterialInventory()`
-→ `optimizeOrderByProfileTypeWithInventory()`
+→ `selectProductionBatch()` / `PRODUCTION_PLANNING.selectBatch()`
+→ `optimizeOrderByProfileTypeWithInventory()` (jokaiselle batch-ehdokkaalle)
 → `getMaterialSourcesForProfile()`
 → `optimizeOrderInventoryBeamDP()`
 → `scoreCompleteMaterialTransitionPlan()`
 → `adaptMaterialOptimizationForUi()`
+→ `createProductionExecution()` / `attachPieces()` / `schedule()`
 → `renderCuttingPlan()`
 
-`optimizeOrderByProfileTypeWithInventory()` optimoi profiilityypit erikseen ja yhdistää tulokset lopuksi. Se käsittelee yhden laskentaerän kysynnän; käyttöliittymän tilauskortit eivät ole optimizerin erillisiä hakutiloja tai optimointikriteerejä.
+`optimizeOrderByProfileTypeWithInventory()` optimoi profiilityypit erikseen ja yhdistää tulokset lopuksi. Se käsittelee valitun batchin yhteisen kysynnän. Batch selectorissa tilaus on jakamaton, mutta materiaalihaku saa yhdistää eri tilausten yksittäisiä kappaleita. Tilauskohdistus muodostetaan ryhmiteltyyn materiaalitulokseen deterministisesti alkuperäisestä kysynnästä.
 
 `optimizeOrderInventoryBeamDP()` kantaa tilassa jäljellä olevat tilauskappaleet ja materiaalilähteet. Tila-avain huomioi äärellisten lähteiden jäljellä olevat määrät. `consumeMaterialSource()` ei saa mutatoida muiden beam-haarojen lähteitä.
 
 Valmiit ratkaisut pisteytetään `scoreCompleteMaterialTransitionPlan()`-funktiolla. Osittaisten beam-tilojen järjestys on edelleen heuristinen eikä käytä täysin samaa materiaalitalousmallia.
 
 Legacy- ja vertailupolkuja ovat muun muassa `optimizeOrderMaterialBeamDP()`, `optimizeOrderBeamDP()`, `optimizeOrderDP()`, `optimizeCuts()` sekä `generateCombinations() → evaluateCombination() → findBestCombination() → optimizeOrder()`. Niitä ei ole kytketty aktiiviseen käyttöliittymään eikä niitä saa ottaa varapoluksi, poistaa tai olettaa oikeiksi ilman erillistä tehtävää ja testejä. Yhdistelmäpolkua ei saa käyttää suurille syötteille ilman suorituskyvyn arviointia.
+
+## Tuotantobatchien ja nippusahauksen säännöt (8.9.2026)
+
+Tarkka toteutus ja testausohjeet: `BATCH_AND_BUNDLE_SAWING_PLANNING.md`. Käyttäjän uusi päätös ohittaa vanhat continuous-/span-/age-planneriluonnokset.
+
+- Batchin min/tavoite/max ovat asetuksia, oletuksena 200/250/300. Tilaus kuuluu kokonaisena yhteen batchiin. Yksittäinen oversized-tilaus sallitaan.
+- Kaikki kokorajoihin sopivat tilausyhdistelmät arvioidaan nykyisellä materiaalipisteellä. Jos koko avoimen jonon kappalemäärä jää alle minimin, batchiin valitaan koko jono. Muussa tapauksessa alle minimin jääviä eriä ei valita edes materiaalipuutteen vuoksi. Tavoite-etäisyys ratkaisee vain materiaalipisteen tasatilanteen; työaikapisteitä ei lisätä.
+- Nippusahaus on aktiivinen scheduler-ominaisuus. U/Pysty/Vaaka max 4, kiskot max 2; Vaste max 1 on varovainen oletus ennen tuotantovahvistusta. Yhteensopivuus tulee `compatibilityGroup`-datasta; väri ei estä nippua mutta materiaalikohdistuksen väriraja säilyy kovana.
+- Lähteen jatkoleikkaus riippuu edellisestä operaatiosta. Erillinen saman ajon jäännöslähde voi käyttää `parentSourceId`:tä; sykli, kaksoiskäyttö ja väärä materiaalitase hylätään. Ready saman ajon jäännös priorisoidaan ennen riippumatonta uutta lähdettä.
+- Mittavasteen siirtoihin lasketaan batchin ensimmäinen sahausmitan asetus ja jokainen seuraava sahausmitan muutos. Saman mitan toistaminen tai pelkkä loppukappaleen poiminta ei lisää siirtoa. Sahausliike tarkoittaa käynnistetyn sahan terän laskemista leikkuuseen.
+- Täsmälleen oikean mittainen loppukappale on `release`-poiminta, ei keksitty sahausliike. `cutOperationCount` ja nippumittarit koskevat vain `kind: "cut"` -operaatioita.
+- Tuotanto-operaatiot johdetaan validoidusta materiaalista; ne eivät muuta scorea, kerfiä, lähteiden varastokulutusta tai loppujäännösten dispositionia.
+- Skeema 4 saa valinnaiset `batchSettings`, rivin `openingId` ja `generatedPlan.batch` (`version: 1`, `orderIds`, `settings`). Vanha kelvollinen skeeman 4 työ säilyy. Materiaalimoottori on edelleen `material-v0.3`; operaatiolistaa ei tallenneta rinnakkaiseksi totuudeksi.
+- Batch-historia, operaatiokuittaus, työaikakustannukset, anti-starvation ja peruutettava taustalaskenta ovat myöhempää työtä.
 
 ## Materiaalivarasto ja pisteytys
 
@@ -113,6 +133,8 @@ Uusi materiaali ja jäännös sisältävät aina värin:
 ```
 
 Rajattomalla uudella lähteellä `quantity` on `null`. Äärellisellä lähteellä se on kokonaisluku vähintään 0; nollamääräistä lähdettä ei saa tarjota optimizerille. `createMaterialInventory()` yhdistää jäännökset nykyisin saman `profileType + color + length` -avaimen alle.
+
+Uuden työn raakalistassa on käyttäjän päätöksellä (8.9.2026) jokaiselle kuudelle profiilille rajaton harmaa oletusrivi ja rajaton musta lisärivi. Profiililla säilyy täsmälleen yksi `additional: false` -rivi; musta rivi toimii tavallisena poistettavana lisärivinä. Tallennetun työn palautus ei lisää rivejä eikä muuta saatavuuksia näiden oletusten mukaisiksi.
 
 Tulevat varastohälytykset käyttävät todellista saldoa mutta eivät muuta optimizerin saatavuutta tai pisteytystä. Rajaton lähde ei tarkoita tunnettua fyysistä varastosaldoa. Alustavat hälytysrajat ja vastaanottotarve on kuvattu `DOMAIN_NOTES.md`:ssä; ne eivät vielä ole toteutettuja ominaisuuksia.
 
@@ -155,13 +177,13 @@ Beam-haun tulosta ei saa väittää globaaliksi optimiksi ilman käsin tehtyä t
 
 Raakalista, Jäännökset ja Sahattavat pidetään käyttöliittymässä erillisinä. Tankokortissa näkyvät profiilityyppi, materiaalilähde, lähdepituus, sahattavat kappaleet, syntyvä jäännös ja sahahukka. Osittaista ratkaisua ei saa näyttää valmiina sahaussuunnitelmana.
 
-Sahattavat syötetään tilauskortteina: pysyvä sisäinen `id`, käyttäjän vapaamuotoinen `name`, yksi yhteinen väri ja viisi profiiliaccordionia. Mittariveillä on vain mitta ja määrä. `getOrdersFromForm() → normalizeOrderCuts()` tuottaa nykyisen `profileType + color + length + quantity` -syötteen sekä `orderId`:n. Tunniste ei riipu muokattavasta nimestä. Se säilyy tilausdatassa ja normalisoiduissa syöteriveissä, mutta nykyinen optimizer ryhmittelee kappaleet ilman tilauskohtaista tuloskohdistusta; tätä ei saa väittää valmiiksi tuotannon jäljitettävyydeksi.
+Sahattavat syötetään tilauskortteina: pysyvä sisäinen `id`, käyttäjän vapaamuotoinen `name`, yksi yhteinen väri ja viisi profiiliaccordionia. Mittariveillä on mitta, määrä ja valinnainen aukon tunnus (enintään 80 merkkiä). `getOrdersFromForm() → normalizeOrderCuts()` tuottaa nykyisen `profileType + color + length + quantity` -syötteen sekä `orderId`:n. Tunniste ei riipu muokattavasta nimestä. Se säilyy tilausdatassa, normalisoiduissa syöteriveissä ja tuotanto-operaatioiden yksilöllisissä kappaleissa. Mittarivin valinnainen `openingId` säilyy samoin; puuttuva aukko näkyy tuntemattomana, eikä sitä saa päätellä mitoista. Tämä ei ole vielä operaatiokohtainen valmistumishistoria.
 
-`rails` on vain UI-osion avain: jokainen mittarivi laajenee täsmälleen yhdeksi `topRail`- ja yhdeksi `bottomRail`-riviksi samalla värillä, mitalla ja määrällä. Materiaaliprofiilit pysyvät erillisinä. Tyhjä mitta ja tyhjä/oletusmäärä 1 eivät tuota kysyntää; muokattu määrä ilman mittaa hylätään laskennassa. Accordionin avaus/sulkeminen tallentuu muuttamatta suunnitelmaa tai TEHTY-tilaa. Tilausten ja mittarivien muokkaus mitätöi suunnitelman; tilauksen poisto vahvistetaan.
+`rails` on vain UI-osion avain: jokainen mittarivi laajenee täsmälleen yhdeksi `topRail`- ja yhdeksi `bottomRail`-riviksi samalla värillä, mitalla ja määrällä. Materiaaliprofiilit pysyvät erillisinä. Tyhjä mitta ja tyhjä/oletusmäärä 1 eivät tuota kysyntää; muokattu määrä ilman mittaa hylätään laskennassa. Tilauskortti on avattava/suljettava `details`-elementti, jonka otsikossa näkyvät nimi, väri ja kokonaiskappalemäärä. Otsikon määrä päivittyy mittarivejä muokatessa ja poistettaessa; kiskot lasketaan erillisinä fyysisinä kappaleina. Uudet ja vanhat tilaukset ilman sulkemistilaa avautuvat oletuksena. Valinnainen boolean `collapsed` tallentaa kortin sulkemistilan skeemassa 4. Sekä kortin että profiiliaccordionin avaus/sulkeminen tallentuu muuttamatta suunnitelmaa tai TEHTY-tilaa. Tilausten ja mittarivien muokkaus mitätöi suunnitelman; tilauksen poisto vahvistetaan.
 
 **Päätetty tuleva kiskosyötteen muutos (2026-09-07), ei vielä toteutettu:** ”Määrä (kpl)” tarkoittaa ala- ja yläkiskojen yhteismäärää, oletuksena 2 = 1 alakisko + 1 yläkisko. Yllä kuvattu nykyinen adapteri kopioi vielä määrän molemmille profiileille. Toteutuksessa määrä puolitetaan kummallekin profiilille ja vaaditaan positiivinen parillinen kokonaismäärä; tyhjien rivien käsittely, fixturet, regressiot ja vanhojen tallenteiden määrien merkitys huomioidaan samassa työssä. Katso `DOMAIN_NOTES.md` ja `ROADMAP.md`.
 
-`TEHTY`-merkintä on palautettava käyttöliittymätila eikä muuta materiaalivarastoa. Varasto muuttuu vain työn finalisoinnissa `calculatePostOrderMaterialInventory()`-tuloksen perusteella.
+`TEHTY`-merkintä on palautettava käyttöliittymätila eikä muuta materiaalivarastoa. Varasto muuttuu vain työn finalisoinnissa `calculatePostOrderMaterialInventory()`-tuloksen perusteella. Batch-suunnitelman finalisointi poistaa vain batchin tilaukset ja säilyttää muun avoimen jonon samassa persistoi-ensin-transaktiossa.
 
 Finalisointi noudattaa persistoi-ensin/commitoi-sitten-järjestystä: lopullinen snapshot kirjoitetaan onnistuneesti ennen varasto-DOM:n vaihtamista ja suunnitelman tyhjentämistä. Epäonnistunut tallennus ei saa muuttaa live-työtä.
 
@@ -183,7 +205,9 @@ Pidä ajurin testilista eksplisiittisenä: lisää sinne vain ilman selainta toi
 
 `runCuttingPhysicsRegressionTests()` lukitsee 23 mittamuunnos-, desimaaliraja-, nollakerf- ja virheellisen tarkkuuden tapausta muuttamatta avointa työtä. Se täydentää aiempia `runCutPieceBoundaryTests()`- ja `runDecimalExactFitRegressionTest()`-testejä. Pidä dev-testit sahausmoduulin ulkopuolella.
 
-`runOrderInputRegressionTests()` tarkistaa tilausadapterin, kiskoparit, tunnisteet ja neljän perustapauksen täsmälleen samat optimointitulokset. `runStoredOrderValidationRegressionTests()` tarkistaa skeeman 4 rakenteen ja kysynnän sekä skeeman 3 hylkäyksen. Nämä kuuluvat Node-ajurin 33 ryhmään. Selaimen `runOrderInputUiRegressionTests()` testaa irrotetun tilauskortin turvallisen DOM-roundtripin muuttamatta avointa työtä. Fixture-loaderit käyttävät `createDevelopmentOrdersFromCuts()`-adapteria; eriävät ylä-/alakiskolistat hylätään ennen lomakkeen muuttamista. Tämä ei rajoita suoria core-testejä eikä ole tallennemigraatio.
+`runOrderInputRegressionTests()` tarkistaa tilausadapterin, kiskoparit, tunnisteet ja neljän perustapauksen täsmälleen samat optimointitulokset. `runStoredOrderValidationRegressionTests()` tarkistaa skeeman 4 rakenteen ja kysynnän sekä skeeman 3 hylkäyksen. Nämä ja uusi `runProductionRegressionTests()` kuuluvat Node-ajurin 35 ryhmään. `runCoreProfileTypeValidationRegressionTests()` on eksplisiittisesti kahdeksan rivin taulukko (B-005 korjattu). Selaimen `runOrderInputUiRegressionTests()` testaa irrotetun tilauskortin turvallisen DOM-roundtripin muuttamatta avointa työtä. Fixture-loaderit käyttävät `createDevelopmentOrdersFromCuts()`-adapteria; eriävät ylä-/alakiskolistat hylätään ennen lomakkeen muuttamista. Tämä ei rajoita suoria core-testejä eikä ole tallennemigraatio.
+
+Aja tuotantoputken ohjaus- ja persistenssimuutoksissa myös `node run-production-ui-regressions.cjs`. Sen 17 tarkistusta käyttävät testikaksoisia; ne eivät korvaa todellista selaimen DOM-, palautus- tai asettelutestiä.
 
 Käytä lisäksi tehtävään sopivia nimettyjä `run...RegressionTest(s)()`-funktioita. Selaimen `loadTestA()`, `loadTestAWithRemnants()`, `loadTestD1()` ja `loadTestProfileIsolation()` vaihtavat avoimen työn syötteet ja tallentavat ne; niiden palauttama `undefined` on normaali. Myös vanha `runAllRegressionTests()` käyttää näitä lomakelatauksia ja muuttaa avointa työtä. `runCurrentOrderSummaryTest()` laskee yhteenvedon nykyisestä lomakkeesta.
 

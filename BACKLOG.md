@@ -25,9 +25,21 @@ Prioriteetit:
 
 ## Avoimet havainnot
 
+### B-006 — Batch-yhdistelmien synkroninen haku suurissa tilausjonoissa
+
+- **Tila:** havaittu 2026-09-08
+- **Prioriteetti:** keskitaso suurissa jonoissa
+- **Alue:** `PRODUCTION_PLANNING.selectBatch`, selaimen laskennan reagointi.
+- **Havainto:** selector luettelee kokorajaan mahtuvat tilausyhdistelmät ja arvioi ne synkronisesti. Kymmenen pientä tilausta voi tuottaa 1023 yhdistelmää; lomake sallii enintään 100 tilausta, jolloin haku voi olla käytännössä mahdoton. Ongelma koskee hakumäärää ja pääsäikeen varaamista, ei materiaalipisteen oikeellisuutta.
+- **Rajaus:** käyttäjän pyynnön mukaisesti ensimmäiseen versioon ei lisätty heuristista esikarsintaa. Tyypillinen arvioitu jono on 5–10 tilausta.
+- **Mittaus 8.9.2026:** viisi 50 kappaleen Pysty-tilausta eri mitoilla vaati kuuden ehdokkaan arviointiin noin 27,4 sekuntia Nodessa.
+- **Seuraava askel:** mittaa todellinen 5–10 tilauksen aineisto ja suunnittele peruutettava taustalaskenta sekä selkeä hakubudjetti. Älä palauta karsitun haun tulosta kaikkien batchien parhaana.
+
+
+
 ### B-005 — Core-profiilitestien paluuarvo ei vastaa Node-ajurin määritystä
 
-- **Tila:** vahvistettu 2026-09-07 myös commitin `838158d` lähteistä ennen U-profiilin oletusmuutosta.
+- **Tila:** valmis 2026-09-08. Lähtöajossa vahvistettiin 33/34-tulos; batch-työn koko testipaketin ajamiseksi ryhmä määritettiin kahdeksan rivin taulukoksi. Kaikki kahdeksan tapausta ja koko 35 ryhmän ajo läpäisevät. Alkuperäinen havainto oli vahvistettu myös commitin `838158d` lähteistä.
 - **Prioriteetti:** keskitaso
 - **Alue:** `run-regressions.cjs`, testiryhmän paluuarvon tarkistus.
 - **Havainto:** `runCoreProfileTypeValidationRegressionTests()` palauttaa kahdeksan PASS/FAIL-riviä, mutta ryhmä on ajurin boolean-listassa ilman `expectedRows`-arvoa. Kaikki kahdeksan tapausta läpäisevät, mutta `result === true` hylkää taulukon ja koko ajo päättyy tulokseen 33/34 sekä paluukoodiin 1.
@@ -44,6 +56,8 @@ Prioriteetit:
 - **Hyväksymiskriteeri:** uusi ranking parantaa mitattua laatua edustavassa testipankissa ilman kohtuutonta suorituskykyhaittaa.
 
 ### B-004 — Suoran core-kutsun profiilivalidointi hyväksyy perityn ominaisuuden
+
+Päivitys 8.9.2026: nykyinen lähdekoodi hylkää nämä profiilit ja kaikki kahdeksan core-profiiliregressiota läpäisevät. Alla oleva virhekuvaus on historiallinen; korjaus oli repossa ennen batch-työtä. Tässä työssä korjattiin vain B-005:n ajurimääritys.
 
 - **Tila:** vahvistettu Node-ajolla 2026-09-06
 - **Prioriteetti:** keskitaso

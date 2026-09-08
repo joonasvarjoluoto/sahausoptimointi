@@ -1,359 +1,111 @@
-# Batch-, nippusahaus- ja sahausjärjestyksen suunnittelumuistio
+# Tuotantobatchit ja nippusahaus
 
-> **Tila: suunnitteluvaiheen ideat, ei valmis arkkitehtuuripäätös.**
->
-> Tämä muistio kokoaa 7.9.2026 käytyä suunnittelua tilausjonosta, tuotantoeristä, nippusahauksesta, jäännöksistä ja sahaussuunnitelman suoritusjärjestyksestä. Näitä kohtia ei pidä tulkita toteutusvaatimuksiksi ennen erillistä päätöstä ja testausta.
+## Päätös ja toteutus 8.9.2026
 
-## 1. Lähtötilanne tuotannossa
+Lähde: käyttäjän tämän toteutustehtävän auktoritatiivinen tehtävänanto. Tämä päätös korvaa muistion 7.9.2026 avoimet continuous-, span-, age- ja sekventiaalisen putkituksen vaihtoehdot. Ne ovat mahdollisia myöhempiä kehityssuuntia, eivät aktiivinen arkkitehtuuri.
 
-Työnjohtaja voisi syöttää tilausten mitat ohjelmaan käsin ja lisätä tilaukset avoimeen tilausjonoon.
+Ainoa aktiivinen optimointikriteeri on nykyinen materiaalitalous. Kerf, materiaalin lähdearvo, jäännöskrediitti, disposition, käsittely, uusien jäännösten luonti ja suuren romun lisäkustannus säilyvät nykyisessä `scoreCompleteMaterialTransitionPlan()`-mallissa. Nippusahaus ja mittavasteen siirrot eivät vaikuta materiaalipisteisiin.
 
-Sahaajan näkökulmasta samaan tuotantoerään valitut tilaukset voidaan käsitellä yhtenä isona kappalepoolina:
-
-- eri tilausten kappaleita saa tehdä samasta raaka-ainetangosta;
-- eri tilausten kappaleita saa sahata samassa nipussa;
-- alkuperäisellä tilausjärjestyksellä ei ole sahausvaiheessa merkitystä;
-- sahaajan ei tarvitse sahausvaiheessa tietää, kuuluuko kappale yhteen vai toiseen tilaukseen;
-- kun kaikki kappaleet on sahattu, ne erotellaan alkuperäisten tilausten mukaan ja pakataan/varastoidaan lomakkeiden perusteella.
-
-Tilaus- ja aukkotieto pitää silti säilyttää kappaleiden metadatassa jäljitettävyyttä ja pakkaamista varten.
-
-## 2. Miksi ensimmäinen versio kannattaa todennäköisesti tehdä tuotantoerinä
-
-Keskustelussa harkittiin koko avoimen jonon continuous/rolling-horizon-planneria.
-
-Nykyinen jäännösvarasto tekee siitä kuitenkin hankalan:
-
-- vanhoista jäännöksistä ei ole tarkkaa digitaalista varastotietoa;
-- sahaaja nostaa syntyvät jäännökset fyysisiin lokeroihin profiilityypin ja värin mukaan;
-- pidemmät palat ovat lokerossa vasemmalla ja lyhyemmät oikealla;
-- seinällä on noin 1000–2000 mm kohdalla 100 mm välein tussiviivoja pituuden silmämääräiseen arviointiin;
-- jäännöksiä ei mitata, tunnisteella merkitä tai kirjata järjestelmään millimetrin tarkkuudella.
-
-Tästä syystä tarkka continuous planner vaatisi digitaalisen varastototuuden, jota nykyisessä tuotantotavassa ei ole.
-
-Ensimmäisen käyttöversion kannattaa siksi todennäköisesti toimia **itsenäisinä optimointierinä**. Vanhaa fyysistä jäännösvarastoa ei tarvitse mallintaa.
-
-Sahaaja voi silti käytännössä käyttää nurkasta löytyvää sopivaa vanhaa jäännöstä uuden tangon sijasta. Tällöin todellinen materiaalinkulutus voi olla optimizerin ennustetta parempi.
-
-## 3. Tuotantoerän koko
-
-Alkuperäinen ajatus oli esimerkiksi viisi tilausta kerrallaan.
-
-24 tilauksen testiaineistosta kuitenkin nähtiin, että tilausten koko vaihtelee voimakkaasti. Siksi kiinteä tilausten lukumäärä ei vaikuta hyvältä eräkoon mittarilta.
-
-Parempi lähtökohta on **kappalemäärään tai myöhemmin arvioituun sahaustyömäärään perustuva erä**.
-
-Esimerkiksi:
-
-- viisi pientä tilausta voi muodostaa hyvän erän;
-- kaksi tai kolme suurta tilausta voi jo muodostaa saman kokoisen erän.
-
-### Alustava tavoite: noin 250 kappaletta
-
-Ensimmäiseen versioon voisi tulla käyttäjän muokattava:
-
-`Tavoite-eräkoko ≈ 250 sahattavaa kappaletta`
-
-250 ei olisi kova vaatimus vaan pehmeä tavoite.
-
-Esimerkiksi materiaaliltaan ja nippusahaukseltaan erinomainen 225 tai 280 kappaleen erä voi olla parempi kuin väkisin koottu 250 kappaleen erä.
-
-Mahdollinen kova maksimieräkoko on vielä avoin kysymys.
-
-Myöhemmin pelkän kappalemäärän rinnalle voidaan arvioida `estimatedSawWork`-mittaria, koska 100 kappaletta eri profiilityyppejä ei välttämättä tarkoita samaa työmäärää.
-
-## 4. Tilausjonon mittakaava ja laskenta-aika
-
-Käytettävissä ollut 24 tilauksen aineisto syntyi aikavälillä **27.7.–7.9.2026**.
-
-Tämänhetkinen arvio käytännön jonosta:
-
-- normaalisti ehkä noin 5–10 avointa tilausta;
-- noin 20 tilauksen yhtäaikainen jono olisi todennäköisesti harvinainen.
-
-Tämän vuoksi ensimmäisessä versiossa ei tarvitse optimoida laskenta-aikaa liian aggressiivisesti.
-
-Optimizer voisi:
-
-1. nähdä kaikki avoimet tilaukset;
-2. muodostaa niistä kaikki järkevän kokoiset erävaihtoehdot;
-3. ajaa oikean cutting optimizerin erävaihtoehdoille;
-4. valita materiaalin ja tuotannon kannalta parhaan erän.
-
-Laskennan ei tarvitse olla reaaliaikainen. Työnjohtaja voi käynnistää optimoinnin esimerkiksi illalla, viikonloppuna tai aamulla samalla kun sahaaja tekee edellistä suunnitelmaa.
-
-Kymmenien minuuttien tai jopa noin tunnin laskenta-aika voi olla hyväksyttävä, jos sillä saavutetaan selvästi parempi lopputulos.
-
-Heuristinen esikarsinta kannattaa lisätä vasta, jos kaikkien järkevien vaihtoehtojen oikea optimointi osoittautuu liian hitaaksi.
-
-## 5. Tilausten odotusaika / starvation
-
-Jos optimizer optimoi pelkästään materiaalitehokkuutta, jokin muiden kanssa huonosti sopiva tilaus voisi jäädä jatkuvasti seuraavan erän ulkopuolelle.
-
-Yksi alustava ratkaisu:
-
-- joka toinen tuotantoerä valitaan täysin vapaasti;
-- joka toiseen erään vanhin avoin tilaus on pakollinen;
-- optimizer saa valita sen ympärille parhaat muut tilaukset.
-
-Tämä on kokeiltava idea, ei lopullinen sääntö.
-
-Myöhemmin vaihtoehtoja ovat esimerkiksi määräpäivät, odotusaika tai käyttäjän määrittelemä prioriteetti.
-
-## 6. Nippusahaus
-
-Eri värit saa yhdistää samaan nippuun.
-
-Esimerkiksi:
-
-- 2 × harmaa Pysty
-- 2 × musta Pysty
-
-voidaan sahata neljän salon nippuna yhdellä sahausliikkeellä, jos sahausmitta on sama.
-
-Väri erottaa materiaalivaraston, mutta ei itsessään estä yhteistä nippusahausta.
-
-### Alustavat, käyttäjän muokattavat nippukapasiteetit
-
-| Profiilityyppi | Oletus |
-| --- | ---: |
-| U-profiili | 4 |
-| Pysty | 4 |
-| Vaaka | 4 |
-| Ala- ja yläkisko | 2 |
-
-Näitä ei pidä kovakoodata pysyviksi tuotantofaktoiksi.
-
-Nippusahauksen optimoinnissa voidaan myöhemmin huomioida muun muassa:
-
-- sahausliikkeiden määrä;
-- mittavasteen muutokset;
-- nipun muodostamiset ja purkamiset;
-- mahdollisuus tehdä samalla nipulla useita peräkkäisiä mittoja.
-
-Materiaalitehokkuus säilyy kuitenkin ensisijaisena tavoitteena, ellei myöhemmin päätetä muuta.
-
-## 7. Optimizerin ja schedulerin vastuunjako
-
-Tässä keskustelussa tarkentui tärkeä jako.
-
-### Cutting optimizer
-
-Optimizer päättää **täydellisen materiaaliratkaisun**:
-
-- mistä tangosta mikäkin kappale tehdään;
-- käytetäänkö uutta tankoa vai saman optimointierän aikana syntyvää jäännöstä;
-- mikä jäännös syntyy mistäkin tangosta;
-- mihin myöhempään sahaukseen kyseinen jäännös käytetään;
-- mitkä eri lähteistä syntyneet jäännökset voidaan myöhemmin niputtaa yhteen.
-
-Optimizerin ei kuitenkaan tarvitse välittää lopullisesta sahausten suoritusjärjestyksestä.
-
-### Saw-plan scheduler
-
-Scheduler ei muuta optimizerin materiaaliratkaisua.
-
-Sen tehtävänä on järjestää jo päätetyt sahaukset fyysisesti mahdolliseen ja sahaajan kannalta järkevään suoritusjärjestykseen.
-
-## 8. Jäännösten riippuvuudet
-
-Esimerkiksi optimizer voi päättää:
+## Putki ja vastuut
 
 ```text
-A: uusi tanko -> kappaleet -> jäännös J1
-B: uusi tanko -> kappaleet -> jäännös J2
-C: uusi tanko -> kappaleet -> romu
-D: uusi tanko -> kappaleet -> romu
-E: J1 + J2 -> kappaleet -> romu
+avoimet tilauskortit
+  → selectProductionBatch / PRODUCTION_PLANNING.selectBatch
+  → valitut kokonaiset tilaukset
+  → nykyinen inventory-aware material optimizer
+  → materiaalin tankokohtainen suunnitelma
+  → attachPieces: yksilölliset kappaleet ja tilaus-/aukkokohdistus
+  → schedule: lähderiippuvuudet ja hetkellinen nippusahaus
+  → cut operations ja materiaalinäkymä
 ```
 
-Operaatiota E ei voi tehdä ennen A:ta ja B:tä.
+`src/production-planning.js` sisältää puhtaan selectorin, kohdistuksen ja schedulerin. `src/production-integration.js` sovittaa ne nykyisiin lomakkeisiin, optimointiin, tallennukseen ja tulosnäkymään. Optimizerin hakua, score-parametreja, legacy-polkuja tai sahausmoduulia ei muutettu.
 
-Riippuvuus voidaan ajatella graafina:
+## Batch-valinta
 
-```text
-A --\
-     -> E
-B --/
+- `minBatchPieces = 200`, `targetBatchPieces = 250`, `maxBatchPieces = 300` ovat asetuksia; niitä voi muuttaa selaimen batch-asetuksista.
+- **Batch selectorissa tilaus on jakamaton yksikkö: yhden tilauksen kaikki kappaleet kuuluvat samaan batchiin. Batchin sisällä material optimizer saa käsitellä kappaleita yksittäin ja yhdistellä niitä muiden batchin tilausten kappaleisiin.**
+- Kappalemäärä lasketaan normalisoidusta kysynnästä: ylä- ja alakisko ovat erillisiä fyysisiä kappaleita. Kiskosyötteen vanhaa määrätulkintaa ei muutettu tässä työssä.
+- Selector luettelee kaikki max-rajaan mahtuvat kokonaisten tilausten yhdistelmät. Yksittäinen max-rajan ylittävä tilaus on sallittu yksin oversized-batchina.
+- Jos kaikkien avoimien tilausten yhteiskappalemäärä jää alle minimin, arvioidaan ainoastaan koko jono yhtenä batchina. Muuten arvioidaan min–max-alue ja oversized-yksittäistilaukset. Alle minimin jääviä osajoukkoja ei tällöin valita; materiaalipuutteen tai kokorajoihin sopimattomien tilauskokojen vuoksi voidaan palauttaa epäonnistuminen. Tilausta ei pilkota. Käyttäjän tarkennus 8.9.2026: minimin tarkoitus on estää tarpeettoman pienet erät suuresta jonosta.
+- Valintajärjestys on nykyinen `totalCostEquivalent`, sitten etäisyys tavoitekokoon ja lopuksi tilaus-ID:iden järjestys. Kokoeroa ei hinnoitella eikä materiaalipistettä normalisoida kappalekohtaiseksi. Kokonaiskustannus voi siksi suosia pienempää tai vähemmän materiaalia vaativaa sallittua batchia; tämä on näkyvä ensimmäisen version sääntö.
+- FIFO, deadline ja anti-starvation eivät ole aktiivisia. `selectBatch(orders, evaluate, settings)` erottaa ehdokkaiden haun materiaaliratkaisun arvioinnista ja sallii selectorin myöhemmän vaihdon.
+- Haku on deterministinen. Kaikkien batch-yhdistelmien tutkiminen ei todista materiaaliratkaisua globaaliksi optimiksi, koska materiaalikerros on beam-heuristiikka.
+- Tyypillinen 5–10 tilauksen jono on lähtömittakaava. Yhdistelmien määrä kasvaa eksponentiaalisesti; pitkä laskenta on synkroninen. Suurten jonojen suorituskyky ja peruutettava taustalaskenta ovat myöhempää työtä, eivät piilotettu esikarsinta.
 
-C
-D
-```
+## Kappaleiden provenance
 
-Scheduler muodostaa tästä topologisesti validin suoritusjärjestyksen.
+Jokainen tuotantokappale saa ajokohtaisen `pieceId`:n, `orderId`:n, `openingId`:n (tai `null`), profiilin, värin, mitan ja lähdeviitteen. Mittarivin valinnainen aukon tunnus kulkee tallennuksen ja normalisoinnin läpi. Saman rivin kaikki kappaleet kuuluvat annettuun aukkoon; eri aukot syötetään omille riveilleen. Tunnisteen oikeellisuus perustuu käyttäjän syötteeseen, eikä järjestelmä päättele aukkoja mitoista.
 
-## 9. Jäännökset käytetään heti kun niiden suunniteltu käyttö on mahdollista
+Optimizer saa yhdistää saman materiaalivariantin ja mitan kysynnän. `attachPieces()` kohdistaa tuloksen deterministisesti alkuperäisiin kysyntäriveihin ja tarkistaa jokaisen kappaleen täsmälleen kerran. Metadata ei vaikuta materiaalipisteeseen. Varastoryhmille ei lisätä pysyviä yksilö-ID:itä.
 
-Tämä ei ole optimizerin pisteytykseen lisättävä `remnantHoldingPenalty`.
+## Scheduler ja turvallisuus
 
-Se on **schedulerin suoritusjärjestyksen prioriteettisääntö**.
+Yksi `cut operation` sisältää yhden katkaisumitan, yhteensopivuusryhmän, mukana olevat lähde-ID:t ja niiden ennen/jälkeen-pituudet, syntyvät kappaleet sekä edeltävät operaatiot. Nippu ei ole pysyvä objekti. Scheduler ottaa valitun mitan samanaikaisesti kaikista valmiista yhteensopivista lähteistä kapasiteettiin saakka; tarvittaessa saman lähteen kappaleiden järjestys muuttuu. Materiaaliratkaisu ja sen loppujäännös säilyvät.
 
-Edellisen esimerkin huono järjestys olisi:
+Profiilikohtaiset `profileDefaults`-asetukset:
 
-```text
-1. A
-2. B
-3. C
-4. D
-5. E
-```
+| Profiili | maxStackSize | Peruste |
+| --- | ---: | --- |
+| U | 4 | Käyttäjän alustava oletus |
+| Pysty | 4 | Käyttäjän alustava oletus |
+| Vaaka | 4 | Käyttäjän alustava oletus |
+| Yläkisko | 2 | Käyttäjän alustava oletus |
+| Alakisko | 2 | Käyttäjän alustava oletus |
+| Vaste | 1 | Varovainen toteutusoletus; käyttäjä ei antanut kapasiteettia |
 
-Koska J1 ja J2 ovat jo olemassa vaiheen 2 jälkeen, parempi järjestys on:
+`getCompatibility()` lukee profiilin `compatibilityGroup`- ja `maxStackSize`-säännöt. Oletuksena kukin profiili muodostaa oman ryhmänsä. Tulevia poikkeuksia voi määrittää datalla; sekaryhmässä noudatetaan mukana olevien profiilien pienintä kapasiteettia. Värit saavat sekoittua sahausliikkeessä, mutta kappaleen ja materiaalilähteen värin on edelleen täsmättävä.
 
-```text
-1. A
-2. B
-3. E
-4. C
-5. D
-```
+`cutPiece()` tarkistaa alkuperäiset lähteet ja jokaisen operaation. Scheduler ei lisää kerfiä, toleranssia, päävaraa eikä muuta dispositionia. Nimellinen täsmäsovitus säilyy nykyisen fysiikan mukaisena. Täsmälleen oikean mittainen loppukappale on `kind: "release"` -poiminta, joka näkyy suoritusjärjestyksessä mutta ei kasvata sahausliikkeiden määrää. Muut leikkaukset ovat `kind: "cut"` -operaatioita.
 
-Yleistetty suunnitteluidea:
+## Saman batchin jäännökset ja DAG
 
-1. suorita operaatio;
-2. lisää siitä syntyvät jäännökset saataville;
-3. tarkista, vapautuiko niiden ansiosta optimizerin jo ennalta suunnittelema jäännösoperaatio;
-4. jos vapautui, tee se ennen riippumattomia uusia tankoja käyttäviä operaatioita;
-5. tarkista tämän jälkeen uudelleen, vapautuiko seuraava jäännösoperaatio;
-6. jatka näin, kunnes valmista jäännösoperaatiota ei ole;
-7. palaa vasta sitten uusiin tankoihin.
+Lähteen jokainen seuraava leikkaus käyttää sen edellisen operaation jäljelle jättämää materiaalia. Tällä jatko-operaatiolla on eksplisiittinen `dependencyIds`-viite edeltävään operaatioon, ja lähteen alkuperä näytetään `same-run-remnant`-tilana. Materiaalinäkymässä sama fyysinen salko säilyy yhtenä bar-objektina, joten sen varastovähennys ja loppujäännöksen krediitti lasketaan vain kerran.
 
-Näin saman optimointierän aikana syntyvät jäännökset eivät jää tarpeettomasti sahausaseman viereen odottamaan.
+Scheduler hyväksyy myös erikseen kuvatun `parentSourceId`-riippuvuuden: lapsilähteen pitää olla `same-run-remnant`, sen pituuden pitää vastata vanhemman loppujäännöstä ja materiaalivariantin olla sama. Sykli, puuttuva vanhempi ja saman jäännöksen kaksoiskäyttö hylätään ennen aikataulutusta. Tämä on schedulerin rajapinta; nykyinen materiaalihaku esittää saman salon jatkoleikkaukset edelleen yhtenä bar-kuviona eikä luo erillistä varastotapahtumaa jokaisesta välijäännöksestä.
 
-## 10. Vanha jäännösvarasto ja uuden erän aikana syntyvät jäännökset ovat eri asia
+Valmis saman ajon jäännöksen käyttö priorisoidaan ennen riippumatonta uutta lähdettä. Tasatilanteet ratkaistaan lähde-ID:llä ja alkuperäisellä kappalejärjestyksellä. Samanmittoiset muut valmiit lähteet voidaan silti ottaa mukaan samaan nippuun. Globaalisti optimaalista tuotantojärjestystä ei väitetä.
 
-### Vanha fyysinen jäännösvarasto
+Vanha fyysinen jäännösvarasto voi tuotannossa olla epätarkka (käyttäjän havainto 7.9.2026). Nykyisen sovelluksen syötetty varasto säilyy optimizerin auktoritatiivisena lähtötietona. Saman ajon välijäännökset tunnetaan laskennallisesti tarkasti; niitä ei sekoiteta vanhaan varastoon.
 
-- optimizer ei välttämättä tunne sitä lainkaan;
-- sitä ei tarvitse inventoida MVP:tä varten;
-- sahaaja voi käyttää sopivaa jäännöstä manuaalisesti.
+## UI, tallennus ja finalisointi
 
-### Nykyisen optimointierän jäännökset
+Batchin tilaukset, kappalemäärät, kokorajat ja materiaalipisteen komponentit näkyvät tuloksessa. Nykyinen materiaalinäkymä säilyy. Avattava sahausjärjestys näyttää operaatiot, lähteet, värit, alkuperän sekä tilaus-, aukko- ja kappaletunnisteet.
 
-- optimizer tuntee niiden pituuden, profiilin ja värin täsmällisesti;
-- optimizer on jo päättänyt niiden myöhemmän käyttökohteen;
-- ne ovat osa varsinaista materiaaliratkaisua;
-- scheduler varmistaa, että ne syntyvät ennen käyttöä ja käytetään heti kun niiden suunniteltu käyttö muuttuu mahdolliseksi.
+Skeema 4 saa yhteensopivat valinnaiset lisäkentät: luonnoksen `batchSettings` (lomakemerkkijonot), mittarivin `openingId` ja `generatedPlan.batch = { version: 1, orderIds, settings }`. Vanha kelvollinen skeeman 4 työ säilyy; sen suunnitelma tarkoittaa entiseen tapaan koko kysyntää. Materiaalimoottoriversio `material-v0.3` säilyy, koska materiaalifysiikka ja score-yhteensopivuus eivät muutu. Uuden batch-metadatan oma versio validoidaan.
 
-## 11. Sahaussuunnitelman UI / tuloste
+Operaatiolistaa ei tallenneta toisena totuutena: se muodostetaan uudelleen validoidusta materiaalista ja kysynnästä. Palautus tarkistaa valitut kokonaiset tilaukset, materiaalitaseen, varastorajat, sahausfysiikan ja tuotantokohdistuksen. Korruptti/puutteellinen batch tai osittainen suunnitelma ei palaudu valmiina.
 
-Nykyinen tankokohtainen näkymä kannattaa säilyttää ainakin tarkistus- ja debug-näkymänä.
+TEHTY pysyy salon UI-tilana. Finalisointi persistoi lopullisen varaston ja jäljelle jäävän tilausjonon ennen live-tilan vaihtamista. Vain valitun batchin tilaukset poistuvat jonosta; tallennusvirhe säilyttää koko työn. Vanhan batchittoman suunnitelman finalisointi säilyttää aiemman tilauslomakekäyttäytymisen. Batch-historiaa, operaatiokohtaista kuittausta tai osittain sahatun batchin uudelleenoptimointia ei vielä ole.
 
-Esimerkiksi nykyisen kaltainen:
+## Mittarit ja myöhempi työ
 
-```text
-Tanko 1
-Lähtömateriaali: uusi 6000 mm
+`metrics` sisältää `cutOperationCount`, `stopPositionChanges`, `bundleUtilization`, `stackChanges` ja `handledSourceCount`. Mittavasteen ensimmäinen asetus lasketaan yhdeksi siirroksi batchin alussa. Seuraava siirto lasketaan aina sahausmitan muuttuessa. Saman mitan toistaminen ei lisää siirtoa. Ilman sahausliikkeitä siirtoja on nolla; poiminnat eivät muuta mittavasteen asentoa. Sahausliike tarkoittaa käynnistetyn sahan terän laskemista käsin alas leikkuuseen. Nippukäyttö on sahausliikkeissä tuotettujen kappaleiden määrä jaettuna sahausliikkeiden kapasiteettien summalla; release-poimintoja ei lasketa mukaan. Nipun muutos vertailee peräkkäisten operaatioiden lähde-ID-listoja.
 
-2500 mm × 1
-1800 mm × 2
-...
+Mittarit ovat raportointia. Työaika, mittavasteen siirto, nippuhyöty, käsittelyaika, WIP, värinvaihdot ja kiireellisyys eivät ole optimizerin objective. Niiden kustannuskalibrointi, anti-starvation, batch-historia ja mahdollinen continuous-planner ovat myöhempiä erillisiä päätöksiä.
 
-Jäännös: 900 mm
-```
+## Testaus
 
-on hyvä tapa tarkistaa optimizerin materiaaliratkaisua.
+Tulokset 8.9.2026: koko Node-paketti 35/35 ryhmää, tuotantoryhmä 65 tarkistusta ja ohjaus-/persistenssiajuri 17 tarkistusta. Viiden 50 kappaleen Pysty-tilauksen mittaus (1000/1010/1020/1030/1040 mm, rajaton musta 6000 mm materiaali, kerf 3): kuusi alueen batch-ehdokasta, noin 27,4 s, valittu 200 kappaletta ja 41 salkoa. Tämä on yksi synteettinen Node-mittaus, ei todistus hakulaadusta tai 10 tilauksen laskenta-ajasta.
 
-Nippusahausta varten tarvitaan lisäksi sahaajalle tarkoitettu **suoritusjärjestysnäkymä**.
+- `node run-regressions.cjs`: vanhat materiaaliregressiot ja uusi `production-regressions.js`-ryhmä.
+- `node run-production-ui-regressions.cjs`: oikean calculate-/restore-/finalize-ohjauksen testit DOM-/storage-testikaksoisella; ei selaimen layout-testi.
+- Uudet tapaukset kattavat batch-koot, kokonaiset tilaukset, oversizedin, deterministisyyden, todellisen ei-FIFO-materiaalivalinnan, nippukapasiteetit, värit, profiilieristyksen, laajennettavan yhteensopivuuden, kappale-/aukkokohdistuksen, riippuvuudet, materiaalitaseen, pisteiden säilymisen ja palautuksen virheet.
+- Ohjaustestit kattavat batchin tallennuksen/palautuksen, TEHTY-tilan, finalisoinnin tallennusvirheen ja onnistumisen, jälkivaraston sekä seuraavan batchin muodostamisen ilman jo valmistuneita tilauksia.
+- Todellinen selaintesti suoritettiin 8.9.2026 käyttäjän antamassa osoitteessa `http://127.0.0.1:5500/index.html`. Aiempi tiedostosivun avaus estyi; nykyinen HTTP-testi valmistui onnistuneesti.
 
-Esimerkiksi:
+### Käyttäjän selaintarkistus
 
-```text
-PYSTY - VAIHE 1
+1. Avaa sovellus omalla nykyisellä käyttötavallasi. Syötä kolme mustaa tilausta: Pysty 2200 × 1 (aukko A), 3800 × 1 (B), 3797 × 1 (C). Käytä 6000 mm salkoa, kerfiä 3, rajatonta mustaa Pystyä ja tyhjää jäännöslistaa.
+2. Aseta batchin min/tavoite/max = 2/2/2 ja laske. Batchiin tulee 2200 + 3797; 3800 jää jonoon. Suunnitelmassa on yksi uusi salko ja nollajäännös.
+3. Avaa sahausjärjestys ja varmista tilaus-/aukkotiedot. Lataa sivu uudelleen: batch, asetukset ja kohdistukset säilyvät.
+4. Merkitse salko tehdyksi ja päätä työ. Vain 3800-tilaus jää jonoon. Laske se seuraavana batchina; alle minimin jäävä yhden kappaleen batch sallitaan.
+5. Nippudemo: kaksi mustaa Pysty-tilausta ja kaksi valkoista, jokaisessa 4000 × 1, vastaavat rajattomat materiaalit, min/tavoite/max = 4/4/4. Neljä lähdettä sahataan samalla 4000 mm:n mitalla yhdessä nipussa, vaikka värit eroavat.
 
-Nippu:
-- 2 × RAL7024, uusi 6000 mm
-- 2 × RAL9005, uusi 6000 mm
+Käyttäjän selaintarkistus 8.9.2026: kolmen tilauksen testin materiaalivalinta vahvistettu oikeaksi rajoilla 2/2/2. Myös rajattoman harmaan ja mustan oletusrivit vahvistettu. Muita aiemman testilistan kohtia ei ole tällä vahvistuksella kuitattu. Mittavasteen ensiasetuksen laskenta ja lyhyen jonon koko batch ovat tämän palautteen jälkeisiä muutoksia.
 
-Mittavaste: 2500 mm
-Sahausliikkeitä: 2
+Käyttäjän jatkotestit: palautus, TEHTY, finalisointi, seuraava batch, syötteen muokkauksen mitätöinti, materiaalin loppuminen sekä eri värien 4 ja 4+2 lähteen nippusahaus vahvistettu toimiviksi. Tämän jälkeen lisättiin käyttäjän pyynnöstä koko tilauskortin pienentäminen nimellä ja värillä otsikoidun accordionin taakse. Kortin sulkemistila tallentuu valinnaisena `collapsed`-booleanina, eikä se vaikuta kysyntään, suunnitelmaan tai TEHTY-tilaan. Uusi kortti avautuu oletuksena.
 
-Tuloksena:
-- RAL7024 2500 mm × 4
-- RAL9005 2500 mm × 4
+Agentin täydentävät selaintestit 8.9.2026 läpäisty: harmaan ja mustan oletusrivit; tilausotsikon fyysinen kappalemäärä ja sen päivittyminen määrää muutettaessa sekä riviä poistettaessa; suljetun kortin ja TEHTY-tilan säilyminen uudelleenlatauksessa; Pysty/Vaaka-profiilieristys samalla 4000 mm mitalla; kiskojen 4000 × 3 -rivin kuusi fyysistä kappaletta ja erilliset 2+1 niput kummallekin kiskolle; alle minimin jäävän koko jonon valinta; rajojen 2/3/4 sallimat 2 ja 4 kappaleen batchit sekä jakamaton 5 kappaleen oversized-tilaus. Suljetun kortin työpöytäasettelu tarkistettu kuvasta; erillistä mobiililaitetestiä ei tehty. Selaimen virhe- ja varoitusloki oli tyhjä.
 
-Jäljelle:
-- ...
-```
-
-Tulosteessa pitää erottaa yksiselitteisesti:
-
-- mitä profiilia sahataan;
-- montako salkoa nipussa on;
-- minkä värisiä salot ovat;
-- ovatko ne uusia vai optimizerin saman erän aikana tuottamia jäännöksiä;
-- mihin mittavaste asetetaan;
-- montako sahausliikettä tehdään;
-- montako valmista kappaletta syntyy;
-- mitä jäännöksiä tai romua vaiheesta syntyy.
-
-`2500 mm × 2` ei yksin riitä, koska nippusahauksessa se voi tarkoittaa joko kappalemäärää tai sahausliikkeiden määrää.
-
-Työnjohtajan pitäisi lopulta voida tarkistaa ja tulostaa valmis sahaajan työjärjestys.
-
-## 12. Tällä hetkellä lupaava kokonaisvirta
-
-```text
-TYÖNJOHTAJA SYÖTTÄÄ TILAUKSET
-        |
-        v
-AVOIN TILAUSJONO
-normaalisti ehkä 5–10 tilausta
-        |
-        v
-TUOTANTOERÄN VALINTA
-pehmeä target esim. ~250 kappaletta
-        |
-        v
-CUTTING OPTIMIZER
-kaikki erän kappaleet yhtenä poolina
-materiaalin alkuperä + jäännösten käyttö ratkaistaan
-        |
-        v
-BUNDLE-SAW PLANNING
-alustavat kapasiteetit 4 / 4 / 4 / 2
-värit saa sekoittaa
-        |
-        v
-SAW-PLAN SCHEDULER
-materiaaliriippuvuuksien topologinen järjestys
-valmis jäännösoperaatio ennen uusia tankoja
-        |
-        v
-TULOSTETTAVA SAHAAJAN TYÖJÄRJESTYS
-        |
-        v
-SAHAUS + TILAUSTEN EROTTELU JA PAKKAUS
-```
-
-## 13. Avoimet asiat
-
-Ainakin seuraavat ovat vielä suunnitteluvaiheessa:
-
-- onko noin 250 kappaletta hyvä oletuseräkoko;
-- tarvitaanko kova maksimieräkoko;
-- käytetäänkö eräkoon mittarina kappalemäärää vai arvioitua sahaustyömäärää;
-- jääkö joka toisen erän vanhimman tilauksen pakotus käyttöön;
-- batch-vaihtoehtojen lopullinen pisteytys;
-- tarvitseeko batch selector heuristisen esikarsinnan;
-- kuinka cutting optimizer ja bundle-saw optimizer lopulta kytketään toisiinsa;
-- saako nipusta poistaa tankoja kesken sahaussekvenssin ja jatkaa lopuilla;
-- sahaustulosteen tarkka rakenne ja jäännösten merkintätapa;
-- miten sahaajan manuaalisesti käyttämät vanhat jäännökset vaikuttavat raportointiin;
-- milloin tulevaisuudessa olisi järkevää siirtyä tarkkaan continuous/rolling-horizon-planneriin.
-
-## 14. Ensimmäisen käyttöversion tavoite
-
-Ensimmäisen version ei tarvitse mallintaa koko tehtaan materiaalivirtaa täydellisesti.
-
-Tavoitteena olisi työkalu, joka:
-
-- sopii nykyiseen manuaaliseen varastonhallintaan;
-- ei vaadi vanhojen jäännösten täydellistä inventointia;
-- yhdistää useiden tilausten kappaleita yhteiseen optimointiin;
-- hyödyntää nippusahausta;
-- tuottaa sahaajalle selkeän tulostettavan työjärjestyksen;
-- käyttää saman optimointierän aikana syntyneet ja optimizerin jo ennalta kohdistamat jäännökset mahdollisimman pian;
-- säilyttää tankokohtaisen näkymän ratkaisun tarkistamiseen;
-- jättää mahdollisuuden kehittää myöhemmin tarkempi digitaalinen varasto ja continuous planner.
+Jatkosahauksen fixture: musta Pysty 4000 × 1 + 1000 × 1, saatavilla täsmälleen yksi uusi 6000 mm tanko, kerf 3, ei jäännösvarastoa. Tulos: yksi tanko, kaksi peräkkäistä saman lähteen sahausta 6000 → 1997 → 994 mm, sahahukka 6 mm, kaksi mittavasteen siirtoa ja oikeat aukot J1/J2. Aiempi testiohje oletti yhden tangon myös rajattomalla saatavuudella. Se oletus oli väärä: sekä HEAD että työversio valitsevat silloin kaksi tankoa pisteellä 7187,8; yhden tangon palautetun ratkaisun piste on 7250,4. Tämä ei ole uuden schedulerin regressio eikä peruste muuttaa materiaalipisteytystä tässä työssä.

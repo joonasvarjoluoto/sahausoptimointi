@@ -5,6 +5,8 @@ const vm = require("node:vm");
 // Lista on tarkoituksellinen: DOM-testit ja pelkät tulostavat demoajot
 // eivät kuulu tähän ajuriin. Odotukset pysyvät app.js:n testifunktioissa.
 const suites = [
+    { name: "runCoreProfileTypeValidationRegressionTests", expectedRows: 8 },
+    { name: "runProductionRegressionTests" },
     { name: "runCoreRegressionTests", expectedRows: 4 },
     { name: "runCutPieceBoundaryTests", expectedRows: 5 },
     { name: "runCuttingPhysicsRegressionTests", expectedRows: 23 },
@@ -13,7 +15,6 @@ const suites = [
         "runOrderInputRegressionTests",
         "runStoredOrderValidationRegressionTests",
         "runUnknownProfileRegressionTest",
-        "runCoreProfileTypeValidationRegressionTests",
         "runClosingProfileRegressionTest",
         "runMaterialVariantIsolationRegressionTest",
         "runMixedMaterialVariantRegressionTest",
@@ -48,7 +49,7 @@ function main() {
 
     // Toimii myös, kun komento käynnistetään muusta työhakemistosta.
     // Sama riippuvuusjärjestys kuin index.html:ssä, ei erillistä Node-toteutusta.
-    const sourceFiles = ["src/cutting-physics.js", "app.js"];
+    const sourceFiles = ["src/cutting-physics.js", "src/production-planning.js", "src/production-integration.js", "app.js", "production-regressions.js"];
     const scripts = [];
 
     for (const filename of sourceFiles) {

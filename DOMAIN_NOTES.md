@@ -48,7 +48,7 @@ Ennen mahdollista muutosta selvitä:
 - **Johdettu vertailu:** 10 s × 12 €/h / 3600 s/h ≈ 0,0333 € per siirto. Hinnalla 7 €/m tämä vastaa noin 4,8 mm uutta profiilia. Yksi metri vastaa noin 35 minuutin palkkaa ja tarkentaa aiempaa puolen tunnin suuruusluokka-arviota.
 - **Päätetty suunta:** optimointia jatketaan materiaali edellä. Mittavasteen siirtoaika voidaan myöhemmin huomioida eriteltynä työaikakustannuksena pisteytyksessä.
 - **Nykyinen vaikutus koodiin:** ei muutosta. Nykyiseen materiaalipisteytykseen ei lisätä euroja sellaisenaan eikä arvioita muuteta automaattisesti score-parametreiksi.
-- **Ennen toteutusta selvitettävä:** siirtojen laskenta todellisesta sahausjärjestyksestä, ensimmäisen asetuksen käsittely, ajan vaihtelu ja palkkakustannuksen soveltamisala. Materiaalikustannus ja työaika muunnetaan vertailukelpoisiin yksiköihin ja raportoidaan erikseen; regressioilla varmistetaan materiaalin ensisijaisuus.
+- **Ennen toteutusta selvitettävä:** ajan vaihtelu ja palkkakustannuksen soveltamisala. Materiaalikustannus ja työaika muunnetaan vertailukelpoisiin yksiköihin ja raportoidaan erikseen; regressioilla varmistetaan materiaalin ensisijaisuus.
 
 ## Raakatangon fyysiset ominaisuudet
 
@@ -80,6 +80,12 @@ Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei p
 **Ennen toteutusta selvitettävä:** kalibroi varat tuotantohavainnoilla; määrittele soveltuminen uusiin tankoihin ja jäännöksiin, viimeiseen katkaisuun sekä päävaraan. Erota laskennallisesti varattu kapasiteetti toteutuneesta sahahukasta ja fyysisestä jäännöksestä. Nykyisen `cutPiece()`-säännön tai tallennetun suunnitelman tulkinnan muuttaminen vaatii erillisen päätöksen, yhteensopivuusarvion ja täsmäsovitus-/kumuloitumisregressiot.
 
 ## Uuden materiaalin saldot ja täydennys
+
+### Raakalistan uuden työn oletukset (8.9.2026)
+
+- **Luokitus:** käyttäjän vahvistama käyttöliittymäpäätös, tämän keskustelun selaintestipalautteen perusteella.
+- **Päätös:** jokaiselle profiilille luodaan valmiiksi kaksi rajatonta materiaaliriviä: harmaa ja musta. Näin uuden työn käyttämättömät profiilit eivät jää ilman materiaaliväriä.
+- **Vaikutus:** `createDefaultStockProfileRows()` käyttää harmaata oletusriviä ja mustaa tavallista lisäriviä. Tallennetut saatavuudet säilyvät ennallaan; rajattomuus on laskentaoletus, ei fyysisen saldon vahvistus.
 
 - **Lähde ja päivämäärä:** käyttäjän muistio ”Tuleva tilaus-UI, varastonhallinta ja sahaustoleranssit”, 2026-09-06.
 - **Vahvistettu käyttötarve:** runsaan varaston tarkkaa määrää ei tarvitse pitää jatkuvasti näkyvissä. Vähäinen saldo on tärkeä sekä optimoinnille että täydennystilauksille.
@@ -175,13 +181,16 @@ Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei p
 - **Varmistus:** U-profiilin oletus, adapterin tyhjät ja täytetyt rivit sekä tallennetun suunnitelman validointi katetaan regressioilla. Selaimen palautusta ja lisäyspainiketta ei voitu testata: käytettävissä oleva selain esti paikallisen tiedostosivun avaamisen.
 - **Määrän uusi merkitys:** adapteri jakaa kiskorivin kokonaismäärän kahdella kummallekin profiilille. Kelvollinen täytetty kiskorivi vaatii positiivisen parillisen kokonaismäärän. Nykyinen adapteri kopioi määrän sellaisenaan molemmille profiileille, joten myös adapteri, fixture-muunnos ja regressiot on päivitettävä. Tallennettujen vanhojen määrien merkitys on säilytettävä erikseen määriteltävällä yhteensopivuusratkaisulla; skeeman/version tarve arvioidaan ennen toteutusta.
 
-### Tuleva tuotantokohdistus
+### Tuotantokohdistus ja batchit (päivitetty 8.9.2026)
 
-- **Luokitus:** tavoiteltu tuotantovaatimus
-- Tilaus ei ole optimizerille jakamaton kokonaisuus; eri tilausten kappaleita voidaan myöhemmin yhdistellä materiaalin kannalta.
-- Jokaisessa kappaleessa pitää säilyttää `orderId` ja `openingId`, jotta sahaus, merkintä, pakkaus ja asennus voidaan yhdistää oikeaan tilaukseen ja aukkoon.
-- Tilaus-UI:n ensimmäisessä toteutuksessa `orderId` säilyy tilauskortissa, tallenteessa ja adapterin cut-riveissä. Optimizerin ryhmitellyssä tuloksessa ei vielä ole kappalekohtaista tilauskohdistusta, eikä `openingId`:tä luoda ilman aukkokohtaista syöttömallia.
-- Rolling-horizon-uudelleenoptimointi on sallittu, kun osa työstä on tehty tai varasto ja tulevat tilaukset muuttuvat.
+- **Luokitus:** käyttäjän vahvistama tuotantomallin päätös; lähde: toteutustehtävä 8.9.2026.
+- Batch selectorissa tilaus on jakamaton yksikkö: kaikki tilauksen kappaleet kuuluvat samaan batchiin. Batchin sisällä material optimizer saa käsitellä kappaleita yksittäin ja yhdistellä eri tilausten kappaleita.
+- Rajat ovat asetuksia: min 200, pehmeä tavoite 250, max 300. Yksittäinen suurempi tilaus on sallittu yksin oversized-batchina.
+- Ainoa aktiivinen objective on nykyinen materiaalipiste. Nippusahaus on schedulerin aktiivinen execution-ominaisuus, eikä sen hyötyä tai mittavasteen siirtoja pisteytetä.
+- Profiilikohtaiset alustavat nippukapasiteetit: U/Pysty/Vaaka 4, Ylä-/Alakisko 2. **Avoin tuotantotieto:** Vasteelle ei annettu kapasiteettia; toteutuksen varovainen oletus on 1, ei vahvistettu konekapasiteetti.
+- Valinnainen mittarivin `openingId` säilyy syötteessä, tallennuksessa ja kappalekohtaisessa operaatiotuloksessa yhdessä `orderId`:n kanssa. Puuttuvaa aukkotunnistetta ei päätellä. Eri aukot syötetään eri riveille.
+- Saman ajon jäännösten käyttö muodostaa eksplisiittiset operaatiodependencyt. Vanha syötetty jäännösvarasto säilyy erillisenä materiaalilähteenä.
+- Continuous-/rolling-/span-/age-plannerit, anti-starvation ja tuotantoaikakustannukset ovat myöhempää mahdollista kehitystä. Toteutuksen täsmällinen malli, testit ja rajaukset: `BATCH_AND_BUNDLE_SAWING_PLANNING.md`.
 
 ## Uuden merkinnän malli
 
@@ -194,3 +203,12 @@ Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei p
 - **Nykyinen vaikutus koodiin:** ei vaikutusta | nykyinen asetus/funktio
 - **Ennen toteutusta selvitettävä:** ...
 ```
+
+### Sahausliikkeen, mittavasteen ja minimierän tarkennus (8.9.2026)
+
+- **Luokitus:** käyttäjän vahvistama tuotantokuvaus ja batch-valinnan päätös; lähde: tämän keskustelun selaintestipalaute.
+- **Sahausliike:** saha käynnistetään ja terä lasketaan käsin alas, jolloin terä suorittaa leikkuun. Nippu voi tuottaa monta kappaletta yhdellä sahausliikkeellä.
+- **Mittavasteen siirto:** käyttäjä siirtää mittavasteen seuraavan sahausliikkeen mittaan. Batchin ensimmäinen asetus lasketaan mukaan, samoin jokainen myöhempi sahausmitan muutos. Saman mitan toistaminen ei lisää siirtoa.
+- **Batchin minimi:** estää pienen osajoukon valinnan suuresta jonosta. Jos koko avoimessa jonossa on alle minimin kappaleita, kaikki tilaukset valitaan samaan batchiin; yksittäisiä halvempia tilauksia ei poimita siitä erikseen.
+- **Vaikutus koodiin:** `schedule()` laskee ensiasetuksen mukaan `stopPositionChanges`-mittariin. `selectBatch()` arvioi lyhyen jonon kokonaan; vähintään minimikokoisesta jonosta se ei valitse alikokoista erää. Materiaalin puute ei oikeuta osittaista valmisratkaisua. Materiaalipisteytys ei muutu.
+- **Käyttäjän vahvistama testihavainto:** testin 2 materiaalitulos ja raakalistan rajattomat harmaa/musta-oletukset toimivat oikein. Vahvistus ei koske kaikkia aiemman selaintestilistan kohtia.

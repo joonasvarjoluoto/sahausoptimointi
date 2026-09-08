@@ -6,7 +6,13 @@ Tämä tiedosto kokoaa lähiajan prioriteetit, joiden tavoitteena on saada sahau
 
 Tekninen pitkän aikavälin eteneminen säilyy `ROADMAP.md`:ssä, yksittäiset virheet `BACKLOG.md`:ssä ja tuotantofaktat `DOMAIN_NOTES.md`:ssä. Tämän tiedoston tarkoitus on kuvata nimenomaan demoon johtava työjärjestys.
 
-## Sovittu demo-prioriteettijärjestys
+## Nykyinen demo 8.9.2026
+
+Käyttäjän uusi päätös korvaa alla olevan aiemman järjestyksen batchien ja nippusahauksen osalta: aktiivinen demo on kokonaisten tilausten batch-valinta → nykyinen materiaalihaku → dependency-aware nippusahaus. Materiaali on ainoa pisteytyskriteeri. Mittariveillä voi antaa aukon tunnuksen. Finalisointi poistaa vain batchin tilaukset ja säilyttää jonon.
+
+Testattu kolmen tilauksen ei-FIFO-esimerkki, nippudemo ja selaintarkistuksen tulokset ovat `BATCH_AND_BUNDLE_SAWING_PLANNING.md`:ssä. Käyttäjän testejä täydentävä todellinen HTTP-selaintesti läpäistiin 8.9.2026; myös Node- ja ohjaustestit läpäisevät.
+
+## Aiempi demo-prioriteettijärjestys (historia / myöhemmät kohteet)
 
 1. **Korjaa B-004 — virheellisten profiilinimien hyväksyminen core-rajapinnoissa.**
    - Rajattu correctness-korjaus tehdään omana työnään ennen näkyvämpiä demo-ominaisuuksia.
@@ -81,6 +87,6 @@ Esimerkkejä:
 
 Tämä on ensisijaisesti **UI- ja domain-sanaston muutos**. Sisäisiä teknisiä nimiä kuten `bar`, `bars`, `barCount` tai tallennusskeeman kenttiä ei tarvitse nimetä uudelleen pelkän käyttöliittymätermin vuoksi, ellei niille ole myöhemmin erillistä teknistä syytä. Näin vältetään turha migraatio- ja regressioriski.
 
-## Demoa varten tärkeä rajaus
+## Aiemman demon rajaus (korvattu batchien ja nippusahauksen osalta 8.9.2026)
 
 Ennen ensimmäistä esimiesdemoa ei tarvitse toteuttaa täydellistä nippusahausta eikä todellista rolling-horizon-yhteisoptimointia. Tavoite on näyttää ehjä käyttöpolku ja materiaalitalouden potentiaali. Tekniset refaktoroinnit voivat jatkua pieninä turvallisina töinä, mutta ne eivät saa syrjäyttää demoon selvästi arvoa tuovia ominaisuuksia ilman erityistä syytä.

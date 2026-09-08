@@ -15,7 +15,11 @@ Ei-kiireelliset yksittäiset virheet ja parannukset kuuluvat `BACKLOG.md`:hen. T
 
 ## Nykyinen checkpoint
 
-Sovellus on mobiiliystävällinen, selaimessa toimiva yhden laskentaerän prototyyppi. Sahattavat voidaan syöttää useana tilauskorttina; aktiivinen optimizeri käsittelee niiden yhteisen kysynnän ja huomioi profiilityypin ja värin materiaalivarianttina, rajallisen tai rajattoman uuden materiaalin sekä olemassa olevat jäännökset. Tämä ei vielä toteuta tilausten tuotantokohdistusta tai rolling-horizon-optimointia.
+Sovellus muodostaa nyt avoimista tilauksista diskreetin tuotantobatchin (8.9.2026). Kokonaiset tilaukset valitaan materiaalipisteen perusteella, nykyinen inventory-aware optimizer tekee materiaaliratkaisun ja erillinen scheduler muodostaa nippusahausoperaatiot. Tilaus-/aukkokohdistus säilyy kappaleissa. Toteutuksen auktoritatiiviset säännöt ja rajat: `BATCH_AND_BUNDLE_SAWING_PLANNING.md`.
+
+Uusi checkpoint: puhdas tuotantokerros, batchin debug-näkymä, valinnainen aukon tunnus, dependency-aware nippusahaus sekä batchin finalisoinnissa säilyvä avoin tilausjono. Materiaalipisteytys ei sisällä tuotantoaikaa. Vanhojen kohtien rolling-/sekventiaalinen putkitus on myöhempää mahdollista työtä.
+
+Checkpointin tarkistus 8.9.2026: 35/35 Node-testiryhmää ja 17 ohjaus-/persistenssitarkistusta läpäisty. Käyttäjän selaintestit ja agentin täydentävä HTTP-selaintestaus läpäisty, mukaan lukien pienennettävät tilauskortit kappalemäärineen, palautus, profiilieristys, kiskoniput, batch-koot ja saman tangon jatkosahaus. Tarkat syötteet ja rajaukset ovat tuotantosuunnitteludokumentissa.
 
 Valmiina ovat muun muassa:
 
@@ -51,38 +55,13 @@ Tuotantofaktat ja alustavat luvut ovat `DOMAIN_NOTES.md`:ssä. Tämä päivitys 
 
 ## Seuraava työvaihe
 
-Käyttäjän pyynnöstä materiaalimoduulien irrotuksen edelle otettiin tilauspohjainen Sahattavat-UI. Käyttäjä vahvisti testien läpäisyn ja seitsemän cut-rivin oikean muodostumisen kahdesta erivärisestä tilauksesta omine tunnisteineen. Laajaa moduulirefaktorointia tai optimizerimuutoksia ei yhdistetty UI-työhön. Käyttäjän 2026-09-07 muistiinpanojen perusteella seuraava pieni toteutus on U-listojen ja yhteisten kiskorivien oletuskappalemäärän muuttaminen 2:ksi. Samalla varmistetaan tyhjien rivien tunnistus, kiskoparien määrät sekä tallennus ja palautus. Muutos on kirjattu, ei vielä toteutettu.
+Vahvista uusi batch-/nippusahauspolku käyttäjän selaimessa muistion testivaiheilla. Automaattinen selainavaus estyi URL-turvakäytäntöön. Node-regressiot sekä ohjaus-/persistenssitestit ovat käytössä; jälkimmäiset käyttävät DOM-testikaksoista eivätkä todista asettelua.
 
-Syyskuun 6. päivän tuotantomuistion varasto- ja toleranssiominaisuudet on koottu vaiheeseen 1c: niitä voidaan tehdä materiaalirajojen selkiydyttyä pieninä erillisinä töinä ilman koko moduulijaon valmistumista. Toleranssimallia ei lykätä myöhempään score-viritykseen, jos sovellusta ollaan ottamassa oikeaan tuotantoon.
+Seuraavat erilliset kehityskohteet: edustavan 5–10 tilauksen jonon suorituskykymittaus, Vasteprofiilin nippukapasiteetin vahvistaminen, operaatiokohtainen kuittaus ja batch-historia. Tuotantoajan kustannuksia lisätään vasta erillisen päätöksen ja kalibroinnin jälkeen. Kiskon yhteiskappalemäärän muutos on edelleen erillinen, tekemätön työ; U-profiilin oletus 2 on toteutettu.
 
-### Päivitetty kehitysjärjestys (2026-09-07)
+## Aikaisempi vaiheistus (historia ja myöhemmät mahdollisuudet)
 
-**Oletusmäärätyön tilanne 2026-09-07:** U-profiilin osuus on toteutettu: uusi mittarivi saa määrän 2, tyhjä U-rivi ohitetaan myös uudella oletuksella ja vanhat määrät säilyvät. Seuraava jäljellä oleva vaihe on alla kuvattu kiskosyötteen kokonaismäärämuutos. U-profiilin parillisuuden pakottamista ei lisätty. Node-ajossa muutoskohtaiset testit läpäisevät; koko ajossa on ennestään testiajurin paluuarvo-ongelma B-005. Selaintesti estyi paikallisen tiedostosivun URL-käytäntöön.
-
-Materiaalin ensisijaisuus säilyy. Nippusahaus ja tilausten putkitus nostetaan vaiheen 3 laajojen materiaalivaihtoehtojen ja pitkän aikavälin arvokalibroinnin edelle. Alla olevat vaihenumerot ovat aiheiden tunnisteita; toteutusjärjestys noudattaa tätä tarkennusta:
-
-1. Toteuta yllä rajattu oletuskappalemäärän muutos omana työnään. Käyttäjän tarkennuksen mukaan kiskorivin määrä on yhteiskappalemäärä: 2 = 1 alakisko + 1 yläkisko. Tämä vaatii oletusarvon lisäksi adapterin määrän puolittamisen, parillisen määrän validoinnin, fixture-muunnoksen ja regressioiden päivityksen sekä tallennettujen vanhojen määrien yhteensopivuusratkaisun. Tarkennus on kirjattu, ei vielä toteutettu.
-2. Rajaa tuotanto-operaatioiden ja kappaleiden tilauskohdistuksen pienin malli nykyisen materiaaliratkaisun päälle. Tarkenna tilausten putkituksen työnkulku ja tavoitemittari. Tee vain tämän edellyttämät materiaalirajojen selkeytykset; koko moduulijako tai laaja Pareto-haku ei ole aloitusehto.
-3. Etene vaiheen 4 nippusahaukseen ja tilausten putkitukseen pieninä testattavina vaiheina. Turvallinen nippuyhteensopivuus, profiilikohtainen kapasiteetti ja tilauskohdistus ovat toteutuksen edellytyksiä. Vaiheen 2 oikeellisuus- ja laatutarkistukset kulkevat mukana.
-4. Kun sahausjärjestys ja mittavasteen siirtojen määrä voidaan laskea, arvioi erillinen työaikakustannus käyttäjän luvuilla: noin 10 s/siirto, 12 €/h ja keskimäärin 7 €/m. Lähteet, epävarmuudet ja yksikkövertailu ovat `DOMAIN_NOTES.md`:ssä. Pisteytystä ei muutettu muistiinpanopäivityksessä.
-
-Laajemman tuotanto-ominaisuuden toteutus aloitetaan rajatulla suunnitelmalla ja hyväksynnällä projektin toimintatapojen mukaisesti.
-
-Skeema nostettiin 3 → 4: tallennetaan tilausten tunnisteet, nimet, värit ja accordionien mittarivit/avaustilat. Käyttäjä vahvisti vanhojen töiden olevan kuvitteellista testidataa ja hyväksyi tyhjästä aloittamisen; migraatiota tai vanhan UI:n rinnakkaistukea ei toteuteta. Vanha tallenne poistuu uuden sivun palautuksessa ilmoituksen kanssa. Moottoriversio `material-v0.3` säilyy.
-
-Varmistus: 14 adapteritapausta (mukana neljän perustapauksen koko optimointituloksen vertailu), 33 uuden tallenteen validointitapausta ja koko Node-ajuri 33/33. Eristetyssä Edgessä testattiin todellinen monivärinen tilaus- ja kiskosyöttö, laskenta, TEHTY, accordionin tilan tallennus, uudelleenlataus, poistojen vahvistus/peruminen, virheelliset syötteet, korruptit tallenteet, skeemavaihdos sekä finalisoinnin epäonnistuminen ja onnistunut uusintayritys. Mobiiliasettelu tarkistettiin leveyksillä 320/375/760 px ja myös tumma teema katsottiin. Käyttäjän omaa selainprofiilia ei käytetty.
-
-Arkkitehtuurikatselmus ja ensimmäinen rajattu refaktorointi on tehty. Core-optimointi toimii jo ilman DOM:ia; ensimmäinen testattavuuden este oli perustestien kytkentä avointa työtä muuttaviin lomakelatauksiin. Yhteiset testitiedot ja `runCoreRegressionTests()`-ajo on hyväksytty myös käyttäjän selaintarkistuksessa.
-
-Node-testiajuri on hyväksytty: `run-regressions.cjs` ajaa saman testipankin ja valitut puhtaat regressiot. Käyttäjä vahvisti VS Coden terminaalissa tuloksen `Regressioryhmät: 29/29 läpäisty` ja paluukoodin 0. Paketinhallintaa, uusia riippuvuuksia tai `app.js`:n pilkkomista ei tarvittu.
-
-`BACKLOG.md / B-003` on korjattu ja hyväksytty myös käyttäjän tarkistuksessa. Tallennusskeema ja optimizerin käyttäytyminen säilyvät ennallaan; korjaus koskee virheellisten profiilinimien hylkäämistä.
-
-Vaiheen 1b ensimmäinen irrotus on toteutettu ja hyväksytty käyttäjän testeissä: `cutPiece()` ja sen mitta-apurit sijaitsevat nyt omassa puhtaassa moduulissaan. Tilaus-UI:n hyväksymisen jälkeen rakennekehityksen luonteva jatko on materiaalivariantin identiteetin ja varaston muodostuksen riippuvuuksien rajaus seuraavaa pientä siirtoa varten. Vaiheen 2 kohdistetut testit (materiaalin niukkuus, varianttieristys ja kerfin rajat) säilyvät suunnitelmassa, ja laajempaa laatumittausta voidaan jatkaa irrotusten rinnalla. Koko sovelluksen pilkkominen ei ole laatumittauksen aloitusehto.
-
-Katselmuksen myöhemmät rakennerajat säilyvät: materiaalivariantin identiteetti keskitetään ennen lisäattribuutteja, materiaaliratkaisu ja tuotanto-operaatiot pidetään erillään, ja monen tilauksen kappalekohdistus säilytetään ennen sahausmittojen ryhmittelyä. Samanlaiset varastojäännökset pysyvät määrällisinä ryhminä; pysyviä yksilö-ID:itä ei tarvita.
-
-Persistenssiauditin default/additional-rivi-invariantti on korjattu ja testattu (B-001). Suorien core-kutsujen profiilivalidointihavainto on kirjattu erikseen kohtaan `BACKLOG.md / B-004`; sitä ei korjata tilaus-UI:n tai moduulien siirron sivussa.
+Alla olevat aiemmat suunnitelmat eivät korvaa 8.9.2026 toteutettua diskreettiä batch-pipelinea eivätkä anna lupaa tuleviin toteutuksiin.
 
 ## Vaihe 1: testattavuuden perusta
 

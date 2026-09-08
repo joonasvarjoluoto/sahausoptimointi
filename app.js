@@ -314,8 +314,14 @@ function createDefaultStockProfileRows() {
                         {
                             quantity: "1",
                             unlimited: true,
-                            color: null,
+                            color: "gray",
                             additional: false
+                        },
+                        {
+                            quantity: "1",
+                            unlimited: true,
+                            color: "black",
+                            additional: true
                         }
                     ]
                 )
@@ -406,7 +412,8 @@ function createOrderInput(id, name = "", color = "", rowsBySection = {}) {
             key: section.key,
             open: false,
             rows: (rowsBySection[section.key] ?? []).map(row => ({
-                length: String(row.length), quantity: String(row.quantity)
+                length: String(row.length), quantity: String(row.quantity),
+                ...(row.openingId ? { openingId: row.openingId } : {})
             }))
         }))
     };
@@ -436,6 +443,7 @@ function normalizeOrderCuts(orders) {
         return section.rows.filter(row => !isBlankOrderMeasure(row, section.key)).flatMap(row =>
             definition.profiles.map(profileType => ({
                 orderId: order.id,
+                ...(row.openingId ? { openingId: row.openingId } : {}),
                 profileType: profileType,
                 color: order.color === "" ? null : order.color,
                 length: Number(row.length),
@@ -463,6 +471,7 @@ function isValidStoredOrders(orders) {
             ids.has(order.id) ||
             typeof order.name !== "string" || order.name.length > MAX_ORDER_NAME_LENGTH ||
             !(order.color === "" || isSupportedMaterialColor(order.color)) ||
+            (order.collapsed !== undefined && typeof order.collapsed !== "boolean") ||
             !Array.isArray(order.sections) ||
             order.sections.length !== ORDER_PROFILE_SECTIONS.length) {
             return false;
@@ -483,7 +492,8 @@ function isValidStoredOrders(orders) {
             }
             for (const row of section.rows) {
                 if (!isPlainObject(row) || !isNumericField(row.length) ||
-                    !isNumericField(row.quantity)) {
+                    !isNumericField(row.quantity) ||
+                    (row.openingId !== undefined && (typeof row.openingId !== "string" || row.openingId.length > 80))) {
                     return false;
                 }
             }
@@ -621,6 +631,11 @@ function runStoredOrderValidationRegressionTests() {
     record("Skeema 4 hyväksytään", valid.schemaVersion === 4 && isValidStoredWorkState(valid));
     record("Skeema 3 ei palaudu uuteen käyttöliittymään",
         !isValidStoredWorkState({ ...valid, schemaVersion: 3 }));
+    record("Suljettu tilaus säilyttää kelvollisen suunnitelman",
+        isValidStoredWorkState({ ...valid, orders: valid.orders.map(order => ({ ...order, collapsed: true })) }));
+    record("Legacy-tilaus ilman sulkemistilaa säilyy", isValidStoredWorkState(valid));
+    record("Virheellinen sulkemistila hylätään",
+        !isValidStoredOrders(valid.orders.map(order => ({ ...order, collapsed: "true" }))));
     const mutations = [
         state => { delete state.orders; },
         state => { state.orders = {}; },
@@ -710,12 +725,23 @@ function runOrderInputUiRegressionTests() {
     const container = document.createElement("div");
     container.append(createOrderCard(order));
     const restored = getOrdersFromForm(container);
-    const passed = JSON.stringify(restored) === JSON.stringify([order]) &&
-        container.querySelectorAll("details").length === 5 &&
+    let passed = JSON.stringify(restored) === JSON.stringify([order]) &&
+        container.querySelectorAll(".order-profile-section").length === 5 &&
+        container.querySelector("details.order-card").open === true &&
+        container.querySelector(".order-summary").textContent.endsWith(" · 14 kpl") &&
         container.querySelectorAll("select").length === 1 &&
         container.querySelectorAll("img, script, .cut-profile-type, .cut-color").length === 0 &&
         container.querySelector(".order-section-count").textContent === "2 mittaa / 10 kpl" &&
         normalizeOrderCuts(restored).length === 4;
+    const card = container.querySelector(".order-card");
+    card.open = false;
+    const collapsed = getOrdersFromForm(container);
+    passed = passed && collapsed[0].collapsed === true &&
+        JSON.stringify(normalizeOrderCuts(collapsed)) === JSON.stringify(normalizeOrderCuts([order])) &&
+        createOrderCard(collapsed[0]).open === false &&
+        container.querySelectorAll("img, script").length === 0;
+    card.open = true;
+    passed = passed && JSON.stringify(getOrdersFromForm(container)) === JSON.stringify([order]);
     console.table([{ test: "Tilauskortin turvallinen DOM-roundtrip", result: passed ? "PASS" : "FAIL" }]);
     return passed;
 }
@@ -726,15 +752,34 @@ function getOrdersFromForm(container = document.getElementById("cutList")) {
         id: card.dataset.orderId,
         name: card.querySelector(".order-name").value,
         color: card.querySelector(".order-color").value,
+        ...(card.open ? {} : { collapsed: true }),
         sections: [...card.querySelectorAll(".order-profile-section")].map(section => ({
             key: section.dataset.sectionKey,
             open: section.open,
             rows: [...section.querySelectorAll(".order-measure-row")].map(row => ({
                 length: row.querySelector(".cut-length").value,
-                quantity: row.querySelector(".cut-quantity").value
+                quantity: row.querySelector(".cut-quantity").value,
+                ...(row.querySelector(".cut-opening").value ? { openingId: row.querySelector(".cut-opening").value } : {})
             }))
         }))
     }));
+}
+
+
+function updateOrderCardSummary(card) {
+    const name = card.querySelector(".order-name").value.trim() || "Nimetön tilaus";
+    const color = card.querySelector(".order-color").value;
+    const count = [...card.querySelectorAll(".order-profile-section")].reduce((total, section) => {
+        const definition = ORDER_PROFILE_SECTIONS.find(item => item.key === section.dataset.sectionKey);
+        return total + [...section.querySelectorAll(".order-measure-row")].reduce((sum, row) => {
+            const length = Number(row.querySelector(".cut-length").value);
+            const quantity = Number(row.querySelector(".cut-quantity").value);
+            return sum + (Number.isFinite(length) && length > 0 && Number.isSafeInteger(quantity) && quantity > 0
+                ? quantity * definition.profiles.length : 0);
+        }, 0);
+    }, 0);
+    card.querySelector(".order-summary").textContent = name +
+        (color ? " · " + getMaterialColorLabel(color) : "") + " · " + count + " kpl";
 }
 
 
@@ -748,10 +793,11 @@ function updateOrderSectionSummary(section) {
     const suffix = section.dataset.sectionKey === "rails" ? " kpl / kisko" : " kpl";
     section.querySelector(".order-section-count").textContent =
         filled.length === 0 ? "Ei mittoja" : filled.length + " mittaa / " + count + suffix;
+    updateOrderCardSummary(section.closest(".order-card"));
 }
 
 
-function createOrderMeasureRow(length = "", quantity = "1") {
+function createOrderMeasureRow(length = "", quantity = "1", openingId = "") {
     const row = document.createElement("div");
     row.className = "order-measure-row";
     row.innerHTML = `
@@ -765,10 +811,15 @@ function createOrderMeasureRow(length = "", quantity = "1") {
             <input class="cut-quantity" type="number" min="1" step="1"
                 inputmode="numeric" placeholder="Kpl">
         </label>
+        <label class="form-field order-opening-field">
+            <span>Aukon tunnus (valinnainen)</span>
+            <input class="cut-opening" type="text" maxlength="80" placeholder="Esim. A1">
+        </label>
         <button class="remove-cut-button" type="button">POISTA MITTA</button>
     `;
     row.querySelector(".cut-length").value = String(length);
     row.querySelector(".cut-quantity").value = String(quantity);
+    row.querySelector(".cut-opening").value = openingId;
     row.querySelector("button").addEventListener("click", () => {
         const section = row.closest(".order-profile-section");
         row.remove();
@@ -781,11 +832,13 @@ function createOrderMeasureRow(length = "", quantity = "1") {
 
 
 function createOrderCard(order) {
-    const card = document.createElement("article");
+    const card = document.createElement("details");
     card.className = "order-card";
+    card.open = order.collapsed !== true;
     card.dataset.orderId = order.id;
     // Käyttäjän nimeä tai tunnistetta ei sijoiteta HTML-merkkijonoon.
     card.innerHTML = `
+        <summary class="order-summary"></summary>
         <div class="order-header">
             <label class="form-field">
                 <span>Tilauksen tunnus / nimi</span>
@@ -801,6 +854,14 @@ function createOrderCard(order) {
     name.maxLength = MAX_ORDER_NAME_LENGTH;
     name.value = order.name;
     card.querySelector(".order-color").innerHTML = createMaterialColorOptions(order.color);
+    const updateSummary = () => updateOrderCardSummary(card);
+    updateSummary();
+    card.addEventListener("input", updateSummary);
+    card.querySelector(".order-color").addEventListener("change", updateSummary);
+    card.addEventListener("toggle", event => {
+        // Tilauskortin pienentäminen on näkymätila, ei kysynnän muutos.
+        if (event.target === card && card.isConnected) saveCurrentWorkState();
+    });
 
     for (const sectionData of order.sections) {
         const definition = ORDER_PROFILE_SECTIONS.find(item => item.key === sectionData.key);
@@ -819,7 +880,7 @@ function createOrderCard(order) {
         const list = document.createElement("div");
         list.className = "order-measure-list";
         list.append(...sectionData.rows.map(row =>
-            createOrderMeasureRow(row.length, row.quantity)));
+            createOrderMeasureRow(row.length, row.quantity, row.openingId ?? "")));
         const add = document.createElement("button");
         add.type = "button";
         add.className = "add-cut-button";
@@ -11236,7 +11297,7 @@ function createStoredPlanVerificationContext(state) {
     }
 
 
-    const cuts = normalizeOrderCuts(state.orders);
+    const cuts = normalizeOrderCuts(getPlanOrders(state.generatedPlan, state.orders));
     if (state.orders.some(order => !isSupportedMaterialColor(order.color))) {
         throw new Error("Tallennetun suunnitelman tilauksen väri puuttuu.");
     }
@@ -11312,6 +11373,9 @@ function createStoredPlanVerificationContext(state) {
 
 
 function verifyStoredGeneratedPlan(state) {
+    if (state.generatedPlan.batch !== undefined) {
+        createProductionExecution(state.generatedPlan, state.orders, Number(state.kerf));
+    }
 
     const verificationContext =
         createStoredPlanVerificationContext(state);
@@ -11356,6 +11420,7 @@ function isValidStoredWorkState(state) {
         ) ||
         !isValidStoredInputRows(state.remnantRows) ||
         !isValidStoredOrders(state.orders) ||
+        !isValidStoredProductionSettings(state.batchSettings) ||
         !Array.isArray(state.completedBarIds)
     ) {
         return false;
@@ -11830,6 +11895,7 @@ function createWorkStateSnapshot({
         schemaVersion: WORK_STATE_SCHEMA_VERSION,
         engineVersion: WORK_STATE_ENGINE_VERSION,
         savedAt: new Date().toISOString(),
+        batchSettings: getProductionSettingsForStorage(),
 
         stockLength: stockLength,
         kerf: kerf,
@@ -11878,6 +11944,7 @@ function removeSavedWorkState() {
 
 
 function resetWorkToDefaults() {
+    restoreProductionSettings();
 
     document.getElementById("stockLength").value =
         DEFAULT_STOCK_LENGTH;
@@ -12007,6 +12074,7 @@ function restoreSavedWorkState() {
     cutList.append(...state.orders.map(createOrderCard));
 
 
+    restoreProductionSettings(state.batchSettings ?? state.generatedPlan?.batch?.settings);
     currentGeneratedPlan = state.generatedPlan;
     resetCompletedBarState();
 
@@ -12309,8 +12377,12 @@ function finalizeCurrentWork() {
                 finalizedRemnantRowsForStorage
             );
 
+        const finalizedIds = currentGeneratedPlan.batch?.orderIds ?? [];
+        const remainingOrders = getOrdersFromForm().filter(order => !finalizedIds.includes(order.id));
+        const remainingOrderCards = remainingOrders.map(createOrderCard);
         const finalWorkStateSnapshot =
             createWorkStateSnapshot({
+                orders: remainingOrders,
                 stockProfileRows:
                     finalizedStockProfileRows,
 
@@ -12335,6 +12407,7 @@ function finalizeCurrentWork() {
                             ...finalizedRemnantRows
                         );
 
+                    document.getElementById("cutList").replaceChildren(...remainingOrderCards);
                     currentGeneratedPlan = null;
                     resetCompletedBarState();
                     workInputRevision++;
@@ -12442,7 +12515,7 @@ function escapeHtml(value) {
 
 function renderCuttingPlan(plan) {
 
-    let result = `
+    let result = renderProductionDetails(plan) + `
         <section class="plan-summary">
             <h2>Laskettu sahaussuunnitelma</h2>
             <p>
@@ -12769,6 +12842,9 @@ async function calculate() {
     }
 
 
+    currentGeneratedPlan = null;
+    resetCompletedBarState();
+    saveCurrentWorkState();
     const calculationInputRevision = workInputRevision;
 
     const calculateButton =
@@ -12798,16 +12874,19 @@ async function calculate() {
             );
 
 
-        const optimization =
-            optimizeOrderByProfileTypeWithInventory(
-                cuts,
-                materialInventory,
-                kerf,
-                PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
-            );
+        const batch = selectProductionBatch(getOrdersFromForm(), materialInventory, kerf, {
+            minBatchPieces: Number(document.getElementById("minBatchPieces").value),
+            targetBatchPieces: Number(document.getElementById("targetBatchPieces").value),
+            maxBatchPieces: Number(document.getElementById("maxBatchPieces").value)
+        });
+        if (!batch.complete) {
+            renderOptimizationFailure("Täydellistä tuotantobatchia ei löytynyt.", "Tarkista materiaalien saatavuus. Rajattu materiaalihaku ei todista mahdottomuutta.");
+            return;
+        }
+        const optimization = batch.optimization;
 
         verifyOptimizationResult(
-            cuts,
+            normalizeOrderCuts(batch.orders),
             materialInventory,
             optimization
         );
@@ -12865,6 +12944,8 @@ async function calculate() {
         }
 
 
+        plan.batch = { version: 1, orderIds: batch.orders.map(o => o.id), settings: batch.settings };
+        createProductionExecution(plan, getOrdersFromForm(), kerf);
         resetCompletedBarState();
         currentGeneratedPlan = plan;
         renderCuttingPlan(plan);
@@ -12898,13 +12979,13 @@ function initializeWorkPersistence() {
 
         if (
             event.target.matches(
-                "#stockLength, " +
+                "#minBatchPieces, #targetBatchPieces, #maxBatchPieces, #stockLength, " +
                 "#kerf, " +
                 ".stock-profile-quantity, " +
                 ".remnant-length, " +
                 ".remnant-quantity, " +
                 ".cut-length, " +
-                ".cut-quantity, .order-name"
+                ".cut-quantity, .cut-opening, .order-name"
             )
         ) {
             handleOrderInputChange();

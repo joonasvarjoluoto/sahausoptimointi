@@ -87,6 +87,11 @@
             LASKE
         </button>
 
+        <details class="plan-summary"><summary>Tuotantobatchin asetukset</summary>
+            <label>Minimikoko (kpl)<input id="minBatchPieces" type="number" min="1" step="1" value="200"></label>
+            <label>Tavoitekoko (kpl)<input id="targetBatchPieces" type="number" min="1" step="1" value="250"></label>
+            <label>Maksimikoko (kpl)<input id="maxBatchPieces" type="number" min="1" step="1" value="300"></label>
+        </details>
         <div id="result" aria-live="polite"></div>
 
 
@@ -105,6 +110,8 @@
     </main>
 
     <script src="src/cutting-physics.js"></script>
+    <script src="src/production-planning.js"></script>
+    <script src="src/production-integration.js"></script>
     <script src="app.js"></script>
 
 </body>
