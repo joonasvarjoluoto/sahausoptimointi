@@ -25,6 +25,15 @@ Prioriteetit:
 
 ## Avoimet havainnot
 
+### B-008 — Replay tuottaa fyysistä varastoa enemmän pitkiä jäännöksiä
+
+- **Tila:** havaittu 2026-09-09
+- **Prioriteetti:** matala; arvioidaan uudelleen vain score-kalibroinnin yhteydessä.
+- **Alue:** optimizerin laatutesti, score ja terminaalinen jäännösvarasto.
+- **Havainto:** jatkuvan materiaalivirran replayhin jäi 34 vähintään 3000 mm palaa, kun käyttäjän nykyisessä noin 100 palan fyysisessä varastossa vain arviolta enintään kolme palaa ylittää 2000 mm ja suurin osa on noin 1300–1800 mm.
+- **Mahdolliset syyt:** nykyinen score voi suosia pitkiksi arvotettuja loppujäännöksiä, tutkimuksen fyysinen säilytyspolitiikka poikkeaa score-dispositionista, simuloitu kysyntä-/batch-virta poikkeaa tuotannosta tai tekijät vaikuttavat yhdessä. Syytä ei ole eroteltu eikä scorea ole todistettu väärin kalibroiduksi.
+- **Myöhempi hyväksymiskriteeri:** jos scorea kalibroidaan, vertaa terminaalisen varaston pituusjakaumaa suurempaan tilausaineistoon ja samanaikaiseen fyysisen varaston reality checkiin. Älä käytä A/B/C-stressivarastojen tai tämän replayn jakaumaa normaalin varaston totuutena.
+
 ### B-007 — Tyhjien DP-kapasiteettisolujen kustannus jäännösvarastolla
 
 - **Tila:** valmis 2026-09-09; saavutettujen kapasiteettien toteutus siirretty production-funktioon.

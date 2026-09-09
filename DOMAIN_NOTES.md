@@ -231,3 +231,18 @@ Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei p
 - **Lähde ja varmuus:** käyttäjän karkea arvio nykyisestä tuotannosta: yhteensä noin 100 käyttökelpoista jäännöstä. Profiilijakauma ei ole tasainen; tarkkoja saldoja, värejä tai pituuksia ei ole annettu.
 - **Vaikutus:** erillisen Node-benchmarkin synteettinen varasto johdetaan 23 tilauksen kysynnästä (tilaus 16 jätetään pois) ja nykyisellä sahausfysiikalla syntyvistä säästettävistä jäännöksistä. Simuloitu jakauma ei ole havaittu varastosaldo eikä automaattisesti sovelluksen oletus.
 - **Avoin kysymys:** todellinen jäännösten säilytys- ja uudelleenkäyttökierto voi muuttaa etenkin pituusjakaumaa; tuotantokelpoisuus pitää myöhemmin tarkistaa oikealla inventaariolla.
+
+### Jäännösten säilytyskäytäntö ja historiallinen replay (9.9.2026)
+
+- **Lähde ja varmuus:** käyttäjän ilmoittama nykyinen käytäntö: U-, Pysty- ja Vaste-profiilien säilytysraja 1000 mm, Vaaka 500 mm ja molemmat kiskot 800 mm. Rajojen optimaalisuutta ei ole vahvistettu.
+- **Tutkimusta koskeva päätös:** käyttäjä vahvisti, että rajan mittainen tai pidempi loppupala säästetään simulaatiossa myös silloin, kun nykyinen score luokittelee sen romuksi. Suunnitelma lasketaan ja pisteytetään ensin muuttumattomalla production-koodilla; fyysinen säilytyssääntö on tutkimuksen erillinen varastopäivitys.
+- **Aineiston tulkinta:** käyttäjän mukaan 24 tilauksen otos vaikuttaa normaalilta tuotannolta. Tilaus 24 on vanhin (27.7.2026), tilaus 1 uusin (7.9.2026); saapumisjärjestys on 24 → 1. Nykyinen kelvollinen benchmark-fixture sisältää 23 tilausta, koska tilaus 16 / RR32 on jätetty pois.
+- **Vaikutus ja rajaus:** production-scorea, varastopäivitystä tai käyttöliittymää ei muutettu. Tulokset, jäljitettävät jäännökset ja otoksen rajaukset ovat `benchmarks/batch-search/flow-replay/RESULTS.md`:ssä. Säilytysrajoja tai score-kertoimia ei kalibroida tämän otoksen perusteella.
+- **Fyysisen varaston reality check:** käyttäjän havainto 9.9.2026: varastossa on noin 100 palaa, suurin osa noin 1300–1800 mm ja enintään noin kolme yli 2000 mm. Pitkät käyttökelpoiset palat käytetään melko nopeasti, jos kysyntää löytyy. Replayhin jäi 34 vähintään 3000 mm palaa, joten sen kappalemäärä on mahdollinen mutta pituusjakauma ja kokonaismetrit eivät kuvaa nykyistä fyysistä varastoa.
+- **Tulkinta:** pitkien palojen ero voi liittyä scoreen, tutkimuksen scoresta erilliseen säilytyspolitiikkaan, simuloituun kysyntä-/batch-virtaan tai niiden yhdistelmään. Se ei osoita scorea väärin kalibroiduksi. A/B/C-varastot säilyvät stressi- ja algoritmitesteinä.
+
+### Työkalun rooli tuotannossa (9.9.2026)
+
+- **Lähde ja varmuus:** käyttäjän projektirajaus. Profiilituotanto on nuorta ja tuotantorytmiin vaikuttavat muun tuotannon tarpeet, koneviat, materiaalisaatavuus ja vaihteleva tilaustilanne.
+- **Tavoite:** sovellus on helppokäyttöinen ja joustava sahaus- ja päätöksentekotyökalu, jota kokenut työnjohtaja tai työntekijä käyttää senhetkisen tilanteen mukaan. Tavoite ei ole koko tehtaan pitkän aikavälin automaattinen tuotannonohjaus.
+- **Rajaus:** nykyiset tuotantokäytännöt ovat baselineja, eivät automaattisesti optimaalisia sääntöjä. Niitä voidaan muuttaa erikseen validoidun paremman käytännön perusteella.

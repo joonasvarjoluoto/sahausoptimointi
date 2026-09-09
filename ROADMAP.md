@@ -25,6 +25,8 @@ Saavutettujen DP-kapasiteettien optimointi siirrettiin aktiiviseen `findCandidat
 
 Pattern-listojen vakaa suora merge siirrettiin productioniin 9.9.2026. Se säilyttää comparatorin, vanhan listan etusijan, duplikaatit ja kuviokiintiön mutta poistaa kapasiteettipäivityksistä merkkijonoavaimet, Map-deduplikoinnin ja koko listan lajittelun. Vaikean A-varaston 3/9/21-batchin materiaalimediaani laski samalla koneella 34,69 sekunnista 20,23 sekuntiin; tulos, score, operaatiot ja beam-tilastot säilyivät.
 
+Jatkuvan jäännösvirran replay-tutkimus suljettiin 9.9.2026. Samoissa batcheissa jäännökset vähensivät uuden materiaalin tarvetta 54 salkoa, mutta simulaatioon kertyi fyysiseen reality checkiin nähden liikaa pitkiä paloja. Nykyisiä romurajoja ei muutettu, scorea ei kalibroitu ja A/B/C-varastot säilyvät stressitesteinä. Raportti: `benchmarks/batch-search/flow-replay/RESULTS.md`.
+
 Checkpointin tarkistus 8.9.2026: 35/35 Node-testiryhmää ja 17 ohjaus-/persistenssitarkistusta läpäisty. Käyttäjän selaintestit ja agentin täydentävä HTTP-selaintestaus läpäisty, mukaan lukien pienennettävät tilauskortit kappalemäärineen, palautus, profiilieristys, kiskoniput, batch-koot ja saman tangon jatkosahaus. Tarkat syötteet ja rajaukset ovat tuotantosuunnitteludokumentissa.
 
 Valmiina ovat muun muassa:
@@ -63,7 +65,7 @@ Tuotantofaktat ja alustavat luvut ovat `DOMAIN_NOTES.md`:ssä. Tämä päivitys 
 
 Batch-/nippusahauspolun ja kiskosyötteen selaintarkistukset on tehty käyttäjän antamassa HTTP-osoitteessa. Seuraava tutkimuskohde on automaattisen batch-valinnan hakulaatu ajan funktiona. Erillinen Node-koeversio ja ensimmäinen 23 tilauksen / 10 minuutin mittaus ovat `benchmarks/batch-search/RESULTS.md`:ssä. Selain käyttää edelleen aiempaa exhaustive-selectoria.
 
-Jatkotutkimus 8.9.2026 kattoi kolme tuotantosimulaatiosta muodostettua 100 jäännöksen varastoa, kaksi äärellistä uutta varastoa ja viisi tilausjärjestystä. Raportti: `benchmarks/batch-search/inventory-study/RESULTS.md`. Pääajojen parhaat löytyivät noin 19–59 sekunnissa eivätkä parantuneet 10 minuuttiin mennessä. Saavutettujen DP-tilojen käsittely on nyt productionissa, mutta vaikea samanvärinen kolmen tilauksen batch säilyi noin 38 sekunnin tapauksena. Seuraava rajattu tutkimus profiloi tämän batchin saavutettujen tilojen määrän ja `keepDistinctPatterns()`-työn nykyistä tulosta muuttamatta. Materiaalihakijan sisäisen rivijärjestyksen hallinta jää tämän jälkeen erilliseksi laatututkimukseksi.
+Jatkotutkimus 8.–9.9.2026 kattoi kolme synteettistä 100 jäännöksen stressivarastoa, kaksi äärellistä uutta varastoa, viisi tilausjärjestystä, vaikean 3/9/21-batchin profiloinnin ja jatkuvan jäännösvirran replayn. Saavutettujen DP-tilojen käsittely ja järjestetty pattern-merge ovat productionissa. Materiaalihakijan sisäisen rivijärjestyksen hallinta sekä replayn pitkien loppujäännösten poikkeama jäävät myöhemmiksi laatututkimuksiksi; jäännösvarastotutkimusta ei jatketa nyt.
 
 Käyttäjän uusi vaatimus erottaa kaksi tavoitetta: käsin valitun 2–5 tilauksen normaalin materiaaliratkaisun pitää valmistua sekuntien suuruusluokassa; automaattinen suuren jonon haku saa käyttää minuutteja tai pidempään, jos mitattu materiaalihyöty perustelee sen. Ensimmäinen koe tukee kaksivaiheista hakua, mutta eri jonot, varastot ja aloitukset pitää mitata ennen production-hakubudjetin päättämistä. Työaikaa tai schedulerin mittareita ei lisätä pisteytykseen.
 
