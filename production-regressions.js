@@ -3,6 +3,12 @@ function runProductionRegressionTests() {
     const assert = (condition, message) => { if (!condition) throw new Error(message); count++; };
     const reject = (fn, message) => { let threw = false; try { fn(); } catch { threw = true; } assert(threw, message); };
     const P = PRODUCTION_PLANNING;
+    for (const total of [2, 4, 6]) {
+        const rails = normalizeOrderCuts([createOrderInput("rail-order", "", "black", {
+            rails: [{ length: "4000", quantity: String(total), openingId: "A" }]
+        })]);
+        assert(rails.length === 2 && rails.every(p => p.quantity === total / 2), "Kiskojen yhteismäärä " + total);
+    }
     const order = (id, pieceCount) => ({ id, pieceCount });
     const evaluate = orders => ({ complete: true, materialScore: orders.reduce((n, o) => n + o.pieceCount, 0) });
     const queue = [order("a", 90), order("b", 90), order("c", 70), order("d", 60)];
@@ -49,6 +55,51 @@ function runProductionRegressionTests() {
         return { id, profileType, color, sourceLength, remaining, waste, origin: "new", pieces, ...extra };
     }
     const sources = Array.from({ length: 6 }, (_, i) => source("s" + i, [1772], "verticalProfile", i % 2 ? "white" : "black"));
+    const railSources = (total, openingId = "A", orderId = "rails") => ["bottomRail", "topRail"].flatMap(profile =>
+        Array.from({ length: total / 2 }, (_, i) => {
+            const item = source(orderId + openingId + profile + i, [4000], profile);
+            item.pieces.forEach(p => Object.assign(p, { orderId, openingId }));
+            return item;
+        }));
+    for (const total of [2, 4, 6]) {
+        const input = railSources(total), before = JSON.stringify(input);
+        const result = P.schedule(input, 3);
+        assert(result.operations.length === (total === 2 ? 1 : total === 4 ? 2 : 4), "Kiskoliikkeet " + total);
+        assert(result.operations.every(o => o.sources.length <= 2), "Kiskokapasiteetti " + total);
+        assert(result.operations.every(o => new Set(o.pieces.map(p => p.profileType)).size === (total === 2 ? 2 : 1)), "Sekanippu vain 1+1 " + total);
+        assert(result.operations.flatMap(o => o.pieces).length === total && result.metrics.stopPositionChanges === 1, "Kappaleet ja mittavaste " + total);
+        assert(JSON.stringify(input) === before && JSON.stringify(result) === JSON.stringify(P.schedule(input, 3)), "Kiskojen determinismi ja mutatoimattomuus");
+        assert(result.operations.every(o => o.sources.every(s => {
+            const cut = CUTTING_PHYSICS.cutPiece(s.before, o.length, 3);
+            return cut.possible && cut.remaining === s.after && cut.waste === s.waste;
+        })), "Kiskonipun materiaalitase " + total);
+    }
+    const differentOpenings = P.schedule([...railSources(2, "A"), ...railSources(2, "B"), ...railSources(2, "A", "other")], 3);
+    assert(differentOpenings.operations.length === 3 && differentOpenings.operations.every(o =>
+        new Set(o.pieces.map(p => JSON.stringify([p.orderId, p.openingId]))).size === 1), "Eri aukkoja ja tilauksia ei pariteta");
+    assert(P.schedule(railSources(2, ""), 3).operations.length === 2, "Puuttuvaa aukkoa ei arvata");
+    const exactRails = railSources(2);
+    exactRails[0] = source(exactRails[0].id, [4000], "bottomRail", "black", 4000);
+    Object.assign(exactRails[0].pieces[0], { orderId: "rails", openingId: "A" });
+    assert(P.schedule(exactRails, 3).metrics.cutOperationCount === 1 && P.schedule(exactRails, 3).operations.length === 2,
+        "Valmiin kiskon poimintaa ei muuteta sekanipun sahausliikkeeksi");
+    const restricted = { ...P.profileDefaults, bottomRail: { compatibilityGroup: "topRail", maxStackSize: 1 } };
+    assert(P.schedule(railSources(2), 3, restricted).operations.length === 2, "Pari kunnioittaa kapasiteettia");
+    const shared = { ...P.profileDefaults, bottomRail: { compatibilityGroup: "topRail", maxStackSize: 2 } };
+    assert(P.schedule(railSources(4), 3, shared).operations.every(o => new Set(o.pieces.map(p => p.profileType)).size === 1), "Yleinen ryhmä ei ohita kiskosääntöä");
+    const adjacentRails = railSources(4);
+    adjacentRails[2].id = "z-top"; adjacentRails[3].id = "zz-top";
+    const adjacentResult = P.schedule([...adjacentRails, source("s-other", [1200])], 3);
+    assert(adjacentResult.operations.slice(0, 2).every(o => o.length === 4000), "Saman aukon kiskot peräkkäin ennen muuta mittaa");
+    for (const quantity of ["1", "3", "0", "-2", "2.5", ""]) reject(() => normalizeOrderCuts([
+        createOrderInput("invalid-rails", "", "black", { rails: [{ length: "4000", quantity }] })
+    ]), "Virheellinen yhteismäärä " + quantity);
+    const legacy = createStoredPlanSemanticRegressionState();
+    legacy.schemaVersion = 4;
+    legacy.orders.forEach(o => o.sections.filter(s => s.key === "rails").forEach(s => s.rows.forEach(r => r.quantity = String(Number(r.quantity) / 2))));
+    const migrated = migrateStoredRailQuantities(legacy);
+    assert(migrated.schemaVersion === 5 && isValidStoredWorkState(migrated), "Vanha laskettu työ migroituu kysyntää muuttamatta");
+    assert(legacy.schemaVersion === 4 && JSON.stringify(migrated) === JSON.stringify(migrateStoredRailQuantities(migrated)), "Migraatio on mutatoimaton ja idempotentti");
     const original = JSON.stringify(sources);
     assert(P.schedule(sources, 3).metrics.stopPositionChanges === 1,
         "Kaksi samanmitan nippusahausta tarvitsee vain ensimmäisen mittavasteen siirron");
@@ -93,6 +144,21 @@ function runProductionRegressionTests() {
         newStock: Object.keys(PROFILE_TYPES).map(profileType => ({ profileType, color: "black", unlimited: true, quantity: null })),
         remnants: [{ profileType: "verticalProfile", color: "black", length: 3900, quantity: 1 }] });
     const cuts = normalizeOrderCuts(orders);
+    const migratedRailOrders = [createOrderInput("legacy-rail", "", "black", {
+        rails: [{ length: "4000", quantity: "2", openingId: "A" }]
+    })];
+    const railOptimization = optimizeOrderByProfileTypeWithInventory(normalizeOrderCuts(migratedRailOrders), inventory, 3, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS);
+    const oldRailState = createStoredPlanSemanticRegressionState();
+    oldRailState.schemaVersion = 4;
+    oldRailState.stockProfileRows.forEach(row => { row.color = "black"; row.unlimited = true; });
+    oldRailState.orders = migratedRailOrders;
+    oldRailState.orders[0].sections.find(s => s.key === "rails").rows[0].quantity = "1";
+    oldRailState.generatedPlan = adaptMaterialOptimizationForUi(railOptimization, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings);
+    oldRailState.completedBarIds = [oldRailState.generatedPlan.bars[0].id];
+    const migratedRailState = migrateStoredRailQuantities(oldRailState);
+    assert(isValidStoredWorkState(migratedRailState) && normalizeOrderCuts(migratedRailState.orders).every(p => p.quantity === 1), "Vanhan kiskotyön 1+1 kysyntä säilyy");
+    assert(JSON.stringify(migratedRailState.generatedPlan) === JSON.stringify(oldRailState.generatedPlan) &&
+        JSON.stringify(migratedRailState.completedBarIds) === JSON.stringify(oldRailState.completedBarIds), "Kiskomigraatio säilyttää materiaalin ja TEHTY-tilan");
     const baseline = optimizeOrderByProfileTypeWithInventory(cuts, inventory, 3, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS);
     const selected = selectProductionBatch(orders, inventory, 3);
     assert(JSON.stringify(selected.optimization) === JSON.stringify(baseline), "Scheduler-polku ei muuta optimizerin tulosta");

@@ -88,6 +88,9 @@ const test = new vm.Script(`(async () => {
     await calculate();
     assert(currentGeneratedPlan === null && JSON.parse(storage).generatedPlan === null, "Epäonnistunut laskenta ei jätä vanhaa valmista suunnitelmaa");
     assert(elements.result.innerHTML.includes("Käytettävissä ei ole yhtään materiaalikappaletta."), "Epäonnistuminen näkyy käyttäjälle");
+    liveOrders = [createOrderInput("invalid-rails", "", "black", { rails: [{ length: "4000", quantity: "3" }] })];
+    await calculate();
+    assert(elements.result.textContent.includes("positiivinen parillinen kokonaisluku"), "Pariton kiskomäärä näyttää virheen ilman hylättyä Promisea");
     console.log("Tuotannon ohjaus-/persistenssitestit: " + checks + " läpäisty");
 })()`);
 

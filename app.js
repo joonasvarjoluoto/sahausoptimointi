@@ -421,7 +421,7 @@ function createOrderInput(id, name = "", color = "", rowsBySection = {}) {
 
 
 function getDefaultOrderQuantity(sectionKey) {
-    return sectionKey === "uProfile" ? "2" : "1";
+    return sectionKey === "uProfile" || sectionKey === "rails" ? "2" : "1";
 }
 
 
@@ -440,16 +440,20 @@ function normalizeOrderCuts(orders) {
         if (!definition) {
             throw new Error("Tuntematon tilauksen profiiliosio.");
         }
-        return section.rows.filter(row => !isBlankOrderMeasure(row, section.key)).flatMap(row =>
-            definition.profiles.map(profileType => ({
+        return section.rows.filter(row => !isBlankOrderMeasure(row, section.key)).flatMap(row => {
+            if (section.key === "rails" && (!Number.isSafeInteger(Number(row.quantity)) ||
+                Number(row.quantity) <= 0 || Number(row.quantity) % 2 !== 0)) {
+                throw new Error("Ylä- ja alakiskojen yhteismäärän pitää olla positiivinen parillinen kokonaisluku (2, 4, 6, …).");
+            }
+            return definition.profiles.map(profileType => ({
                 orderId: order.id,
                 ...(row.openingId ? { openingId: row.openingId } : {}),
                 profileType: profileType,
                 color: order.color === "" ? null : order.color,
                 length: Number(row.length),
-                quantity: Number(row.quantity)
-            }))
-        );
+                quantity: Number(row.quantity) / definition.profiles.length
+            }));
+        });
     }));
 }
 
@@ -509,8 +513,8 @@ function runOrderInputRegressionTests() {
         test: test, result: passed ? "PASS" : "FAIL"
     });
     const row = (length, quantity) => ({ length: String(length), quantity: String(quantity) });
-    record("Vain U-profiilin uusi oletusmäärä on 2", ORDER_PROFILE_SECTIONS.every(section =>
-        getDefaultOrderQuantity(section.key) === (section.key === "uProfile" ? "2" : "1")));
+    record("U-profiilin ja kiskojen oletusmäärä on 2", ORDER_PROFILE_SECTIONS.every(section =>
+        getDefaultOrderQuantity(section.key) === (section.key === "uProfile" || section.key === "rails" ? "2" : "1")));
     const cut = (orderId, profileType, color, length, quantity) => ({
         orderId, profileType, color, length, quantity
     });
@@ -536,13 +540,13 @@ function runOrderInputRegressionTests() {
         },
         {
             name: "Yksi kiskomitta on kaksi fyysistä profiilia", orders: [
-                createOrderInput("rails", "", "white", { rails: [row(3290, 2)] })
+                createOrderInput("rails", "", "white", { rails: [row(3290, 4)] })
             ], expected: [cut("rails", "topRail", "white", 3290, 2),
             cut("rails", "bottomRail", "white", 3290, 2)]
         },
         {
             name: "Useat kiskomitat", orders: [
-                createOrderInput("rails", "", "gray", { rails: [row(3290, 2), row(2460, 1)] })
+                createOrderInput("rails", "", "gray", { rails: [row(3290, 4), row(2460, 2)] })
             ], expected: [cut("rails", "topRail", "gray", 3290, 2),
             cut("rails", "bottomRail", "gray", 3290, 2),
             cut("rails", "topRail", "gray", 2460, 1),
@@ -568,7 +572,7 @@ function runOrderInputRegressionTests() {
         {
             name: "Muiden profiilien määrä 2 ja U-profiilin muokattu määrä vaativat mitan", orders: [
                 createOrderInput("partial-defaults", "", "gray", {
-                    verticalProfile: [row("", 2)], uProfile: [row("", 4)], rails: [row("", 2)]
+                    verticalProfile: [row("", 2)], uProfile: [row("", 4)], rails: [row("", 4)]
                 })
             ], expected: [cut("partial-defaults", "verticalProfile", "gray", 0, 2),
                 cut("partial-defaults", "uProfile", "gray", 0, 4),
@@ -628,7 +632,7 @@ function runStoredOrderValidationRegressionTests() {
     const results = [];
     const record = (test, passed) => results.push({ test, result: passed ? "PASS" : "FAIL" });
     const valid = createStoredPlanSemanticRegressionState();
-    record("Skeema 4 hyväksytään", valid.schemaVersion === 4 && isValidStoredWorkState(valid));
+    record("Skeema 5 hyväksytään", valid.schemaVersion === 5 && isValidStoredWorkState(valid));
     record("Skeema 3 ei palaudu uuteen käyttöliittymään",
         !isValidStoredWorkState({ ...valid, schemaVersion: 3 }));
     record("Suljettu tilaus säilyttää kelvollisen suunnitelman",
@@ -728,7 +732,7 @@ function runOrderInputUiRegressionTests() {
     let passed = JSON.stringify(restored) === JSON.stringify([order]) &&
         container.querySelectorAll(".order-profile-section").length === 5 &&
         container.querySelector("details.order-card").open === true &&
-        container.querySelector(".order-summary").textContent.endsWith(" · 14 kpl") &&
+        container.querySelector(".order-summary").textContent.endsWith(" · 12 kpl") &&
         container.querySelectorAll("select").length === 1 &&
         container.querySelectorAll("img, script, .cut-profile-type, .cut-color").length === 0 &&
         container.querySelector(".order-section-count").textContent === "2 mittaa / 10 kpl" &&
@@ -770,12 +774,11 @@ function updateOrderCardSummary(card) {
     const name = card.querySelector(".order-name").value.trim() || "Nimetön tilaus";
     const color = card.querySelector(".order-color").value;
     const count = [...card.querySelectorAll(".order-profile-section")].reduce((total, section) => {
-        const definition = ORDER_PROFILE_SECTIONS.find(item => item.key === section.dataset.sectionKey);
         return total + [...section.querySelectorAll(".order-measure-row")].reduce((sum, row) => {
             const length = Number(row.querySelector(".cut-length").value);
             const quantity = Number(row.querySelector(".cut-quantity").value);
             return sum + (Number.isFinite(length) && length > 0 && Number.isSafeInteger(quantity) && quantity > 0
-                ? quantity * definition.profiles.length : 0);
+                ? quantity : 0);
         }, 0);
     }, 0);
     card.querySelector(".order-summary").textContent = name +
@@ -790,7 +793,7 @@ function updateOrderSectionSummary(section) {
         const quantity = Number(row.querySelector(".cut-quantity").value);
         return sum + (Number.isSafeInteger(quantity) && quantity > 0 ? quantity : 0);
     }, 0);
-    const suffix = section.dataset.sectionKey === "rails" ? " kpl / kisko" : " kpl";
+    const suffix = " kpl";
     section.querySelector(".order-section-count").textContent =
         filled.length === 0 ? "Ei mittoja" : filled.length + " mittaa / " + count + suffix;
     updateOrderCardSummary(section.closest(".order-card"));
@@ -8837,7 +8840,7 @@ function runStoredProfileTypeValidationRegressionTests() {
         }
         const isRail = profileType === "topRail" || profileType === "bottomRail";
         state.orders = [createOrderInput("regression", "", "black", {
-            [isRail ? "rails" : profileType]: [{ length: "2200", quantity: "1" }]
+            [isRail ? "rails" : profileType]: [{ length: "2200", quantity: isRail ? "2" : "1" }]
         })];
         state.remnantRows[0].profileType = profileType;
         state.generatedPlan.bars[0].profileType = profileType;
@@ -10965,7 +10968,7 @@ function getRemnantStatusLabel(remnantStatus) {
 
 
 const WORK_STORAGE_KEY = "sahausoptimointi.currentWork";
-const WORK_STATE_SCHEMA_VERSION = 4;
+const WORK_STATE_SCHEMA_VERSION = 5;
 const WORK_STATE_ENGINE_VERSION = "material-v0.3";
 const MAX_STORED_FORM_ROW_COUNT = 1000;
 
@@ -11992,6 +11995,23 @@ function startNewWork() {
 }
 
 
+// Skeeman 4 määrä oli profiilikohtainen. Muunnos säilyttää fyysisen kysynnän,
+// suunnitelman ja kuittaukset; normaali semanttinen validointi suoritetaan sen jälkeen.
+function migrateStoredRailQuantities(state) {
+    if (state?.schemaVersion !== 4 || !isValidStoredOrders(state.orders)) return state;
+    const migrated = JSON.parse(JSON.stringify(state));
+    migrated.schemaVersion = 5;
+    for (const order of migrated.orders) {
+        for (const section of order.sections.filter(s => s.key === "rails")) {
+            for (const row of section.rows) {
+                if (row.quantity !== "") row.quantity = String(Number(row.quantity) * 2);
+            }
+        }
+    }
+    return migrated;
+}
+
+
 function restoreSavedWorkState() {
 
     let serializedState;
@@ -12013,7 +12033,7 @@ function restoreSavedWorkState() {
 
 
     try {
-        state = JSON.parse(serializedState);
+        state = migrateStoredRailQuantities(JSON.parse(serializedState));
     } catch {
         removeSavedWorkState();
         resetWorkToDefaults();
@@ -12709,8 +12729,15 @@ async function calculate() {
         );
 
 
-    const cuts =
-        getCutsFromForm();
+    let cuts;
+    try {
+        cuts = getCutsFromForm();
+    } catch (error) {
+        const result = document.getElementById("result");
+        result.className = "validation-message";
+        result.textContent = "Tarkista syötteet: " + error.message;
+        return;
+    }
 
     const materialAvailability =
         getMaterialAvailabilityFromForm();
@@ -14324,7 +14351,7 @@ function createDevelopmentOrdersFromCuts(cuts) {
         if (!section) {
             throw new Error("Testilatauksen profiilityyppi on tuntematon.");
         }
-        section.rows.push({ length: String(cut.length), quantity: String(cut.quantity) });
+        section.rows.push({ length: String(cut.length), quantity: String(cut.quantity * (key === "rails" ? 2 : 1)) });
     }
     const railTotals = profile => {
         const totals = new Map();

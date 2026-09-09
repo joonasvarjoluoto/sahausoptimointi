@@ -54,7 +54,7 @@ Profiilikohtaiset `profileDefaults`-asetukset:
 | Alakisko | 2 | Käyttäjän alustava oletus |
 | Vaste | 1 | Varovainen toteutusoletus; käyttäjä ei antanut kapasiteettia |
 
-`getCompatibility()` lukee profiilin `compatibilityGroup`- ja `maxStackSize`-säännöt. Oletuksena kukin profiili muodostaa oman ryhmänsä. Tulevia poikkeuksia voi määrittää datalla; sekaryhmässä noudatetaan mukana olevien profiilien pienintä kapasiteettia. Värit saavat sekoittua sahausliikkeessä, mutta kappaleen ja materiaalilähteen värin on edelleen täsmättävä.
+`getCompatibility()` lukee profiilin `compatibilityGroup`- ja `maxStackSize`-säännöt. Oletuksena kukin profiili muodostaa oman ryhmänsä. Aukkokohtainen `railPairCompatibility` sallii erikseen täsmälleen yhden ala- ja yläkiskon sekanipun; yleinen ryhmäasetus ei ohita tätä kiskorajausta. Tulevia poikkeuksia voi määrittää datalla; sekaryhmässä noudatetaan mukana olevien profiilien pienintä kapasiteettia. Värit saavat sekoittua sahausliikkeessä, mutta kappaleen ja materiaalilähteen värin on edelleen täsmättävä.
 
 `cutPiece()` tarkistaa alkuperäiset lähteet ja jokaisen operaation. Scheduler ei lisää kerfiä, toleranssia, päävaraa eikä muuta dispositionia. Nimellinen täsmäsovitus säilyy nykyisen fysiikan mukaisena. Täsmälleen oikean mittainen loppukappale on `kind: "release"` -poiminta, joka näkyy suoritusjärjestyksessä mutta ei kasvata sahausliikkeiden määrää. Muut leikkaukset ovat `kind: "cut"` -operaatioita.
 
@@ -72,7 +72,7 @@ Vanha fyysinen jäännösvarasto voi tuotannossa olla epätarkka (käyttäjän h
 
 Batchin tilaukset, kappalemäärät, kokorajat ja materiaalipisteen komponentit näkyvät tuloksessa. Nykyinen materiaalinäkymä säilyy. Avattava sahausjärjestys näyttää operaatiot, lähteet, värit, alkuperän sekä tilaus-, aukko- ja kappaletunnisteet.
 
-Skeema 4 saa yhteensopivat valinnaiset lisäkentät: luonnoksen `batchSettings` (lomakemerkkijonot), mittarivin `openingId` ja `generatedPlan.batch = { version: 1, orderIds, settings }`. Vanha kelvollinen skeeman 4 työ säilyy; sen suunnitelma tarkoittaa entiseen tapaan koko kysyntää. Materiaalimoottoriversio `material-v0.3` säilyy, koska materiaalifysiikka ja score-yhteensopivuus eivät muutu. Uuden batch-metadatan oma versio validoidaan.
+Skeema 5 säilyttää skeeman 4 valinnaiset lisäkentät: luonnoksen `batchSettings` (lomakemerkkijonot), mittarivin `openingId` ja `generatedPlan.batch = { version: 1, orderIds, settings }`. Vanha kelvollinen skeeman 4 työ migroidaan kaksinkertaistamalla kiskojen lomakemäärät; sen suunnitelma tarkoittaa entiseen tapaan koko kysyntää. Materiaalimoottoriversio `material-v0.3` säilyy, koska materiaalifysiikka ja score-yhteensopivuus eivät muutu. Uuden batch-metadatan oma versio validoidaan.
 
 Operaatiolistaa ei tallenneta toisena totuutena: se muodostetaan uudelleen validoidusta materiaalista ja kysynnästä. Palautus tarkistaa valitut kokonaiset tilaukset, materiaalitaseen, varastorajat, sahausfysiikan ja tuotantokohdistuksen. Korruptti/puutteellinen batch tai osittainen suunnitelma ei palaudu valmiina.
 
@@ -109,3 +109,12 @@ Käyttäjän jatkotestit: palautus, TEHTY, finalisointi, seuraava batch, syötte
 Agentin täydentävät selaintestit 8.9.2026 läpäisty: harmaan ja mustan oletusrivit; tilausotsikon fyysinen kappalemäärä ja sen päivittyminen määrää muutettaessa sekä riviä poistettaessa; suljetun kortin ja TEHTY-tilan säilyminen uudelleenlatauksessa; Pysty/Vaaka-profiilieristys samalla 4000 mm mitalla; kiskojen 4000 × 3 -rivin kuusi fyysistä kappaletta ja erilliset 2+1 niput kummallekin kiskolle; alle minimin jäävän koko jonon valinta; rajojen 2/3/4 sallimat 2 ja 4 kappaleen batchit sekä jakamaton 5 kappaleen oversized-tilaus. Suljetun kortin työpöytäasettelu tarkistettu kuvasta; erillistä mobiililaitetestiä ei tehty. Selaimen virhe- ja varoitusloki oli tyhjä.
 
 Jatkosahauksen fixture: musta Pysty 4000 × 1 + 1000 × 1, saatavilla täsmälleen yksi uusi 6000 mm tanko, kerf 3, ei jäännösvarastoa. Tulos: yksi tanko, kaksi peräkkäistä saman lähteen sahausta 6000 → 1997 → 994 mm, sahahukka 6 mm, kaksi mittavasteen siirtoa ja oikeat aukot J1/J2. Aiempi testiohje oletti yhden tangon myös rajattomalla saatavuudella. Se oletus oli väärä: sekä HEAD että työversio valitsevat silloin kaksi tankoa pisteellä 7187,8; yhden tangon palautetun ratkaisun piste on 7250,4. Tämä ei ole uuden schedulerin regressio eikä peruste muuttaa materiaalipisteytystä tässä työssä.
+
+
+### Kiskojen yhteismäärä ja aukkoparit, 8.9.2026
+
+Lomakkeen 2/4/6 tarkoittaa yhteensä 1+1 / 2+2 / 3+3 fyysistä kiskoa. Positiivinen parillinen määrä vaaditaan; oletus on 2. Aiemman yllä olevan kiskotestin määrä 3 oli vanhaa profiilikohtaista syöttöä: sama fyysinen kysyntä syötetään nyt määrällä 6.
+
+Scheduler laskee koko batchin kiskot `orderId + openingId` -avaimella. Vain täsmälleen kahden samanmittaisen ja samanvärisen eri kiskoprofiilin aukko saa sekanippupoikkeuksen. Molempien lähteiden pitää olla valmiina, aidosti sahattavia ja sallia kahden kapasiteetti. Muiden aukkojen kappaleita ei lainata pariksi. Yli kahden määrät niputetaan saman profiilin sisällä kapasiteettirajoilla. Saman aukon sama mitta saa valmiiden operaatioiden järjestyksessä preferenssin; riippuvuuksia ei rikota eikä materiaalihakua pisteytetä uudelleen.
+
+Testit: 2/4/6 yhteismäärä ja 1/2/4 sahausliikettä erillisiltä 6000 mm lähteiltä mitalla 4000 mm; aukko- ja tilauseristys; puuttuva aukko; kapasiteetti 1; yleisen ryhmän ohitusyritys; peräkkäisyys; parittomat/virheelliset määrät; determinismi ja mutatoimattomuus; skeeman 4 kiskotyön materiaalin ja TEHTY-tilan säilyttävä migraatio. HTTP-selaimessa tarkistettiin 2/4/6 määrät ja kiskoparin palautus. Node 35/35 ryhmää; ohjaus-/persistenssitestit 18 tarkistusta.

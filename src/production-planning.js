@@ -103,6 +103,31 @@ const PRODUCTION_PLANNING = (() => {
         return rule;
     }
 
+    const railPairCompatibility = Object.freeze({
+        profiles: Object.freeze(["bottomRail", "topRail"]),
+        compatibilityGroup: "opening-rail-pair", maxStackSize: 2
+    });
+    const isRail = piece => railPairCompatibility.profiles.includes(piece.profileType);
+    const openingKey = piece => piece.openingId?.trim()
+        ? JSON.stringify([piece.orderId, piece.openingId]) : null;
+
+    function createRailPairIndex(sources) {
+        const openings = new Map(), pairs = new Map();
+        for (const piece of sources.flatMap(source => source.pieces).filter(isRail)) {
+            const key = openingKey(piece);
+            if (!key) continue;
+            if (!openings.has(key)) openings.set(key, []);
+            openings.get(key).push(piece);
+        }
+        for (const [key, pieces] of openings) {
+            if (pieces.length === 2 && pieces[0].profileType !== pieces[1].profileType &&
+                pieces[0].length === pieces[1].length && pieces[0].color === pieces[1].color) {
+                pieces.forEach(piece => pairs.set(piece.pieceId, key));
+            }
+        }
+        return pairs;
+    }
+
     function schedule(sources, kerf, profiles = profileDefaults) {
         const physics = typeof CUTTING_PHYSICS !== "undefined" ? CUTTING_PHYSICS : require("./cutting-physics.js");
         if (kerf < 0 || !physics.hasSupportedMillimeterPrecision(kerf)) throw new Error("Virheellinen sahausvara.");
@@ -146,6 +171,7 @@ const PRODUCTION_PLANNING = (() => {
             visited.add(state.source.id);
         }
         states.forEach(check);
+        const railPairs = createRailPairIndex(sources);
         const operations = [];
         while ([...states.values()].some(s => s.pieces.length)) {
             const ready = [...states.values()].filter(s => s.pieces.length &&
@@ -153,31 +179,60 @@ const PRODUCTION_PLANNING = (() => {
             if (!ready.length) throw new Error("Materiaaliriippuvuudet estävät suorituksen.");
             // Jatkoleikkaus käyttää juuri syntynyttä, tarkasti tunnettua jäännöstä.
             const priority = s => s.lastOperation || s.source.parentSourceId ? 0 : 1;
-            ready.sort((a, b) => priority(a) - priority(b) || (a.source.id < b.source.id ? -1 : 1));
+            const previous = operations.at(-1);
+            const previousRail = previous?.pieces.find(isRail);
+            const adjacent = p => previousRail && isRail(p) && openingKey(p) &&
+                openingKey(p) === openingKey(previousRail) && p.length === previous.length;
+            // Aukon saman mitan kiskot pidetään lähellä toisiaan ilman materiaalipisteitä.
+            for (const state of ready) {
+                const index = state.pieces.findIndex(adjacent);
+                if (index > 0) state.pieces.unshift(...state.pieces.splice(index, 1));
+            }
+            ready.sort((a, b) => Number(!adjacent(a.pieces[0])) - Number(!adjacent(b.pieces[0])) ||
+                priority(a) - priority(b) || (a.source.id < b.source.id ? -1 : 1));
             const first = ready[0];
             const piece = first.pieces[0];
             // Täsmälleen valmis loppukappale poimitaan ilman sahausliikettä.
             const kind = first.remaining === piece.length ? "release" : "cut";
             const rule = getCompatibility(first.source, profiles);
-            const group = [first];
+            const group = [{ state: first, piece }];
             let limit = rule.maxStackSize;
-            for (const state of ready.slice(1)) {
+            let compatibilityGroup = rule.compatibilityGroup;
+            const pairKey = railPairs.get(piece.pieceId);
+            // Eksplisiittinen poikkeus: vain nimetty aukko, yksi kumpaakin ja kaksi valmista lähdettä.
+            if (kind === "cut" && pairKey && limit >= 2) {
+                for (const state of ready.slice(1)) {
+                    const partner = state.pieces.find(p => railPairs.get(p.pieceId) === pairKey &&
+                        p.profileType !== piece.profileType);
+                    const other = getCompatibility(state.source, profiles);
+                    if (partner && state.remaining !== partner.length && other.maxStackSize >= 2) {
+                        group.push({ state, piece: partner });
+                        limit = railPairCompatibility.maxStackSize;
+                        compatibilityGroup = railPairCompatibility.compatibilityGroup;
+                        break;
+                    }
+                }
+            }
+            if (group.length === 1) for (const state of ready.slice(1)) {
                 const other = getCompatibility(state.source, profiles);
                 const nextLimit = Math.min(limit, other.maxStackSize);
+                const candidate = state.pieces.find(p => p.length === piece.length &&
+                    // Kiskosekanippua ei sallita edes yleisen compatibilityGroup-asetuksen kautta.
+                    (!(isRail(piece) || isRail(p)) || p.profileType === piece.profileType) &&
+                    (!pairKey && !railPairs.has(p.pieceId)));
                 if (other.compatibilityGroup === rule.compatibilityGroup && group.length < nextLimit &&
-                    state.pieces.some(p => p.length === piece.length) &&
-                    (state.remaining === piece.length ? "release" : "cut") === kind) {
-                    group.push(state);
+                    candidate && (state.remaining === piece.length ? "release" : "cut") === kind) {
+                    group.push({ state, piece: candidate });
                     limit = nextLimit;
                 }
             }
             const dependencies = new Set();
             const operation = { id: `operation-${operations.length + 1}`, number: operations.length + 1, kind,
-                compatibilityGroup: rule.compatibilityGroup, length: piece.length, sources: [], pieces: [], dependencyIds: [], maxStackSize: limit };
-            for (const state of group) {
+                compatibilityGroup, length: piece.length, sources: [], pieces: [], dependencyIds: [], maxStackSize: limit };
+            for (const { state, piece: selectedPiece } of group) {
                 const parentOp = state.lastOperation || (state.source.parentSourceId && states.get(state.source.parentSourceId).lastOperation);
                 if (parentOp) dependencies.add(parentOp);
-                const index = state.pieces.findIndex(p => p.length === piece.length);
+                const index = state.pieces.findIndex(p => p.pieceId === selectedPiece.pieceId);
                 const [output] = state.pieces.splice(index, 1);
                 const cut = physics.cutPiece(state.remaining, output.length, kerf);
                 if (!cut.possible) throw new Error("Järjestetty sahaus ei mahdu lähteeseen.");
@@ -204,7 +259,7 @@ const PRODUCTION_PLANNING = (() => {
             bundleUtilization: cuts.length ? cuts.reduce((n, o) => n + o.sources.length, 0) / cuts.reduce((n, o) => n + o.maxStackSize, 0) : 0
         } };
     }
-    return Object.freeze({ batchDefaults, profileDefaults, batchSettings, selectBatch, attachPieces, getCompatibility, schedule });
+    return Object.freeze({ batchDefaults, profileDefaults, batchSettings, selectBatch, attachPieces, getCompatibility, railPairCompatibility, schedule });
 })();
 
 if (typeof module !== "undefined" && module.exports) module.exports = PRODUCTION_PLANNING;
