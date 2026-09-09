@@ -1,0 +1,5493 @@
+{
+  "hard": {
+    "ids": [
+      3,
+      9,
+      21
+    ],
+    "score": 275865.03348940733,
+    "planHash": "24306390ba723df1cb1c430c9b021731e26589256d1e372f963e84a56cdef9f2",
+    "baselineMs": [
+      37011.9543,
+      34702.8225,
+      33813.169700000006
+    ],
+    "materialMedianMs": 34690.244399999996,
+    "countRunMs": 44342.143,
+    "sampleRunMs": 46305.680499999995,
+    "schedulerMedianMs": 9.781100000000151,
+    "variants": [
+      {
+        "profile": "uProfile",
+        "color": "gray",
+        "pieces": 26,
+        "lengthCount": 8,
+        "lengths": [
+          {
+            "length": 1205,
+            "quantity": 2
+          },
+          {
+            "length": 1235,
+            "quantity": 4
+          },
+          {
+            "length": 1255,
+            "quantity": 4
+          },
+          {
+            "length": 1285,
+            "quantity": 2
+          },
+          {
+            "length": 1610,
+            "quantity": 2
+          },
+          {
+            "length": 1865,
+            "quantity": 4
+          },
+          {
+            "length": 2163,
+            "quantity": 6
+          },
+          {
+            "length": 2165,
+            "quantity": 2
+          }
+        ],
+        "nearLengths": [
+          [
+            2163,
+            2165
+          ]
+        ],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 3988.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 14
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 2591.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 12
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 1936.9,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 6
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 1209.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 1
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 1180.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "new",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 18
+          }
+        ],
+        "remnantPhysicalCount": 5,
+        "baselineMs": {
+          "min": 86.45420000000001,
+          "median": 89.8335,
+          "p95": 95.2774,
+          "max": 95.2774,
+          "sum": 271.56510000000003,
+          "mean": 90.52170000000001
+        },
+        "beam": {
+          "statesExpanded": 161,
+          "statesGenerated": 3552,
+          "statesDeduplicated": 1731,
+          "completeSolutionsEvaluated": 89,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 924,
+        "uniqueInputs": 825,
+        "uniqueDemands": 140,
+        "reachable": {
+          "min": 1,
+          "median": 3,
+          "p95": 77,
+          "max": 226,
+          "sum": 13405,
+          "mean": 14.507575757575758
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 2,
+          "p95": 12,
+          "max": 18,
+          "sum": 3255,
+          "mean": 3.522727272727273
+        },
+        "totals": {
+          "chunks": 3255,
+          "transitions": 18382,
+          "copies": 18747,
+          "copiedElements": 124853,
+          "keepCalls": 18382,
+          "inputPatterns": 25029,
+          "uniquePatterns": 19657,
+          "retainedPatterns": 19657,
+          "capacityKeysSorted": 45623,
+          "returned": 3552
+        },
+        "maxKeepInput": 5,
+        "maxKeepDistinct": 3,
+        "patternMs": 73.29289999999989,
+        "repeatedCalls": 99,
+        "repeatedPatternMs": 0.7522999999999058,
+        "timings": {
+          "keepSamples": 12,
+          "copySamples": 12,
+          "copySampleMs": 0.01079999999997483,
+          "dedupSampleMs": 0.02260000000002549,
+          "sortSampleMs": 0.011799999999965394
+        },
+        "sourceWork": [
+          {
+            "length": 3988.2,
+            "calls": 133,
+            "ms": 13.62110000000009,
+            "keepCalls": 2738,
+            "patterns": 3388
+          },
+          {
+            "length": 2591.5,
+            "calls": 151,
+            "ms": 7.56509999999988,
+            "keepCalls": 1408,
+            "patterns": 1784
+          },
+          {
+            "length": 1936.9,
+            "calls": 159,
+            "ms": 3.5743999999998977,
+            "keepCalls": 415,
+            "patterns": 415
+          },
+          {
+            "length": 1209.2,
+            "calls": 159,
+            "ms": 2.5721000000000416,
+            "keepCalls": 99,
+            "patterns": 99
+          },
+          {
+            "length": 1180.2,
+            "calls": 161,
+            "ms": 1.4609999999999488,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 6000,
+            "calls": 161,
+            "ms": 44.49920000000003,
+            "keepCalls": 13722,
+            "patterns": 19343
+          }
+        ]
+      },
+      {
+        "profile": "verticalProfile",
+        "color": "gray",
+        "pieces": 72,
+        "lengthCount": 8,
+        "lengths": [
+          {
+            "length": 1098,
+            "quantity": 6
+          },
+          {
+            "length": 1128,
+            "quantity": 12
+          },
+          {
+            "length": 1148,
+            "quantity": 12
+          },
+          {
+            "length": 1178,
+            "quantity": 6
+          },
+          {
+            "length": 1503,
+            "quantity": 4
+          },
+          {
+            "length": 1758,
+            "quantity": 9
+          },
+          {
+            "length": 2056,
+            "quantity": 17
+          },
+          {
+            "length": 2058,
+            "quantity": 6
+          }
+        ],
+        "nearLengths": [
+          [
+            2056,
+            2058
+          ]
+        ],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 3944.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 14
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 3340.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 13
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 3237.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 13
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1932.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 6
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1912.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 6
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1899.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 6
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1845.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 6
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1840.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 6
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1588.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 5
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1578.4,
+            "unlimited": false,
+            "quantity": 2,
+            "initialChunks": 5
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1539.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 5
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1436.3,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1412.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1206.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1198.1,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "new",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 20
+          }
+        ],
+        "remnantPhysicalCount": 16,
+        "baselineMs": {
+          "min": 435.80809999999997,
+          "median": 459.3903,
+          "p95": 494.3138,
+          "max": 494.3138,
+          "sum": 1389.5122000000001,
+          "mean": 463.1707333333334
+        },
+        "beam": {
+          "statesExpanded": 427,
+          "statesGenerated": 19953,
+          "statesDeduplicated": 8190,
+          "completeSolutionsEvaluated": 74,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 6684,
+        "uniqueInputs": 5456,
+        "uniqueDemands": 342,
+        "reachable": {
+          "min": 1,
+          "median": 3,
+          "p95": 33,
+          "max": 329,
+          "sum": 62299,
+          "mean": 9.320616397366846
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 2,
+          "p95": 10,
+          "max": 20,
+          "sum": 18873,
+          "mean": 2.823608617594255
+        },
+        "totals": {
+          "chunks": 18873,
+          "transitions": 74043,
+          "copies": 75501,
+          "copiedElements": 510703,
+          "keepCalls": 74043,
+          "inputPatterns": 95302,
+          "uniquePatterns": 78956,
+          "retainedPatterns": 78956,
+          "capacityKeysSorted": 206785,
+          "returned": 19953
+        },
+        "maxKeepInput": 5,
+        "maxKeepDistinct": 3,
+        "patternMs": 296.2920000000028,
+        "repeatedCalls": 1228,
+        "repeatedPatternMs": 8.075100000001726,
+        "timings": {
+          "keepSamples": 72,
+          "copySamples": 72,
+          "copySampleMs": 0.03589999999979909,
+          "dedupSampleMs": 0.12269999999989523,
+          "sortSampleMs": 0.04780000000016571
+        },
+        "sourceWork": [
+          {
+            "length": 3944.2,
+            "calls": 374,
+            "ms": 35.02399999999983,
+            "keepCalls": 9200,
+            "patterns": 11487
+          },
+          {
+            "length": 3340.5,
+            "calls": 380,
+            "ms": 30.94630000000035,
+            "keepCalls": 6351,
+            "patterns": 8039
+          },
+          {
+            "length": 3237.6,
+            "calls": 379,
+            "ms": 24.272300000001366,
+            "keepCalls": 6148,
+            "patterns": 7821
+          },
+          {
+            "length": 1932.2,
+            "calls": 427,
+            "ms": 8.122500000001025,
+            "keepCalls": 936,
+            "patterns": 936
+          },
+          {
+            "length": 1912.8,
+            "calls": 427,
+            "ms": 7.758200000001125,
+            "keepCalls": 936,
+            "patterns": 936
+          },
+          {
+            "length": 1899.2,
+            "calls": 427,
+            "ms": 9.694200000000563,
+            "keepCalls": 936,
+            "patterns": 936
+          },
+          {
+            "length": 1845.4,
+            "calls": 427,
+            "ms": 7.765099999998256,
+            "keepCalls": 936,
+            "patterns": 936
+          },
+          {
+            "length": 1840.4,
+            "calls": 427,
+            "ms": 7.710400000000902,
+            "keepCalls": 936,
+            "patterns": 936
+          },
+          {
+            "length": 1588.2,
+            "calls": 427,
+            "ms": 6.94899999999916,
+            "keepCalls": 675,
+            "patterns": 675
+          },
+          {
+            "length": 1578.4,
+            "calls": 427,
+            "ms": 6.617200000000452,
+            "keepCalls": 675,
+            "patterns": 675
+          },
+          {
+            "length": 1539.2,
+            "calls": 427,
+            "ms": 6.67130000000077,
+            "keepCalls": 675,
+            "patterns": 675
+          },
+          {
+            "length": 1436.3,
+            "calls": 427,
+            "ms": 6.327900000000113,
+            "keepCalls": 601,
+            "patterns": 601
+          },
+          {
+            "length": 1412.4,
+            "calls": 427,
+            "ms": 6.297200000000743,
+            "keepCalls": 601,
+            "patterns": 601
+          },
+          {
+            "length": 1206.6,
+            "calls": 427,
+            "ms": 6.368899999999456,
+            "keepCalls": 601,
+            "patterns": 601
+          },
+          {
+            "length": 1198.1,
+            "calls": 427,
+            "ms": 6.2732999999996935,
+            "keepCalls": 601,
+            "patterns": 601
+          },
+          {
+            "length": 6000,
+            "calls": 427,
+            "ms": 119.49419999999901,
+            "keepCalls": 43235,
+            "patterns": 58846
+          }
+        ]
+      },
+      {
+        "profile": "closingProfile",
+        "color": "gray",
+        "pieces": 2,
+        "lengthCount": 2,
+        "lengths": [
+          {
+            "length": 1758,
+            "quantity": 1
+          },
+          {
+            "length": 2056,
+            "quantity": 1
+          }
+        ],
+        "nearLengths": [],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "closingProfile",
+            "color": "gray",
+            "sourceLength": 3633.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 2
+          },
+          {
+            "source": "remnant",
+            "profileType": "closingProfile",
+            "color": "gray",
+            "sourceLength": 3315,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 2
+          },
+          {
+            "source": "remnant",
+            "profileType": "closingProfile",
+            "color": "gray",
+            "sourceLength": 3147.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 2
+          },
+          {
+            "source": "new",
+            "profileType": "closingProfile",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 2
+          }
+        ],
+        "remnantPhysicalCount": 3,
+        "baselineMs": {
+          "min": 0.516399999999976,
+          "median": 0.6194000000000415,
+          "p95": 0.6893999999999778,
+          "max": 0.6893999999999778,
+          "sum": 1.8251999999999953,
+          "mean": 0.6083999999999984
+        },
+        "beam": {
+          "statesExpanded": 9,
+          "statesGenerated": 35,
+          "statesDeduplicated": 0,
+          "completeSolutionsEvaluated": 27,
+          "maxBeamSize": 8,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 30,
+        "uniqueInputs": 12,
+        "uniqueDemands": 3,
+        "reachable": {
+          "min": 2,
+          "median": 2,
+          "p95": 3,
+          "max": 4,
+          "sum": 65,
+          "mean": 2.1666666666666665
+        },
+        "chunksPerCall": {
+          "min": 1,
+          "median": 1,
+          "p95": 2,
+          "max": 2,
+          "sum": 34,
+          "mean": 1.1333333333333333
+        },
+        "totals": {
+          "chunks": 34,
+          "transitions": 35,
+          "copies": 35,
+          "copiedElements": 44,
+          "keepCalls": 35,
+          "inputPatterns": 35,
+          "uniquePatterns": 35,
+          "retainedPatterns": 35,
+          "capacityKeysSorted": 38,
+          "returned": 35
+        },
+        "maxKeepInput": 1,
+        "maxKeepDistinct": 1,
+        "patternMs": 0.31039999999973134,
+        "repeatedCalls": 18,
+        "repeatedPatternMs": 0.16030000000000655,
+        "timings": {
+          "keepSamples": 0,
+          "copySamples": 0,
+          "copySampleMs": 0,
+          "dedupSampleMs": 0,
+          "sortSampleMs": 0
+        },
+        "sourceWork": [
+          {
+            "length": 3633.5,
+            "calls": 7,
+            "ms": 0.07580000000007203,
+            "keepCalls": 8,
+            "patterns": 8
+          },
+          {
+            "length": 3315,
+            "calls": 7,
+            "ms": 0.07669999999984611,
+            "keepCalls": 8,
+            "patterns": 8
+          },
+          {
+            "length": 3147.6,
+            "calls": 7,
+            "ms": 0.06379999999990105,
+            "keepCalls": 8,
+            "patterns": 8
+          },
+          {
+            "length": 6000,
+            "calls": 9,
+            "ms": 0.09409999999991214,
+            "keepCalls": 11,
+            "patterns": 11
+          }
+        ]
+      },
+      {
+        "profile": "horizontalProfile",
+        "color": "gray",
+        "pieces": 74,
+        "lengthCount": 13,
+        "lengths": [
+          {
+            "length": 488,
+            "quantity": 6
+          },
+          {
+            "length": 563,
+            "quantity": 4
+          },
+          {
+            "length": 581,
+            "quantity": 6
+          },
+          {
+            "length": 585,
+            "quantity": 6
+          },
+          {
+            "length": 634,
+            "quantity": 6
+          },
+          {
+            "length": 638,
+            "quantity": 6
+          },
+          {
+            "length": 640,
+            "quantity": 6
+          },
+          {
+            "length": 643,
+            "quantity": 6
+          },
+          {
+            "length": 717,
+            "quantity": 6
+          },
+          {
+            "length": 906,
+            "quantity": 4
+          },
+          {
+            "length": 1001,
+            "quantity": 6
+          },
+          {
+            "length": 1011,
+            "quantity": 6
+          },
+          {
+            "length": 1046,
+            "quantity": 6
+          }
+        ],
+        "nearLengths": [
+          [
+            581,
+            585
+          ],
+          [
+            634,
+            638
+          ],
+          [
+            638,
+            640
+          ],
+          [
+            640,
+            643
+          ],
+          [
+            1001,
+            1011
+          ]
+        ],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "horizontalProfile",
+            "color": "gray",
+            "sourceLength": 5447.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 39
+          },
+          {
+            "source": "remnant",
+            "profileType": "horizontalProfile",
+            "color": "gray",
+            "sourceLength": 5172.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 39
+          },
+          {
+            "source": "remnant",
+            "profileType": "horizontalProfile",
+            "color": "gray",
+            "sourceLength": 5005.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 39
+          },
+          {
+            "source": "remnant",
+            "profileType": "horizontalProfile",
+            "color": "gray",
+            "sourceLength": 4901.7,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 39
+          },
+          {
+            "source": "new",
+            "profileType": "horizontalProfile",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 39
+          }
+        ],
+        "remnantPhysicalCount": 4,
+        "baselineMs": {
+          "min": 33209.568100000004,
+          "median": 34072.4004,
+          "p95": 36338.5322,
+          "max": 36338.5322,
+          "sum": 103620.5007,
+          "mean": 34540.166900000004
+        },
+        "beam": {
+          "statesExpanded": 201,
+          "statesGenerated": 7677,
+          "statesDeduplicated": 2415,
+          "completeSolutionsEvaluated": 151,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 898,
+        "uniqueInputs": 777,
+        "uniqueDemands": 167,
+        "reachable": {
+          "min": 2,
+          "median": 589,
+          "p95": 3430,
+          "max": 3946,
+          "sum": 1135146,
+          "mean": 1264.0824053452116
+        },
+        "chunksPerCall": {
+          "min": 1,
+          "median": 16,
+          "p95": 36,
+          "max": 39,
+          "sum": 14994,
+          "mean": 16.697104677060132
+        },
+        "totals": {
+          "chunks": 14994,
+          "transitions": 6893183,
+          "copies": 17113286,
+          "copiedElements": 207647074,
+          "keepCalls": 6893183,
+          "inputPatterns": 48565146,
+          "uniquePatterns": 44854331,
+          "retainedPatterns": 36884890,
+          "capacityKeysSorted": 13212782,
+          "returned": 7677
+        },
+        "maxKeepInput": 20,
+        "maxKeepDistinct": 20,
+        "patternMs": 43427.933699999936,
+        "repeatedCalls": 121,
+        "repeatedPatternMs": 1.1497999999628519,
+        "timings": {
+          "keepSamples": 6716,
+          "copySamples": 6716,
+          "copySampleMs": 5.305199999888373,
+          "dedupSampleMs": 37.56689999980358,
+          "sortSampleMs": 5.8831000003890495
+        },
+        "sourceWork": [
+          {
+            "length": 5447.8,
+            "calls": 137,
+            "ms": 7320.94499999998,
+            "keepCalls": 1126081,
+            "patterns": 8217959
+          },
+          {
+            "length": 5172.5,
+            "calls": 183,
+            "ms": 7611.7766999999785,
+            "keepCalls": 1279613,
+            "patterns": 8375527
+          },
+          {
+            "length": 5005.4,
+            "calls": 187,
+            "ms": 6783.8632999999845,
+            "keepCalls": 1181666,
+            "patterns": 7293706
+          },
+          {
+            "length": 4901.7,
+            "calls": 190,
+            "ms": 6584.622900000018,
+            "keepCalls": 1172866,
+            "patterns": 7150284
+          },
+          {
+            "length": 6000,
+            "calls": 201,
+            "ms": 15126.72579999998,
+            "keepCalls": 2132957,
+            "patterns": 17527670
+          }
+        ]
+      },
+      {
+        "profile": "topRail",
+        "color": "gray",
+        "pieces": 13,
+        "lengthCount": 13,
+        "lengths": [
+          {
+            "length": 1115,
+            "quantity": 1
+          },
+          {
+            "length": 1435,
+            "quantity": 1
+          },
+          {
+            "length": 1715,
+            "quantity": 1
+          },
+          {
+            "length": 1725,
+            "quantity": 1
+          },
+          {
+            "length": 1800,
+            "quantity": 1
+          },
+          {
+            "length": 1873,
+            "quantity": 1
+          },
+          {
+            "length": 1885,
+            "quantity": 1
+          },
+          {
+            "length": 1890,
+            "quantity": 1
+          },
+          {
+            "length": 1900,
+            "quantity": 1
+          },
+          {
+            "length": 2123,
+            "quantity": 1
+          },
+          {
+            "length": 2975,
+            "quantity": 1
+          },
+          {
+            "length": 3005,
+            "quantity": 1
+          },
+          {
+            "length": 3110,
+            "quantity": 1
+          }
+        ],
+        "nearLengths": [
+          [
+            1715,
+            1725
+          ],
+          [
+            1885,
+            1890
+          ],
+          [
+            1890,
+            1900
+          ]
+        ],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 4907.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 13
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 4184.3,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 13
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 3858.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 13
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 3799.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 13
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 1675.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 2
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 1085.3,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "new",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 13
+          }
+        ],
+        "remnantPhysicalCount": 6,
+        "baselineMs": {
+          "min": 32.44740000000456,
+          "median": 32.65600000000268,
+          "p95": 33.351300000002084,
+          "max": 33.351300000002084,
+          "sum": 98.45470000000932,
+          "mean": 32.818233333336444
+        },
+        "beam": {
+          "statesExpanded": 101,
+          "statesGenerated": 2512,
+          "statesDeduplicated": 1085,
+          "completeSolutionsEvaluated": 69,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 592,
+        "uniqueInputs": 519,
+        "uniqueDemands": 83,
+        "reachable": {
+          "min": 1,
+          "median": 3,
+          "p95": 49,
+          "max": 215,
+          "sum": 7860,
+          "mean": 13.277027027027026
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 2,
+          "p95": 10,
+          "max": 13,
+          "sum": 2091,
+          "mean": 3.5320945945945947
+        },
+        "totals": {
+          "chunks": 2091,
+          "transitions": 7366,
+          "copies": 7385,
+          "copiedElements": 67277,
+          "keepCalls": 7366,
+          "inputPatterns": 7483,
+          "uniquePatterns": 7483,
+          "retainedPatterns": 7483,
+          "capacityKeysSorted": 22731,
+          "returned": 2512
+        },
+        "maxKeepInput": 2,
+        "maxKeepDistinct": 2,
+        "patternMs": 27.906599999980244,
+        "repeatedCalls": 73,
+        "repeatedPatternMs": 0.5505000000048312,
+        "timings": {
+          "keepSamples": 5,
+          "copySamples": 5,
+          "copySampleMs": 0.0015999999959603883,
+          "dedupSampleMs": 0.007400000009511132,
+          "sortSampleMs": 0.002099999997881241
+        },
+        "sourceWork": [
+          {
+            "length": 4907.5,
+            "calls": 22,
+            "ms": 2.4188000000140164,
+            "keepCalls": 726,
+            "patterns": 737
+          },
+          {
+            "length": 4184.3,
+            "calls": 89,
+            "ms": 4.835000000006403,
+            "keepCalls": 1172,
+            "patterns": 1180
+          },
+          {
+            "length": 3858.8,
+            "calls": 89,
+            "ms": 4.482200000034936,
+            "keepCalls": 1089,
+            "patterns": 1098
+          },
+          {
+            "length": 3799.6,
+            "calls": 89,
+            "ms": 4.35460000000603,
+            "keepCalls": 1053,
+            "patterns": 1062
+          },
+          {
+            "length": 1675.5,
+            "calls": 101,
+            "ms": 1.0626000000338536,
+            "keepCalls": 28,
+            "patterns": 28
+          },
+          {
+            "length": 1085.3,
+            "calls": 101,
+            "ms": 0.9213999999119551,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 6000,
+            "calls": 101,
+            "ms": 9.83199999997305,
+            "keepCalls": 3298,
+            "patterns": 3378
+          }
+        ]
+      },
+      {
+        "profile": "bottomRail",
+        "color": "gray",
+        "pieces": 13,
+        "lengthCount": 13,
+        "lengths": [
+          {
+            "length": 1115,
+            "quantity": 1
+          },
+          {
+            "length": 1435,
+            "quantity": 1
+          },
+          {
+            "length": 1715,
+            "quantity": 1
+          },
+          {
+            "length": 1725,
+            "quantity": 1
+          },
+          {
+            "length": 1800,
+            "quantity": 1
+          },
+          {
+            "length": 1873,
+            "quantity": 1
+          },
+          {
+            "length": 1885,
+            "quantity": 1
+          },
+          {
+            "length": 1890,
+            "quantity": 1
+          },
+          {
+            "length": 1900,
+            "quantity": 1
+          },
+          {
+            "length": 2123,
+            "quantity": 1
+          },
+          {
+            "length": 2975,
+            "quantity": 1
+          },
+          {
+            "length": 3005,
+            "quantity": 1
+          },
+          {
+            "length": 3110,
+            "quantity": 1
+          }
+        ],
+        "nearLengths": [
+          [
+            1715,
+            1725
+          ],
+          [
+            1885,
+            1890
+          ],
+          [
+            1890,
+            1900
+          ]
+        ],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 4184.3,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 13
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 4120.3,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 13
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 3062.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 12
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 2957.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 10
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 2826.7,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 10
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 1619.7,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 2
+          },
+          {
+            "source": "new",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 13
+          }
+        ],
+        "remnantPhysicalCount": 6,
+        "baselineMs": {
+          "min": 32.674299999998766,
+          "median": 32.767399999997,
+          "p95": 33.88690000000497,
+          "max": 33.88690000000497,
+          "sum": 99.32860000000073,
+          "mean": 33.10953333333358
+        },
+        "beam": {
+          "statesExpanded": 101,
+          "statesGenerated": 2496,
+          "statesDeduplicated": 1052,
+          "completeSolutionsEvaluated": 70,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 616,
+        "uniqueInputs": 433,
+        "uniqueDemands": 64,
+        "reachable": {
+          "min": 1,
+          "median": 4,
+          "p95": 41,
+          "max": 215,
+          "sum": 6853,
+          "mean": 11.125
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 3,
+          "p95": 10,
+          "max": 13,
+          "sum": 2192,
+          "mean": 3.5584415584415585
+        },
+        "totals": {
+          "chunks": 2192,
+          "transitions": 6327,
+          "copies": 6358,
+          "copiedElements": 58962,
+          "keepCalls": 6327,
+          "inputPatterns": 6448,
+          "uniquePatterns": 6448,
+          "retainedPatterns": 6448,
+          "capacityKeysSorted": 18975,
+          "returned": 2496
+        },
+        "maxKeepInput": 2,
+        "maxKeepDistinct": 2,
+        "patternMs": 25.206300000041665,
+        "repeatedCalls": 183,
+        "repeatedPatternMs": 5.076300000044284,
+        "timings": {
+          "keepSamples": 3,
+          "copySamples": 3,
+          "copySampleMs": 0.0013000000035390258,
+          "dedupSampleMs": 0.005800000006274786,
+          "sortSampleMs": 0.0012999999962630682
+        },
+        "sourceWork": [
+          {
+            "length": 4184.3,
+            "calls": 63,
+            "ms": 3.5058999999746447,
+            "keepCalls": 870,
+            "patterns": 878
+          },
+          {
+            "length": 4120.3,
+            "calls": 60,
+            "ms": 3.461799999990035,
+            "keepCalls": 892,
+            "patterns": 901
+          },
+          {
+            "length": 3062.5,
+            "calls": 93,
+            "ms": 2.730900000031397,
+            "keepCalls": 466,
+            "patterns": 466
+          },
+          {
+            "length": 2957.5,
+            "calls": 99,
+            "ms": 2.247800000011921,
+            "keepCalls": 331,
+            "patterns": 331
+          },
+          {
+            "length": 2826.7,
+            "calls": 99,
+            "ms": 2.126799999998184,
+            "keepCalls": 304,
+            "patterns": 304
+          },
+          {
+            "length": 1619.7,
+            "calls": 101,
+            "ms": 1.0573000000149477,
+            "keepCalls": 29,
+            "patterns": 29
+          },
+          {
+            "length": 6000,
+            "calls": 101,
+            "ms": 10.075800000020536,
+            "keepCalls": 3435,
+            "patterns": 3539
+          }
+        ]
+      }
+    ],
+    "cpu": {
+      "sampleCount": 24570,
+      "totalMs": 39194.384,
+      "self": [
+        {
+          "name": "keepDistinctPatterns@app.js:2946",
+          "ms": 29350.678,
+          "percent": 74.8849069805511
+        },
+        {
+          "name": "findCandidatePatternsDP@app.js:2828",
+          "ms": 6174.686,
+          "percent": 15.75400700263589
+        },
+        {
+          "name": "findMaterialSourceCandidates@app.js:1627",
+          "ms": 1317.364,
+          "percent": 3.361103978569991
+        },
+        {
+          "name": "(garbage collector)@:0",
+          "ms": 1111.414,
+          "percent": 2.8356460456171475
+        },
+        {
+          "name": "compareQuantities@app.js:2932",
+          "ms": 512.565,
+          "percent": 1.307751130876301
+        },
+        {
+          "name": "optimizeOrderInventoryBeamDP@app.js:6200",
+          "ms": 113.502,
+          "percent": 0.2895874061957448
+        },
+        {
+          "name": "hasSupportedMillimeterPrecision@src/cutting-physics.js:6",
+          "ms": 104.036,
+          "percent": 0.26543598695160003
+        },
+        {
+          "name": "(anonymous)@app.js:2979",
+          "ms": 66.135,
+          "percent": 0.16873590869549066
+        },
+        {
+          "name": "(program)@:0",
+          "ms": 62.171,
+          "percent": 0.15862221485608755
+        },
+        {
+          "name": "(anonymous)@app.js:6408",
+          "ms": 60.004,
+          "percent": 0.15309336153873473
+        },
+        {
+          "name": "getStateKey@app.js:6377",
+          "ms": 58.504,
+          "percent": 0.1492662826388597
+        },
+        {
+          "name": "compareStates@app.js:6432",
+          "ms": 56.875,
+          "percent": 0.1451100749535954
+        },
+        {
+          "name": "post@node:inspector:115",
+          "ms": 37.563,
+          "percent": 0.09583770981067083
+        },
+        {
+          "name": "getBarsKey@app.js:6405",
+          "ms": 31.556,
+          "percent": 0.08051153450963791
+        },
+        {
+          "name": "subtractPattern@app.js:6288",
+          "ms": 29.384,
+          "percent": 0.07496992426261885
+        },
+        {
+          "name": "cutPiece@src/cutting-physics.js:39",
+          "ms": 18.233,
+          "percent": 0.04651941972094777
+        },
+        {
+          "name": "(anonymous)@app.js:6387",
+          "ms": 16.491,
+          "percent": 0.04207490542522623
+        },
+        {
+          "name": "(anonymous)@app.js:1709",
+          "ms": 14.646,
+          "percent": 0.037367598378379926
+        },
+        {
+          "name": "(anonymous)@app.js:3015",
+          "ms": 12.766,
+          "percent": 0.03257099282386987
+        },
+        {
+          "name": "millimetersToDpUnits@src/cutting-physics.js:14",
+          "ms": 6.463,
+          "percent": 0.01648960728659494
+        },
+        {
+          "name": "copyItems@app.js:6241",
+          "ms": 3.438,
+          "percent": 0.0087716648385136
+        },
+        {
+          "name": "createState@app.js:6491",
+          "ms": 3.363,
+          "percent": 0.008580310893519847
+        },
+        {
+          "name": "(anonymous)@app.js:6623",
+          "ms": 3.268,
+          "percent": 0.008337929229861095
+        },
+        {
+          "name": "schedule@src/production-planning.js:131",
+          "ms": 3.214,
+          "percent": 0.008200154389465593
+        },
+        {
+          "name": "(anonymous)@app.js:6381",
+          "ms": 3.198,
+          "percent": 0.008159332214533592
+        },
+        {
+          "name": "optimizeOrderByProfileTypeWithInventory@app.js:7307",
+          "ms": 2.913,
+          "percent": 0.007432187223557334
+        },
+        {
+          "name": "(anonymous)@src/production-planning.js:191",
+          "ms": 2.449,
+          "percent": 0.006248344150529321
+        },
+        {
+          "name": "scoreCompleteMaterialTransitionPlan@app.js:3938",
+          "ms": 2.206,
+          "percent": 0.0056283573687495635
+        },
+        {
+          "name": "dispatch@:0",
+          "ms": 1.736,
+          "percent": 0.004429205980122051
+        },
+        {
+          "name": "(anonymous)@src/production-planning.js:89",
+          "ms": 1.733,
+          "percent": 0.004421551822322301
+        },
+        {
+          "name": "consumeMaterialSource@app.js:1703",
+          "ms": 1.615,
+          "percent": 0.004120488282198797
+        },
+        {
+          "name": "(anonymous)@app.js:1715",
+          "ms": 1.597,
+          "percent": 0.004074563335400296
+        },
+        {
+          "name": "(anonymous)@app.js:6412",
+          "ms": 1.564,
+          "percent": 0.003990367599603045
+        },
+        {
+          "name": "(anonymous)@app.js:2978",
+          "ms": 1.55,
+          "percent": 0.003954648196537545
+        },
+        {
+          "name": "createRailPairIndex@src/production-planning.js:114",
+          "ms": 1.456,
+          "percent": 0.003714817918812042
+        }
+      ],
+      "inclusive": [
+        {
+          "name": "(root)",
+          "ms": 39194.384,
+          "percent": 100
+        },
+        {
+          "name": "(anonymous)",
+          "ms": 37991.293,
+          "percent": 96.9304505461803
+        },
+        {
+          "name": "run",
+          "ms": 37983.843,
+          "percent": 96.91144272097758
+        },
+        {
+          "name": "runInContext",
+          "ms": 37942.437,
+          "percent": 96.80580003502543
+        },
+        {
+          "name": "optimizeOrderByProfileTypeWithInventory",
+          "ms": 37929.734,
+          "percent": 96.77338977951536
+        },
+        {
+          "name": "optimizeOrderInventoryBeamDP",
+          "ms": 37926.531,
+          "percent": 96.76521769037116
+        },
+        {
+          "name": "findMaterialSourceCandidates",
+          "ms": 37525.922,
+          "percent": 95.74310952303779
+        },
+        {
+          "name": "findCandidatePatternsDP",
+          "ms": 36208.558,
+          "percent": 92.3820055444678
+        },
+        {
+          "name": "keepDistinctPatterns",
+          "ms": 29835.844,
+          "percent": 76.12275268824227
+        },
+        {
+          "name": "(garbage collector)",
+          "ms": 1111.414,
+          "percent": 2.8356460456171475
+        },
+        {
+          "name": "compareQuantities",
+          "ms": 512.565,
+          "percent": 1.307751130876301
+        },
+        {
+          "name": "compareStates",
+          "ms": 149.999,
+          "percent": 0.3827053386015711
+        },
+        {
+          "name": "cutPiece",
+          "ms": 111.006,
+          "percent": 0.2832191469063527
+        },
+        {
+          "name": "millimetersToDpUnits",
+          "ms": 110.499,
+          "percent": 0.28192559423819497
+        },
+        {
+          "name": "hasSupportedMillimeterPrecision",
+          "ms": 104.036,
+          "percent": 0.26543598695160003
+        },
+        {
+          "name": "getBarsKey",
+          "ms": 93.124,
+          "percent": 0.2375952636479757
+        },
+        {
+          "name": "getStateKey",
+          "ms": 78.193,
+          "percent": 0.19950052027861953
+        },
+        {
+          "name": "(program)",
+          "ms": 62.171,
+          "percent": 0.15862221485608755
+        },
+        {
+          "name": "post",
+          "ms": 39.299,
+          "percent": 0.10026691579079287
+        },
+        {
+          "name": "subtractPattern",
+          "ms": 32.822,
+          "percent": 0.08374158910113245
+        },
+        {
+          "name": "createProductionExecution",
+          "ms": 10.487,
+          "percent": 0.02675638428199305
+        },
+        {
+          "name": "schedule",
+          "ms": 8.754,
+          "percent": 0.022334832459670752
+        },
+        {
+          "name": "copyItems",
+          "ms": 3.438,
+          "percent": 0.0087716648385136
+        },
+        {
+          "name": "createState",
+          "ms": 3.379,
+          "percent": 0.008621133068451846
+        },
+        {
+          "name": "scoreCompleteMaterialTransitionPlan",
+          "ms": 2.206,
+          "percent": 0.0056283573687495635
+        }
+      ],
+      "positionTicks": [
+        {
+          "frame": {
+            "functionName": "findCandidatePatternsDP",
+            "scriptId": "159",
+            "url": "app.js",
+            "lineNumber": 2827,
+            "columnNumber": 32
+          },
+          "hitCount": 3871,
+          "positionTicks": [
+            {
+              "line": 70,
+              "ticks": 1
+            },
+            {
+              "line": 2915,
+              "ticks": 7
+            },
+            {
+              "line": 2979,
+              "ticks": 289
+            },
+            {
+              "line": 3003,
+              "ticks": 152
+            },
+            {
+              "line": 2990,
+              "ticks": 139
+            },
+            {
+              "line": 3014,
+              "ticks": 4
+            },
+            {
+              "line": 2956,
+              "ticks": 23
+            },
+            {
+              "line": 2828,
+              "ticks": 17
+            },
+            {
+              "line": 3076,
+              "ticks": 3
+            },
+            {
+              "line": 3001,
+              "ticks": 167
+            },
+            {
+              "line": 3055,
+              "ticks": 7
+            },
+            {
+              "line": 2951,
+              "ticks": 207
+            },
+            {
+              "line": 3015,
+              "ticks": 50
+            },
+            {
+              "line": 2849,
+              "ticks": 3
+            },
+            {
+              "line": 2977,
+              "ticks": 66
+            },
+            {
+              "line": 2978,
+              "ticks": 32
+            },
+            {
+              "line": 2841,
+              "ticks": 1
+            },
+            {
+              "line": 2905,
+              "ticks": 2
+            },
+            {
+              "line": 3023,
+              "ticks": 9
+            },
+            {
+              "line": 2901,
+              "ticks": 3
+            },
+            {
+              "line": 2907,
+              "ticks": 1
+            },
+            {
+              "line": 3013,
+              "ticks": 2
+            },
+            {
+              "line": 76,
+              "ticks": 1
+            },
+            {
+              "line": 3083,
+              "ticks": 3
+            },
+            {
+              "line": 3002,
+              "ticks": 737
+            },
+            {
+              "line": 2881,
+              "ticks": 6
+            },
+            {
+              "line": 2970,
+              "ticks": 8
+            },
+            {
+              "line": 2968,
+              "ticks": 1
+            },
+            {
+              "line": 2953,
+              "ticks": 668
+            },
+            {
+              "line": 2889,
+              "ticks": 2
+            },
+            {
+              "line": 3010,
+              "ticks": 2
+            },
+            {
+              "line": 2963,
+              "ticks": 32
+            },
+            {
+              "line": 2835,
+              "ticks": 4
+            },
+            {
+              "line": 2857,
+              "ticks": 1
+            },
+            {
+              "line": 2962,
+              "ticks": 14
+            },
+            {
+              "line": 2981,
+              "ticks": 299
+            },
+            {
+              "line": 2957,
+              "ticks": 63
+            },
+            {
+              "line": 2992,
+              "ticks": 716
+            },
+            {
+              "line": 2866,
+              "ticks": 1
+            },
+            {
+              "line": 2994,
+              "ticks": 40
+            },
+            {
+              "line": 2995,
+              "ticks": 5
+            },
+            {
+              "line": 2964,
+              "ticks": 11
+            },
+            {
+              "line": 3050,
+              "ticks": 1
+            },
+            {
+              "line": 2986,
+              "ticks": 1
+            },
+            {
+              "line": 2948,
+              "ticks": 35
+            },
+            {
+              "line": 2997,
+              "ticks": 25
+            },
+            {
+              "line": 2973,
+              "ticks": 1
+            },
+            {
+              "line": 2987,
+              "ticks": 5
+            },
+            {
+              "line": 3039,
+              "ticks": 2
+            },
+            {
+              "line": 3036,
+              "ticks": 1
+            },
+            {
+              "line": 2920,
+              "ticks": 1
+            }
+          ]
+        },
+        {
+          "frame": {
+            "functionName": "keepDistinctPatterns",
+            "scriptId": "159",
+            "url": "app.js",
+            "lineNumber": 2945,
+            "columnNumber": 33
+          },
+          "hitCount": 18400,
+          "positionTicks": [
+            {
+              "line": 2962,
+              "ticks": 125
+            },
+            {
+              "line": 2946,
+              "ticks": 4
+            },
+            {
+              "line": 2964,
+              "ticks": 139
+            },
+            {
+              "line": 2948,
+              "ticks": 1239
+            },
+            {
+              "line": 2956,
+              "ticks": 1815
+            },
+            {
+              "line": 2953,
+              "ticks": 13070
+            },
+            {
+              "line": 2963,
+              "ticks": 1109
+            },
+            {
+              "line": 2957,
+              "ticks": 897
+            },
+            {
+              "line": 2951,
+              "ticks": 2
+            }
+          ]
+        },
+        {
+          "frame": {
+            "functionName": "compareQuantities",
+            "scriptId": "159",
+            "url": "app.js",
+            "lineNumber": 2931,
+            "columnNumber": 30
+          },
+          "hitCount": 305,
+          "positionTicks": [
+            {
+              "line": 2936,
+              "ticks": 105
+            },
+            {
+              "line": 2932,
+              "ticks": 26
+            },
+            {
+              "line": 2934,
+              "ticks": 84
+            },
+            {
+              "line": 2942,
+              "ticks": 42
+            },
+            {
+              "line": 2937,
+              "ticks": 48
+            }
+          ]
+        },
+        {
+          "frame": {
+            "functionName": "compareQuantities",
+            "scriptId": "159",
+            "url": "app.js",
+            "lineNumber": 2931,
+            "columnNumber": 30
+          },
+          "hitCount": 17,
+          "positionTicks": [
+            {
+              "line": 2942,
+              "ticks": 6
+            },
+            {
+              "line": 2932,
+              "ticks": 11
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "fast": {
+    "ids": [
+      1,
+      4,
+      17,
+      18
+    ],
+    "score": 425770.0462349256,
+    "planHash": "588c354271bd9c3ecb79a40cfc99da2e97c202b1d2516cf810fc412fac2559b1",
+    "baselineMs": [
+      2431.0371999999998,
+      2323.1634,
+      2315.4280000000003
+    ],
+    "materialMedianMs": 2308.6549,
+    "countRunMs": 3524.2999,
+    "sampleRunMs": 4125.1815,
+    "schedulerMedianMs": 11.53229999999985,
+    "variants": [
+      {
+        "profile": "uProfile",
+        "color": "gray",
+        "pieces": 20,
+        "lengthCount": 7,
+        "lengths": [
+          {
+            "length": 2451,
+            "quantity": 2
+          },
+          {
+            "length": 2477,
+            "quantity": 6
+          },
+          {
+            "length": 2712,
+            "quantity": 2
+          },
+          {
+            "length": 2784,
+            "quantity": 2
+          },
+          {
+            "length": 2790,
+            "quantity": 2
+          },
+          {
+            "length": 2792,
+            "quantity": 4
+          },
+          {
+            "length": 2809,
+            "quantity": 2
+          }
+        ],
+        "nearLengths": [
+          [
+            2784,
+            2790
+          ],
+          [
+            2790,
+            2792
+          ]
+        ],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 3988.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 7
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 2591.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 2
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 1936.9,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 1209.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 1180.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "new",
+            "profileType": "uProfile",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 14
+          }
+        ],
+        "remnantPhysicalCount": 5,
+        "baselineMs": {
+          "min": 48.3385,
+          "median": 48.4703,
+          "p95": 56.0941,
+          "max": 56.0941,
+          "sum": 152.9029,
+          "mean": 50.96763333333333
+        },
+        "beam": {
+          "statesExpanded": 200,
+          "statesGenerated": 2502,
+          "statesDeduplicated": 1271,
+          "completeSolutionsEvaluated": 51,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 1171,
+        "uniqueInputs": 1087,
+        "uniqueDemands": 182,
+        "reachable": {
+          "min": 1,
+          "median": 1,
+          "p95": 20,
+          "max": 36,
+          "sum": 4940,
+          "mean": 4.218616567036721
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 0,
+          "p95": 9,
+          "max": 14,
+          "sum": 2305,
+          "mean": 1.968403074295474
+        },
+        "totals": {
+          "chunks": 2305,
+          "transitions": 5351,
+          "copies": 5351,
+          "copiedElements": 28152,
+          "keepCalls": 5351,
+          "inputPatterns": 6933,
+          "uniquePatterns": 5351,
+          "retainedPatterns": 5351,
+          "capacityKeysSorted": 12926,
+          "returned": 2502
+        },
+        "maxKeepInput": 2,
+        "maxKeepDistinct": 1,
+        "patternMs": 36.00799999999967,
+        "repeatedCalls": 84,
+        "repeatedPatternMs": 1.2803999999999718,
+        "timings": {
+          "keepSamples": 4,
+          "copySamples": 4,
+          "copySampleMs": 0.015699999999995384,
+          "dedupSampleMs": 0.014000000000010004,
+          "sortSampleMs": 0.008900000000011232
+        },
+        "sourceWork": [
+          {
+            "length": 3988.2,
+            "calls": 183,
+            "ms": 6.904800000000009,
+            "keepCalls": 705,
+            "patterns": 705
+          },
+          {
+            "length": 2591.5,
+            "calls": 188,
+            "ms": 4.105899999999906,
+            "keepCalls": 325,
+            "patterns": 325
+          },
+          {
+            "length": 1936.9,
+            "calls": 200,
+            "ms": 1.7845999999999833,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1209.2,
+            "calls": 200,
+            "ms": 1.7045999999999992,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1180.2,
+            "calls": 200,
+            "ms": 1.6479999999998682,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 6000,
+            "calls": 200,
+            "ms": 19.860099999999903,
+            "keepCalls": 4321,
+            "patterns": 5903
+          }
+        ]
+      },
+      {
+        "profile": "uProfile",
+        "color": "black",
+        "pieces": 8,
+        "lengthCount": 4,
+        "lengths": [
+          {
+            "length": 2060,
+            "quantity": 2
+          },
+          {
+            "length": 2316,
+            "quantity": 2
+          },
+          {
+            "length": 2322,
+            "quantity": 2
+          },
+          {
+            "length": 2325,
+            "quantity": 2
+          }
+        ],
+        "nearLengths": [
+          [
+            2316,
+            2322
+          ],
+          [
+            2322,
+            2325
+          ]
+        ],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 3896.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 3882.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 3809.9,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 2900.1,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 1959.7,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 1910.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 1886.1,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 1705.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 1424.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 1408,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 1355.3,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 1336.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 1332.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "new",
+            "profileType": "uProfile",
+            "color": "black",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 8
+          }
+        ],
+        "remnantPhysicalCount": 13,
+        "baselineMs": {
+          "min": 19.663900000000012,
+          "median": 19.87100000000001,
+          "p95": 23.00840000000001,
+          "max": 23.00840000000001,
+          "sum": 62.54330000000003,
+          "mean": 20.847766666666676
+        },
+        "beam": {
+          "statesExpanded": 81,
+          "statesGenerated": 1109,
+          "statesDeduplicated": 669,
+          "completeSolutionsEvaluated": 94,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 1097,
+        "uniqueInputs": 713,
+        "uniqueDemands": 51,
+        "reachable": {
+          "min": 1,
+          "median": 1,
+          "p95": 5,
+          "max": 15,
+          "sum": 2252,
+          "mean": 2.0528714676390156
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 0,
+          "p95": 4,
+          "max": 8,
+          "sum": 974,
+          "mean": 0.8878760255241568
+        },
+        "totals": {
+          "chunks": 974,
+          "transitions": 1372,
+          "copies": 1372,
+          "copiedElements": 4206,
+          "keepCalls": 1372,
+          "inputPatterns": 1589,
+          "uniquePatterns": 1372,
+          "retainedPatterns": 1372,
+          "capacityKeysSorted": 2448,
+          "returned": 1109
+        },
+        "maxKeepInput": 2,
+        "maxKeepDistinct": 1,
+        "patternMs": 12.224499999999438,
+        "repeatedCalls": 384,
+        "repeatedPatternMs": 3.5716999999999643,
+        "timings": {
+          "keepSamples": 0,
+          "copySamples": 0,
+          "copySampleMs": 0,
+          "dedupSampleMs": 0,
+          "sortSampleMs": 0
+        },
+        "sourceWork": [
+          {
+            "length": 3896.4,
+            "calls": 73,
+            "ms": 1.2717000000000667,
+            "keepCalls": 175,
+            "patterns": 175
+          },
+          {
+            "length": 3882.4,
+            "calls": 73,
+            "ms": 1.188999999999794,
+            "keepCalls": 175,
+            "patterns": 175
+          },
+          {
+            "length": 3809.9,
+            "calls": 71,
+            "ms": 1.0938999999999623,
+            "keepCalls": 169,
+            "patterns": 169
+          },
+          {
+            "length": 2900.1,
+            "calls": 70,
+            "ms": 1.1928999999999519,
+            "keepCalls": 166,
+            "patterns": 166
+          },
+          {
+            "length": 1959.7,
+            "calls": 81,
+            "ms": 0.488099999999946,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1910.6,
+            "calls": 81,
+            "ms": 0.4989999999999668,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1886.1,
+            "calls": 81,
+            "ms": 0.47939999999996985,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1705.5,
+            "calls": 81,
+            "ms": 0.4788999999999817,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1424.4,
+            "calls": 81,
+            "ms": 0.47770000000008395,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1408,
+            "calls": 81,
+            "ms": 0.4955999999998255,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1355.3,
+            "calls": 81,
+            "ms": 0.4844999999999118,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1336.6,
+            "calls": 81,
+            "ms": 0.4865999999998678,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1332.2,
+            "calls": 81,
+            "ms": 0.47740000000004557,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 6000,
+            "calls": 81,
+            "ms": 3.109800000000064,
+            "keepCalls": 687,
+            "patterns": 904
+          }
+        ]
+      },
+      {
+        "profile": "verticalProfile",
+        "color": "gray",
+        "pieces": 50,
+        "lengthCount": 7,
+        "lengths": [
+          {
+            "length": 2344,
+            "quantity": 5
+          },
+          {
+            "length": 2370,
+            "quantity": 17
+          },
+          {
+            "length": 2605,
+            "quantity": 7
+          },
+          {
+            "length": 2677,
+            "quantity": 4
+          },
+          {
+            "length": 2683,
+            "quantity": 4
+          },
+          {
+            "length": 2685,
+            "quantity": 8
+          },
+          {
+            "length": 2702,
+            "quantity": 5
+          }
+        ],
+        "nearLengths": [
+          [
+            2677,
+            2683
+          ],
+          [
+            2683,
+            2685
+          ]
+        ],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 3944.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 7
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 3340.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 7
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 3237.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 7
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1932.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1912.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1899.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1845.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1840.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1588.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1578.4,
+            "unlimited": false,
+            "quantity": 2,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1539.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1436.3,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1412.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1206.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 1198.1,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "new",
+            "profileType": "verticalProfile",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 14
+          }
+        ],
+        "remnantPhysicalCount": 16,
+        "baselineMs": {
+          "min": 215.2362,
+          "median": 216.13830000000002,
+          "p95": 237.06780000000003,
+          "max": 237.06780000000003,
+          "sum": 668.4423,
+          "mean": 222.81410000000002
+        },
+        "beam": {
+          "statesExpanded": 501,
+          "statesGenerated": 10092,
+          "statesDeduplicated": 4731,
+          "completeSolutionsEvaluated": 73,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 7977,
+        "uniqueInputs": 7630,
+        "uniqueDemands": 477,
+        "reachable": {
+          "min": 1,
+          "median": 1,
+          "p95": 8,
+          "max": 36,
+          "sum": 21778,
+          "mean": 2.7300990347248337
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 0,
+          "p95": 7,
+          "max": 14,
+          "sum": 9744,
+          "mean": 1.2215118465588568
+        },
+        "totals": {
+          "chunks": 9744,
+          "transitions": 18876,
+          "copies": 18876,
+          "copiedElements": 100442,
+          "keepCalls": 18876,
+          "inputPatterns": 23951,
+          "uniquePatterns": 18876,
+          "retainedPatterns": 18876,
+          "capacityKeysSorted": 50231,
+          "returned": 10092
+        },
+        "maxKeepInput": 2,
+        "maxKeepDistinct": 1,
+        "patternMs": 137.3969,
+        "repeatedCalls": 347,
+        "repeatedPatternMs": 3.8541000000004715,
+        "timings": {
+          "keepSamples": 24,
+          "copySamples": 24,
+          "copySampleMs": 0.010699999999928878,
+          "dedupSampleMs": 0.0397999999999854,
+          "sortSampleMs": 0.05290000000010764
+        },
+        "sourceWork": [
+          {
+            "length": 3944.2,
+            "calls": 490,
+            "ms": 13.757000000000346,
+            "keepCalls": 2024,
+            "patterns": 2024
+          },
+          {
+            "length": 3340.5,
+            "calls": 488,
+            "ms": 13.504199999999543,
+            "keepCalls": 2022,
+            "patterns": 2022
+          },
+          {
+            "length": 3237.6,
+            "calls": 486,
+            "ms": 12.60109999999986,
+            "keepCalls": 2013,
+            "patterns": 2013
+          },
+          {
+            "length": 1932.2,
+            "calls": 501,
+            "ms": 4.243199999999973,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1912.8,
+            "calls": 501,
+            "ms": 4.135299999999489,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1899.2,
+            "calls": 501,
+            "ms": 4.156700000000512,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1845.4,
+            "calls": 501,
+            "ms": 4.216599999999858,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1840.4,
+            "calls": 501,
+            "ms": 4.287100000000208,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1588.2,
+            "calls": 501,
+            "ms": 4.136600000000072,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1578.4,
+            "calls": 501,
+            "ms": 4.133400000000194,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1539.2,
+            "calls": 501,
+            "ms": 4.090600000000052,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1436.3,
+            "calls": 501,
+            "ms": 4.1353000000003135,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1412.4,
+            "calls": 501,
+            "ms": 4.107899999998978,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1206.6,
+            "calls": 501,
+            "ms": 4.178899999999459,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1198.1,
+            "calls": 501,
+            "ms": 4.086200000000389,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 6000,
+            "calls": 501,
+            "ms": 47.62680000000074,
+            "keepCalls": 12817,
+            "patterns": 17892
+          }
+        ]
+      },
+      {
+        "profile": "verticalProfile",
+        "color": "black",
+        "pieces": 18,
+        "lengthCount": 4,
+        "lengths": [
+          {
+            "length": 1953,
+            "quantity": 2
+          },
+          {
+            "length": 2209,
+            "quantity": 4
+          },
+          {
+            "length": 2215,
+            "quantity": 6
+          },
+          {
+            "length": 2218,
+            "quantity": 6
+          }
+        ],
+        "nearLengths": [
+          [
+            2209,
+            2215
+          ],
+          [
+            2215,
+            2218
+          ]
+        ],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 4413,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 5
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 4065,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 5
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 3965.9,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 5
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 3953.1,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 5
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 3896.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 2996.1,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 2995.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 2982.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1980.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 1
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1973.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 1
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1925.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1901.7,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1863.4,
+            "unlimited": false,
+            "quantity": 2,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1618.1,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1615.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1596,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1582.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1576.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1555.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "remnant",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 1205.7,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "new",
+            "profileType": "verticalProfile",
+            "color": "black",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 8
+          }
+        ],
+        "remnantPhysicalCount": 21,
+        "baselineMs": {
+          "min": 107.8646,
+          "median": 108.80159999999995,
+          "p95": 123.4966,
+          "max": 123.4966,
+          "sum": 340.16279999999995,
+          "mean": 113.38759999999998
+        },
+        "beam": {
+          "statesExpanded": 181,
+          "statesGenerated": 5525,
+          "statesDeduplicated": 2571,
+          "completeSolutionsEvaluated": 165,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 3600,
+        "uniqueInputs": 2795,
+        "uniqueDemands": 139,
+        "reachable": {
+          "min": 1,
+          "median": 1,
+          "p95": 5,
+          "max": 15,
+          "sum": 9337,
+          "mean": 2.593611111111111
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 0,
+          "p95": 4,
+          "max": 8,
+          "sum": 5039,
+          "mean": 1.3997222222222223
+        },
+        "totals": {
+          "chunks": 5039,
+          "transitions": 6446,
+          "copies": 6446,
+          "copiedElements": 22479,
+          "keepCalls": 6446,
+          "inputPatterns": 7155,
+          "uniquePatterns": 6446,
+          "retainedPatterns": 6446,
+          "capacityKeysSorted": 12786,
+          "returned": 5525
+        },
+        "maxKeepInput": 2,
+        "maxKeepDistinct": 1,
+        "patternMs": 55.32770000000056,
+        "repeatedCalls": 805,
+        "repeatedPatternMs": 8.761299999998073,
+        "timings": {
+          "keepSamples": 8,
+          "copySamples": 8,
+          "copySampleMs": 0.013500000000135515,
+          "dedupSampleMs": 0.012499999999874944,
+          "sortSampleMs": 0.0026000000000294676
+        },
+        "sourceWork": [
+          {
+            "length": 4413,
+            "calls": 24,
+            "ms": 0.9952999999999292,
+            "keepCalls": 174,
+            "patterns": 214
+          },
+          {
+            "length": 4065,
+            "calls": 175,
+            "ms": 3.8722999999993704,
+            "keepCalls": 556,
+            "patterns": 566
+          },
+          {
+            "length": 3965.9,
+            "calls": 175,
+            "ms": 5.402099999999507,
+            "keepCalls": 556,
+            "patterns": 566
+          },
+          {
+            "length": 3953.1,
+            "calls": 174,
+            "ms": 3.508699999999635,
+            "keepCalls": 553,
+            "patterns": 563
+          },
+          {
+            "length": 3896.5,
+            "calls": 176,
+            "ms": 3.4545000000001096,
+            "keepCalls": 541,
+            "patterns": 541
+          },
+          {
+            "length": 2996.1,
+            "calls": 175,
+            "ms": 3.4910999999995056,
+            "keepCalls": 537,
+            "patterns": 537
+          },
+          {
+            "length": 2995.2,
+            "calls": 175,
+            "ms": 3.538400000000081,
+            "keepCalls": 537,
+            "patterns": 537
+          },
+          {
+            "length": 2982.4,
+            "calls": 175,
+            "ms": 3.4398000000006164,
+            "keepCalls": 537,
+            "patterns": 537
+          },
+          {
+            "length": 1980.5,
+            "calls": 180,
+            "ms": 1.8157999999996832,
+            "keepCalls": 137,
+            "patterns": 137
+          },
+          {
+            "length": 1973.8,
+            "calls": 180,
+            "ms": 1.8175000000000523,
+            "keepCalls": 137,
+            "patterns": 137
+          },
+          {
+            "length": 1925.8,
+            "calls": 181,
+            "ms": 1.2481000000003633,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1901.7,
+            "calls": 181,
+            "ms": 1.2414999999995189,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1863.4,
+            "calls": 181,
+            "ms": 1.2261999999996647,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1618.1,
+            "calls": 181,
+            "ms": 1.2841999999999985,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1615.2,
+            "calls": 181,
+            "ms": 1.2533999999997718,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1596,
+            "calls": 181,
+            "ms": 1.220900000000313,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1582.6,
+            "calls": 181,
+            "ms": 1.2217000000007374,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1576.6,
+            "calls": 181,
+            "ms": 1.2269000000003416,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1555.8,
+            "calls": 181,
+            "ms": 1.2299000000003844,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 1205.7,
+            "calls": 181,
+            "ms": 2.8201000000004797,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 6000,
+            "calls": 181,
+            "ms": 10.019300000000499,
+            "keepCalls": 2181,
+            "patterns": 2820
+          }
+        ]
+      },
+      {
+        "profile": "closingProfile",
+        "color": "gray",
+        "pieces": 4,
+        "lengthCount": 4,
+        "lengths": [
+          {
+            "length": 2344,
+            "quantity": 1
+          },
+          {
+            "length": 2370,
+            "quantity": 1
+          },
+          {
+            "length": 2605,
+            "quantity": 1
+          },
+          {
+            "length": 2702,
+            "quantity": 1
+          }
+        ],
+        "nearLengths": [],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "closingProfile",
+            "color": "gray",
+            "sourceLength": 3633.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "closingProfile",
+            "color": "gray",
+            "sourceLength": 3315,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "closingProfile",
+            "color": "gray",
+            "sourceLength": 3147.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "new",
+            "profileType": "closingProfile",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 4
+          }
+        ],
+        "remnantPhysicalCount": 3,
+        "baselineMs": {
+          "min": 4.09559999999999,
+          "median": 4.448199999999986,
+          "p95": 5.47709999999995,
+          "max": 5.47709999999995,
+          "sum": 14.020899999999926,
+          "mean": 4.673633333333309
+        },
+        "beam": {
+          "statesExpanded": 51,
+          "statesGenerated": 339,
+          "statesDeduplicated": 171,
+          "completeSolutionsEvaluated": 79,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 149,
+        "uniqueInputs": 60,
+        "uniqueDemands": 15,
+        "reachable": {
+          "min": 2,
+          "median": 3,
+          "p95": 7,
+          "max": 11,
+          "sum": 488,
+          "mean": 3.2751677852348995
+        },
+        "chunksPerCall": {
+          "min": 1,
+          "median": 2,
+          "p95": 3,
+          "max": 4,
+          "sum": 281,
+          "mean": 1.8859060402684564
+        },
+        "totals": {
+          "chunks": 281,
+          "transitions": 339,
+          "copies": 339,
+          "copiedElements": 827,
+          "keepCalls": 339,
+          "inputPatterns": 339,
+          "uniquePatterns": 339,
+          "retainedPatterns": 339,
+          "capacityKeysSorted": 487,
+          "returned": 339
+        },
+        "maxKeepInput": 1,
+        "maxKeepDistinct": 1,
+        "patternMs": 2.1323000000003276,
+        "repeatedCalls": 89,
+        "repeatedPatternMs": 1.1867000000004282,
+        "timings": {
+          "keepSamples": 0,
+          "copySamples": 0,
+          "copySampleMs": 0,
+          "dedupSampleMs": 0,
+          "sortSampleMs": 0
+        },
+        "sourceWork": [
+          {
+            "length": 3633.5,
+            "calls": 34,
+            "ms": 0.4498999999999569,
+            "keepCalls": 65,
+            "patterns": 65
+          },
+          {
+            "length": 3315,
+            "calls": 32,
+            "ms": 0.40640000000007603,
+            "keepCalls": 62,
+            "patterns": 62
+          },
+          {
+            "length": 3147.6,
+            "calls": 32,
+            "ms": 0.40019999999981337,
+            "keepCalls": 62,
+            "patterns": 62
+          },
+          {
+            "length": 6000,
+            "calls": 51,
+            "ms": 0.8758000000004813,
+            "keepCalls": 150,
+            "patterns": 150
+          }
+        ]
+      },
+      {
+        "profile": "horizontalProfile",
+        "color": "gray",
+        "pieces": 54,
+        "lengthCount": 9,
+        "lengths": [
+          {
+            "length": 616,
+            "quantity": 4
+          },
+          {
+            "length": 684,
+            "quantity": 8
+          },
+          {
+            "length": 705,
+            "quantity": 4
+          },
+          {
+            "length": 762,
+            "quantity": 6
+          },
+          {
+            "length": 807,
+            "quantity": 6
+          },
+          {
+            "length": 880,
+            "quantity": 8
+          },
+          {
+            "length": 923,
+            "quantity": 6
+          },
+          {
+            "length": 1047,
+            "quantity": 6
+          },
+          {
+            "length": 1136,
+            "quantity": 6
+          }
+        ],
+        "nearLengths": [],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "horizontalProfile",
+            "color": "gray",
+            "sourceLength": 5447.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 27
+          },
+          {
+            "source": "remnant",
+            "profileType": "horizontalProfile",
+            "color": "gray",
+            "sourceLength": 5172.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 27
+          },
+          {
+            "source": "remnant",
+            "profileType": "horizontalProfile",
+            "color": "gray",
+            "sourceLength": 5005.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 27
+          },
+          {
+            "source": "remnant",
+            "profileType": "horizontalProfile",
+            "color": "gray",
+            "sourceLength": 4901.7,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 27
+          },
+          {
+            "source": "new",
+            "profileType": "horizontalProfile",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 28
+          }
+        ],
+        "remnantPhysicalCount": 4,
+        "baselineMs": {
+          "min": 1834.9820000000002,
+          "median": 1846.6083,
+          "p95": 1900.9317,
+          "max": 1900.9317,
+          "sum": 5582.522000000001,
+          "mean": 1860.840666666667
+        },
+        "beam": {
+          "statesExpanded": 161,
+          "statesGenerated": 5670,
+          "statesDeduplicated": 1924,
+          "completeSolutionsEvaluated": 94,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 620,
+        "uniqueInputs": 592,
+        "uniqueDemands": 146,
+        "reachable": {
+          "min": 2,
+          "median": 293,
+          "p95": 2167,
+          "max": 2720,
+          "sum": 415537,
+          "mean": 670.2209677419355
+        },
+        "chunksPerCall": {
+          "min": 1,
+          "median": 14,
+          "p95": 25,
+          "max": 28,
+          "sum": 8531,
+          "mean": 13.759677419354839
+        },
+        "totals": {
+          "chunks": 8531,
+          "transitions": 1036637,
+          "copies": 1205591,
+          "copiedElements": 10234756,
+          "keepCalls": 1036637,
+          "inputPatterns": 2394985,
+          "uniquePatterns": 1973675,
+          "retainedPatterns": 1971152,
+          "capacityKeysSorted": 2616623,
+          "returned": 5670
+        },
+        "maxKeepInput": 20,
+        "maxKeepDistinct": 17,
+        "patternMs": 2805.7248000000036,
+        "repeatedCalls": 28,
+        "repeatedPatternMs": 0.45709999999962747,
+        "timings": {
+          "keepSamples": 1017,
+          "copySamples": 1017,
+          "copySampleMs": 0.5317999999959966,
+          "dedupSampleMs": 2.124599999997031,
+          "sortSampleMs": 0.4629000000010137
+        },
+        "sourceWork": [
+          {
+            "length": 5447.8,
+            "calls": 40,
+            "ms": 433.77059999999915,
+            "keepCalls": 156024,
+            "patterns": 365089
+          },
+          {
+            "length": 5172.5,
+            "calls": 129,
+            "ms": 508.1974000000006,
+            "keepCalls": 196984,
+            "patterns": 422502
+          },
+          {
+            "length": 5005.4,
+            "calls": 140,
+            "ms": 402.4870999999997,
+            "keepCalls": 160428,
+            "patterns": 327824
+          },
+          {
+            "length": 4901.7,
+            "calls": 150,
+            "ms": 431.8969000000019,
+            "keepCalls": 173696,
+            "patterns": 347457
+          },
+          {
+            "length": 6000,
+            "calls": 161,
+            "ms": 1029.3728000000024,
+            "keepCalls": 349505,
+            "patterns": 932113
+          }
+        ]
+      },
+      {
+        "profile": "horizontalProfile",
+        "color": "black",
+        "pieces": 18,
+        "lengthCount": 4,
+        "lengths": [
+          {
+            "length": 741,
+            "quantity": 4
+          },
+          {
+            "length": 775,
+            "quantity": 6
+          },
+          {
+            "length": 791,
+            "quantity": 6
+          },
+          {
+            "length": 1144,
+            "quantity": 2
+          }
+        ],
+        "nearLengths": [],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "horizontalProfile",
+            "color": "black",
+            "sourceLength": 3458.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 11
+          },
+          {
+            "source": "remnant",
+            "profileType": "horizontalProfile",
+            "color": "black",
+            "sourceLength": 2278.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 7
+          },
+          {
+            "source": "remnant",
+            "profileType": "horizontalProfile",
+            "color": "black",
+            "sourceLength": 2237.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 7
+          },
+          {
+            "source": "new",
+            "profileType": "horizontalProfile",
+            "color": "black",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 11
+          }
+        ],
+        "remnantPhysicalCount": 3,
+        "baselineMs": {
+          "min": 18.683700000000044,
+          "median": 19.193900000000212,
+          "p95": 19.45659999999998,
+          "max": 19.45659999999998,
+          "sum": 57.33420000000024,
+          "mean": 19.111400000000078
+        },
+        "beam": {
+          "statesExpanded": 70,
+          "statesGenerated": 1356,
+          "statesDeduplicated": 775,
+          "completeSolutionsEvaluated": 125,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 240,
+        "uniqueInputs": 177,
+        "uniqueDemands": 47,
+        "reachable": {
+          "min": 2,
+          "median": 8,
+          "p95": 130,
+          "max": 223,
+          "sum": 4715,
+          "mean": 19.645833333333332
+        },
+        "chunksPerCall": {
+          "min": 1,
+          "median": 3,
+          "p95": 9,
+          "max": 11,
+          "sum": 925,
+          "mean": 3.8541666666666665
+        },
+        "totals": {
+          "chunks": 925,
+          "transitions": 6144,
+          "copies": 6144,
+          "copiedElements": 22934,
+          "keepCalls": 6144,
+          "inputPatterns": 7813,
+          "uniquePatterns": 6144,
+          "retainedPatterns": 6144,
+          "capacityKeysSorted": 8431,
+          "returned": 1356
+        },
+        "maxKeepInput": 2,
+        "maxKeepDistinct": 1,
+        "patternMs": 18.487000000004173,
+        "repeatedCalls": 63,
+        "repeatedPatternMs": 0.5114999999977954,
+        "timings": {
+          "keepSamples": 3,
+          "copySamples": 3,
+          "copySampleMs": 0.0008999999995467078,
+          "dedupSampleMs": 0.0048000000001593435,
+          "sortSampleMs": 0.0009000000000014552
+        },
+        "sourceWork": [
+          {
+            "length": 3458.2,
+            "calls": 51,
+            "ms": 2.937700000001314,
+            "keepCalls": 853,
+            "patterns": 1092
+          },
+          {
+            "length": 2278.4,
+            "calls": 61,
+            "ms": 2.27599999999984,
+            "keepCalls": 517,
+            "patterns": 608
+          },
+          {
+            "length": 2237.2,
+            "calls": 58,
+            "ms": 2.1242000000024746,
+            "keepCalls": 489,
+            "patterns": 580
+          },
+          {
+            "length": 6000,
+            "calls": 70,
+            "ms": 11.149100000000544,
+            "keepCalls": 4285,
+            "patterns": 5533
+          }
+        ]
+      },
+      {
+        "profile": "topRail",
+        "color": "gray",
+        "pieces": 10,
+        "lengthCount": 9,
+        "lengths": [
+          {
+            "length": 1220,
+            "quantity": 1
+          },
+          {
+            "length": 1399,
+            "quantity": 1
+          },
+          {
+            "length": 1748,
+            "quantity": 2
+          },
+          {
+            "length": 2257,
+            "quantity": 1
+          },
+          {
+            "length": 2391,
+            "quantity": 1
+          },
+          {
+            "length": 2688,
+            "quantity": 1
+          },
+          {
+            "length": 2741,
+            "quantity": 1
+          },
+          {
+            "length": 3112,
+            "quantity": 1
+          },
+          {
+            "length": 3379,
+            "quantity": 1
+          }
+        ],
+        "nearLengths": [],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 4907.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 10
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 4184.3,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 10
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 3858.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 10
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 3799.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 10
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 1675.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 2
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 1085.3,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "new",
+            "profileType": "topRail",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 10
+          }
+        ],
+        "remnantPhysicalCount": 6,
+        "baselineMs": {
+          "min": 17.66130000000021,
+          "median": 18.31770000000006,
+          "p95": 18.35039999999981,
+          "max": 18.35039999999981,
+          "sum": 54.32940000000008,
+          "mean": 18.109800000000025
+        },
+        "beam": {
+          "statesExpanded": 81,
+          "statesGenerated": 1646,
+          "statesDeduplicated": 578,
+          "completeSolutionsEvaluated": 74,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 486,
+        "uniqueInputs": 381,
+        "uniqueDemands": 60,
+        "reachable": {
+          "min": 1,
+          "median": 3,
+          "p95": 21,
+          "max": 63,
+          "sum": 2916,
+          "mean": 6
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 2,
+          "p95": 8,
+          "max": 10,
+          "sum": 1331,
+          "mean": 2.7386831275720165
+        },
+        "totals": {
+          "chunks": 1331,
+          "transitions": 2515,
+          "copies": 2515,
+          "copiedElements": 15566,
+          "keepCalls": 2515,
+          "inputPatterns": 2600,
+          "uniquePatterns": 2515,
+          "retainedPatterns": 2515,
+          "capacityKeysSorted": 6471,
+          "returned": 1646
+        },
+        "maxKeepInput": 2,
+        "maxKeepDistinct": 1,
+        "patternMs": 12.574299999997038,
+        "repeatedCalls": 105,
+        "repeatedPatternMs": 1.1351999999969848,
+        "timings": {
+          "keepSamples": 0,
+          "copySamples": 0,
+          "copySampleMs": 0,
+          "dedupSampleMs": 0,
+          "sortSampleMs": 0
+        },
+        "sourceWork": [
+          {
+            "length": 4907.5,
+            "calls": 37,
+            "ms": 1.3591000000005806,
+            "keepCalls": 310,
+            "patterns": 327
+          },
+          {
+            "length": 4184.3,
+            "calls": 60,
+            "ms": 1.905899999997473,
+            "keepCalls": 376,
+            "patterns": 389
+          },
+          {
+            "length": 3858.8,
+            "calls": 73,
+            "ms": 2.0893999999993866,
+            "keepCalls": 380,
+            "patterns": 390
+          },
+          {
+            "length": 3799.6,
+            "calls": 73,
+            "ms": 2.0038999999974294,
+            "keepCalls": 380,
+            "patterns": 390
+          },
+          {
+            "length": 1675.5,
+            "calls": 81,
+            "ms": 0.7113999999987755,
+            "keepCalls": 27,
+            "patterns": 27
+          },
+          {
+            "length": 1085.3,
+            "calls": 81,
+            "ms": 0.5911000000019158,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 6000,
+            "calls": 81,
+            "ms": 3.913500000001477,
+            "keepCalls": 1042,
+            "patterns": 1077
+          }
+        ]
+      },
+      {
+        "profile": "topRail",
+        "color": "black",
+        "pieces": 4,
+        "lengthCount": 4,
+        "lengths": [
+          {
+            "length": 1470,
+            "quantity": 1
+          },
+          {
+            "length": 2295,
+            "quantity": 1
+          },
+          {
+            "length": 2343,
+            "quantity": 1
+          },
+          {
+            "length": 2500,
+            "quantity": 1
+          }
+        ],
+        "nearLengths": [],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "black",
+            "sourceLength": 5024.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "black",
+            "sourceLength": 4529.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "black",
+            "sourceLength": 4099.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "black",
+            "sourceLength": 3848.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "black",
+            "sourceLength": 1636.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 1
+          },
+          {
+            "source": "remnant",
+            "profileType": "topRail",
+            "color": "black",
+            "sourceLength": 1106.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "new",
+            "profileType": "topRail",
+            "color": "black",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 4
+          }
+        ],
+        "remnantPhysicalCount": 6,
+        "baselineMs": {
+          "min": 3.5231999999996333,
+          "median": 3.6347999999998137,
+          "p95": 3.734299999999621,
+          "max": 3.734299999999621,
+          "sum": 10.892299999999068,
+          "mean": 3.630766666666356
+        },
+        "beam": {
+          "statesExpanded": 41,
+          "statesGenerated": 334,
+          "statesDeduplicated": 131,
+          "completeSolutionsEvaluated": 115,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 233,
+        "uniqueInputs": 75,
+        "uniqueDemands": 11,
+        "reachable": {
+          "min": 1,
+          "median": 2,
+          "p95": 4,
+          "max": 11,
+          "sum": 567,
+          "mean": 2.4334763948497855
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 1,
+          "p95": 2,
+          "max": 4,
+          "sum": 264,
+          "mean": 1.1330472103004292
+        },
+        "totals": {
+          "chunks": 264,
+          "transitions": 334,
+          "copies": 334,
+          "copiedElements": 685,
+          "keepCalls": 334,
+          "inputPatterns": 334,
+          "uniquePatterns": 334,
+          "retainedPatterns": 334,
+          "capacityKeysSorted": 394,
+          "returned": 334
+        },
+        "maxKeepInput": 1,
+        "maxKeepDistinct": 1,
+        "patternMs": 2.3668000000020584,
+        "repeatedCalls": 158,
+        "repeatedPatternMs": 1.442100000001119,
+        "timings": {
+          "keepSamples": 0,
+          "copySamples": 0,
+          "copySampleMs": 0,
+          "dedupSampleMs": 0,
+          "sortSampleMs": 0
+        },
+        "sourceWork": [
+          {
+            "length": 5024.5,
+            "calls": 23,
+            "ms": 0.3514000000004671,
+            "keepCalls": 60,
+            "patterns": 60
+          },
+          {
+            "length": 4529.8,
+            "calls": 30,
+            "ms": 0.3720000000012078,
+            "keepCalls": 59,
+            "patterns": 59
+          },
+          {
+            "length": 4099.5,
+            "calls": 30,
+            "ms": 0.3545000000017353,
+            "keepCalls": 59,
+            "patterns": 59
+          },
+          {
+            "length": 3848.8,
+            "calls": 29,
+            "ms": 0.3364999999994325,
+            "keepCalls": 56,
+            "patterns": 56
+          },
+          {
+            "length": 1636.5,
+            "calls": 39,
+            "ms": 0.21839999999929205,
+            "keepCalls": 10,
+            "patterns": 10
+          },
+          {
+            "length": 1106.4,
+            "calls": 41,
+            "ms": 0.19419999999990978,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 6000,
+            "calls": 41,
+            "ms": 0.5398000000000138,
+            "keepCalls": 90,
+            "patterns": 90
+          }
+        ]
+      },
+      {
+        "profile": "bottomRail",
+        "color": "gray",
+        "pieces": 10,
+        "lengthCount": 9,
+        "lengths": [
+          {
+            "length": 1220,
+            "quantity": 1
+          },
+          {
+            "length": 1399,
+            "quantity": 1
+          },
+          {
+            "length": 1748,
+            "quantity": 2
+          },
+          {
+            "length": 2257,
+            "quantity": 1
+          },
+          {
+            "length": 2391,
+            "quantity": 1
+          },
+          {
+            "length": 2688,
+            "quantity": 1
+          },
+          {
+            "length": 2741,
+            "quantity": 1
+          },
+          {
+            "length": 3112,
+            "quantity": 1
+          },
+          {
+            "length": 3379,
+            "quantity": 1
+          }
+        ],
+        "nearLengths": [],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 4184.3,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 10
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 4120.3,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 10
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 3062.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 7
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 2957.5,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 7
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 2826.7,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 7
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 1619.7,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 2
+          },
+          {
+            "source": "new",
+            "profileType": "bottomRail",
+            "color": "gray",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 10
+          }
+        ],
+        "remnantPhysicalCount": 6,
+        "baselineMs": {
+          "min": 18.993599999999788,
+          "median": 19.01279999999997,
+          "p95": 19.76680000000033,
+          "max": 19.76680000000033,
+          "sum": 57.77320000000009,
+          "mean": 19.257733333333363
+        },
+        "beam": {
+          "statesExpanded": 81,
+          "statesGenerated": 1650,
+          "statesDeduplicated": 558,
+          "completeSolutionsEvaluated": 102,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 508,
+        "uniqueInputs": 392,
+        "uniqueDemands": 59,
+        "reachable": {
+          "min": 1,
+          "median": 3,
+          "p95": 17,
+          "max": 63,
+          "sum": 2787,
+          "mean": 5.4862204724409445
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 2,
+          "p95": 8,
+          "max": 10,
+          "sum": 1384,
+          "mean": 2.7244094488188977
+        },
+        "totals": {
+          "chunks": 1384,
+          "transitions": 2364,
+          "copies": 2364,
+          "copiedElements": 14142,
+          "keepCalls": 2364,
+          "inputPatterns": 2449,
+          "uniquePatterns": 2364,
+          "retainedPatterns": 2364,
+          "capacityKeysSorted": 5687,
+          "returned": 1650
+        },
+        "maxKeepInput": 2,
+        "maxKeepDistinct": 1,
+        "patternMs": 13.023100000004433,
+        "repeatedCalls": 116,
+        "repeatedPatternMs": 2.2679000000002816,
+        "timings": {
+          "keepSamples": 0,
+          "copySamples": 0,
+          "copySampleMs": 0,
+          "dedupSampleMs": 0,
+          "sortSampleMs": 0
+        },
+        "sourceWork": [
+          {
+            "length": 4184.3,
+            "calls": 53,
+            "ms": 1.7351000000016938,
+            "keepCalls": 318,
+            "patterns": 334
+          },
+          {
+            "length": 4120.3,
+            "calls": 56,
+            "ms": 1.7496000000014647,
+            "keepCalls": 333,
+            "patterns": 351
+          },
+          {
+            "length": 3062.5,
+            "calls": 79,
+            "ms": 1.5608999999985826,
+            "keepCalls": 216,
+            "patterns": 216
+          },
+          {
+            "length": 2957.5,
+            "calls": 79,
+            "ms": 1.4520000000002256,
+            "keepCalls": 204,
+            "patterns": 204
+          },
+          {
+            "length": 2826.7,
+            "calls": 79,
+            "ms": 1.447300000001178,
+            "keepCalls": 204,
+            "patterns": 204
+          },
+          {
+            "length": 1619.7,
+            "calls": 81,
+            "ms": 0.8087999999993372,
+            "keepCalls": 36,
+            "patterns": 36
+          },
+          {
+            "length": 6000,
+            "calls": 81,
+            "ms": 4.269400000001951,
+            "keepCalls": 1053,
+            "patterns": 1104
+          }
+        ]
+      },
+      {
+        "profile": "bottomRail",
+        "color": "black",
+        "pieces": 4,
+        "lengthCount": 4,
+        "lengths": [
+          {
+            "length": 1470,
+            "quantity": 1
+          },
+          {
+            "length": 2295,
+            "quantity": 1
+          },
+          {
+            "length": 2343,
+            "quantity": 1
+          },
+          {
+            "length": 2500,
+            "quantity": 1
+          }
+        ],
+        "nearLengths": [],
+        "sources": [
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "black",
+            "sourceLength": 3848.8,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "black",
+            "sourceLength": 3798.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "black",
+            "sourceLength": 3055.1,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 4
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "black",
+            "sourceLength": 2087.4,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 1
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "black",
+            "sourceLength": 2078.6,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 1
+          },
+          {
+            "source": "remnant",
+            "profileType": "bottomRail",
+            "color": "black",
+            "sourceLength": 1431.2,
+            "unlimited": false,
+            "quantity": 1,
+            "initialChunks": 0
+          },
+          {
+            "source": "new",
+            "profileType": "bottomRail",
+            "color": "black",
+            "sourceLength": 6000,
+            "unlimited": true,
+            "quantity": null,
+            "initialChunks": 4
+          }
+        ],
+        "remnantPhysicalCount": 6,
+        "baselineMs": {
+          "min": 3.643199999999979,
+          "median": 3.94820000000027,
+          "p95": 4.430499999999938,
+          "max": 4.430499999999938,
+          "sum": 12.021900000000187,
+          "mean": 4.007300000000062
+        },
+        "beam": {
+          "statesExpanded": 41,
+          "statesGenerated": 340,
+          "statesDeduplicated": 150,
+          "completeSolutionsEvaluated": 73,
+          "maxBeamSize": 20,
+          "feasibilityFallback": {
+            "attempted": false,
+            "status": "not-needed",
+            "pieceCount": 0,
+            "sourceCount": 0,
+            "statesExpanded": 0,
+            "placementsTried": 0,
+            "memoHits": 0
+          }
+        },
+        "calls": 245,
+        "uniqueInputs": 105,
+        "uniqueDemands": 15,
+        "reachable": {
+          "min": 1,
+          "median": 2,
+          "p95": 7,
+          "max": 11,
+          "sum": 585,
+          "mean": 2.3877551020408165
+        },
+        "chunksPerCall": {
+          "min": 0,
+          "median": 1,
+          "p95": 3,
+          "max": 4,
+          "sum": 274,
+          "mean": 1.1183673469387756
+        },
+        "totals": {
+          "chunks": 274,
+          "transitions": 340,
+          "copies": 340,
+          "copiedElements": 841,
+          "keepCalls": 340,
+          "inputPatterns": 340,
+          "uniquePatterns": 340,
+          "retainedPatterns": 340,
+          "capacityKeysSorted": 460,
+          "returned": 340
+        },
+        "maxKeepInput": 1,
+        "maxKeepDistinct": 1,
+        "patternMs": 2.613099999998667,
+        "repeatedCalls": 140,
+        "repeatedPatternMs": 1.2764999999972133,
+        "timings": {
+          "keepSamples": 0,
+          "copySamples": 0,
+          "copySampleMs": 0,
+          "dedupSampleMs": 0,
+          "sortSampleMs": 0
+        },
+        "sourceWork": [
+          {
+            "length": 3848.8,
+            "calls": 27,
+            "ms": 0.3913000000006832,
+            "keepCalls": 65,
+            "patterns": 65
+          },
+          {
+            "length": 3798.4,
+            "calls": 29,
+            "ms": 0.39859999999907814,
+            "keepCalls": 62,
+            "patterns": 62
+          },
+          {
+            "length": 3055.1,
+            "calls": 30,
+            "ms": 0.35819999999966967,
+            "keepCalls": 58,
+            "patterns": 58
+          },
+          {
+            "length": 2087.4,
+            "calls": 39,
+            "ms": 0.25730000000066866,
+            "keepCalls": 16,
+            "patterns": 16
+          },
+          {
+            "length": 2078.6,
+            "calls": 38,
+            "ms": 0.25109999999995125,
+            "keepCalls": 16,
+            "patterns": 16
+          },
+          {
+            "length": 1431.2,
+            "calls": 41,
+            "ms": 0.2087999999994281,
+            "keepCalls": 0,
+            "patterns": 0
+          },
+          {
+            "length": 6000,
+            "calls": 41,
+            "ms": 0.747799999999188,
+            "keepCalls": 123,
+            "patterns": 123
+          }
+        ]
+      }
+    ],
+    "cpu": {
+      "sampleCount": 1818,
+      "totalMs": 2886.803,
+      "self": [
+        {
+          "name": "keepDistinctPatterns@app.js:2946",
+          "ms": 1439.655,
+          "percent": 49.87021975521018
+        },
+        {
+          "name": "findCandidatePatternsDP@app.js:2828",
+          "ms": 696.818,
+          "percent": 24.138051678621643
+        },
+        {
+          "name": "findMaterialSourceCandidates@app.js:1627",
+          "ms": 177.006,
+          "percent": 6.131557989928651
+        },
+        {
+          "name": "(garbage collector)@:0",
+          "ms": 99.473,
+          "percent": 3.445784142527218
+        },
+        {
+          "name": "hasSupportedMillimeterPrecision@src/cutting-physics.js:6",
+          "ms": 87.912,
+          "percent": 3.0453065207428427
+        },
+        {
+          "name": "optimizeOrderInventoryBeamDP@app.js:6200",
+          "ms": 79.705,
+          "percent": 2.7610127881951074
+        },
+        {
+          "name": "getStateKey@app.js:6377",
+          "ms": 50.126,
+          "percent": 1.736384505627852
+        },
+        {
+          "name": "(anonymous)@app.js:6408",
+          "ms": 35.224,
+          "percent": 1.2201733197589166
+        },
+        {
+          "name": "compareStates@app.js:6432",
+          "ms": 27.956,
+          "percent": 0.968406919349883
+        },
+        {
+          "name": "(anonymous)@app.js:6387",
+          "ms": 26.283,
+          "percent": 0.9104535363168184
+        },
+        {
+          "name": "cutPiece@src/cutting-physics.js:39",
+          "ms": 20.365,
+          "percent": 0.7054516709314768
+        },
+        {
+          "name": "post@node:inspector:115",
+          "ms": 20.064,
+          "percent": 0.6950249116410091
+        },
+        {
+          "name": "getBarsKey@app.js:6405",
+          "ms": 15.996,
+          "percent": 0.554107779436283
+        },
+        {
+          "name": "compareQuantities@app.js:2932",
+          "ms": 15.662,
+          "percent": 0.5425378870674583
+        },
+        {
+          "name": "subtractPattern@app.js:6288",
+          "ms": 15.029,
+          "percent": 0.5206105162007937
+        },
+        {
+          "name": "optimizeOrderInventoryBeamDP@evalmachine.<anonymous>:20",
+          "ms": 9.761,
+          "percent": 0.3381249084194522
+        },
+        {
+          "name": "(anonymous)@app.js:1715",
+          "ms": 5.445,
+          "percent": 0.18861695792889227
+        },
+        {
+          "name": "getNewStockBarsUsed@app.js:6369",
+          "ms": 4.986,
+          "percent": 0.1727170160208369
+        },
+        {
+          "name": "(anonymous)@src/production-planning.js:191",
+          "ms": 4.968,
+          "percent": 0.17209348888718767
+        },
+        {
+          "name": "(program)@:0",
+          "ms": 4.92,
+          "percent": 0.17043074986412304
+        },
+        {
+          "name": "(anonymous)@app.js:1709",
+          "ms": 4.909,
+          "percent": 0.17004970550467075
+        },
+        {
+          "name": "getRemainingSize@app.js:6355",
+          "ms": 3.267,
+          "percent": 0.11317017475733536
+        },
+        {
+          "name": "optimizeOrderByProfileTypeWithInventory@app.js:7307",
+          "ms": 3.213,
+          "percent": 0.11129959335638767
+        },
+        {
+          "name": "schedule@src/production-planning.js:131",
+          "ms": 3.202,
+          "percent": 0.11091854899693537
+        },
+        {
+          "name": "(anonymous)@app.js:2979",
+          "ms": 3.195,
+          "percent": 0.11067606622273846
+        },
+        {
+          "name": "(anonymous)@app.js:6412",
+          "ms": 3.18,
+          "percent": 0.11015646027803074
+        },
+        {
+          "name": "getPositiveItems@app.js:6277",
+          "ms": 3.004,
+          "percent": 0.10405975052679382
+        },
+        {
+          "name": "(anonymous)@app.js:6381",
+          "ms": 2.81,
+          "percent": 0.09733951364190767
+        },
+        {
+          "name": "(anonymous)@app.js:2978",
+          "ms": 2.809,
+          "percent": 0.09730487324559382
+        },
+        {
+          "name": "scoreCompleteMaterialTransitionPlan@app.js:3938",
+          "ms": 2.133,
+          "percent": 0.07388796533743383
+        },
+        {
+          "name": "consumeMaterialSource@app.js:1703",
+          "ms": 1.704,
+          "percent": 0.05902723531879384
+        },
+        {
+          "name": "createState@app.js:6491",
+          "ms": 1.663,
+          "percent": 0.05760697906992614
+        },
+        {
+          "name": "validateMaterialAvailability@app.js:1204",
+          "ms": 1.652,
+          "percent": 0.05722593471047384
+        },
+        {
+          "name": "copyItems@app.js:6241",
+          "ms": 1.633,
+          "percent": 0.056567767180510764
+        },
+        {
+          "name": "getMaterialSourcesForProfile@app.js:1525",
+          "ms": 1.627,
+          "percent": 0.056359924802627685
+        }
+      ],
+      "inclusive": [
+        {
+          "name": "(root)",
+          "ms": 2886.803,
+          "percent": 100
+        },
+        {
+          "name": "run",
+          "ms": 2780.802,
+          "percent": 96.32808335033599
+        },
+        {
+          "name": "(anonymous)",
+          "ms": 2779.667,
+          "percent": 96.28876650051978
+        },
+        {
+          "name": "runInContext",
+          "ms": 2758.046,
+          "percent": 95.53980649181811
+        },
+        {
+          "name": "optimizeOrderByProfileTypeWithInventory",
+          "ms": 2744.658,
+          "percent": 95.07604086596834
+        },
+        {
+          "name": "optimizeOrderInventoryBeamDP",
+          "ms": 2738.166,
+          "percent": 94.85115541309885
+        },
+        {
+          "name": "findMaterialSourceCandidates",
+          "ms": 2442.193,
+          "percent": 84.59853339490087
+        },
+        {
+          "name": "findCandidatePatternsDP",
+          "ms": 2265.187,
+          "percent": 78.46697540497222
+        },
+        {
+          "name": "keepDistinctPatterns",
+          "ms": 1453.709,
+          "percent": 50.35705588500497
+        },
+        {
+          "name": "(garbage collector)",
+          "ms": 99.473,
+          "percent": 3.445784142527218
+        },
+        {
+          "name": "hasSupportedMillimeterPrecision",
+          "ms": 87.912,
+          "percent": 3.0453065207428427
+        },
+        {
+          "name": "millimetersToDpUnits",
+          "ms": 87.912,
+          "percent": 3.0453065207428427
+        },
+        {
+          "name": "cutPiece",
+          "ms": 82.499,
+          "percent": 2.857798055495993
+        },
+        {
+          "name": "compareStates",
+          "ms": 82.356,
+          "percent": 2.8528444788231133
+        },
+        {
+          "name": "getStateKey",
+          "ms": 77.683,
+          "percent": 2.69096990684851
+        },
+        {
+          "name": "getBarsKey",
+          "ms": 54.4,
+          "percent": 1.8844375594732306
+        },
+        {
+          "name": "post",
+          "ms": 21.621,
+          "percent": 0.7489600087016676
+        },
+        {
+          "name": "subtractPattern",
+          "ms": 16.662,
+          "percent": 0.5771782833813045
+        },
+        {
+          "name": "compareQuantities",
+          "ms": 15.662,
+          "percent": 0.5425378870674583
+        },
+        {
+          "name": "createState",
+          "ms": 11.594,
+          "percent": 0.40162075486273224
+        },
+        {
+          "name": "createProductionExecution",
+          "ms": 11.266,
+          "percent": 0.39025870487179065
+        },
+        {
+          "name": "schedule",
+          "ms": 9.76,
+          "percent": 0.3380902680231384
+        },
+        {
+          "name": "consumeMaterialSource",
+          "ms": 7.222,
+          "percent": 0.25017294217859687
+        },
+        {
+          "name": "getNewStockBarsUsed",
+          "ms": 6.608,
+          "percent": 0.22890373884189535
+        },
+        {
+          "name": "(program)",
+          "ms": 4.92,
+          "percent": 0.17043074986412304
+        }
+      ],
+      "positionTicks": [
+        {
+          "frame": {
+            "functionName": "findCandidatePatternsDP",
+            "scriptId": "159",
+            "url": "app.js",
+            "lineNumber": 2827,
+            "columnNumber": 32
+          },
+          "hitCount": 440,
+          "positionTicks": [
+            {
+              "line": 2970,
+              "ticks": 2
+            },
+            {
+              "line": 3010,
+              "ticks": 2
+            },
+            {
+              "line": 2978,
+              "ticks": 6
+            },
+            {
+              "line": 2992,
+              "ticks": 26
+            },
+            {
+              "line": 2956,
+              "ticks": 1
+            },
+            {
+              "line": 2828,
+              "ticks": 80
+            },
+            {
+              "line": 3014,
+              "ticks": 1
+            },
+            {
+              "line": 2901,
+              "ticks": 3
+            },
+            {
+              "line": 2953,
+              "ticks": 31
+            },
+            {
+              "line": 2889,
+              "ticks": 1
+            },
+            {
+              "line": 2907,
+              "ticks": 2
+            },
+            {
+              "line": 2881,
+              "ticks": 2
+            },
+            {
+              "line": 2841,
+              "ticks": 1
+            },
+            {
+              "line": 2905,
+              "ticks": 2
+            },
+            {
+              "line": 2979,
+              "ticks": 62
+            },
+            {
+              "line": 2915,
+              "ticks": 3
+            },
+            {
+              "line": 2857,
+              "ticks": 1
+            },
+            {
+              "line": 2963,
+              "ticks": 3
+            },
+            {
+              "line": 2835,
+              "ticks": 4
+            },
+            {
+              "line": 3002,
+              "ticks": 54
+            },
+            {
+              "line": 3083,
+              "ticks": 2
+            },
+            {
+              "line": 2968,
+              "ticks": 2
+            },
+            {
+              "line": 2868,
+              "ticks": 1
+            },
+            {
+              "line": 2986,
+              "ticks": 2
+            },
+            {
+              "line": 2922,
+              "ticks": 1
+            },
+            {
+              "line": 3050,
+              "ticks": 1
+            },
+            {
+              "line": 2973,
+              "ticks": 2
+            },
+            {
+              "line": 3003,
+              "ticks": 23
+            },
+            {
+              "line": 3015,
+              "ticks": 11
+            },
+            {
+              "line": 2951,
+              "ticks": 18
+            },
+            {
+              "line": 2849,
+              "ticks": 1
+            },
+            {
+              "line": 2977,
+              "ticks": 9
+            },
+            {
+              "line": 2981,
+              "ticks": 34
+            },
+            {
+              "line": 3023,
+              "ticks": 1
+            },
+            {
+              "line": 3001,
+              "ticks": 24
+            },
+            {
+              "line": 2957,
+              "ticks": 4
+            },
+            {
+              "line": 2990,
+              "ticks": 7
+            },
+            {
+              "line": 2964,
+              "ticks": 2
+            },
+            {
+              "line": 2997,
+              "ticks": 1
+            },
+            {
+              "line": 2994,
+              "ticks": 2
+            },
+            {
+              "line": 3039,
+              "ticks": 1
+            },
+            {
+              "line": 2962,
+              "ticks": 1
+            },
+            {
+              "line": 3055,
+              "ticks": 3
+            }
+          ]
+        },
+        {
+          "frame": {
+            "functionName": "keepDistinctPatterns",
+            "scriptId": "159",
+            "url": "app.js",
+            "lineNumber": 2945,
+            "columnNumber": 33
+          },
+          "hitCount": 896,
+          "positionTicks": [
+            {
+              "line": 2962,
+              "ticks": 9
+            },
+            {
+              "line": 2946,
+              "ticks": 5
+            },
+            {
+              "line": 2964,
+              "ticks": 22
+            },
+            {
+              "line": 2948,
+              "ticks": 204
+            },
+            {
+              "line": 2956,
+              "ticks": 77
+            },
+            {
+              "line": 2953,
+              "ticks": 495
+            },
+            {
+              "line": 2963,
+              "ticks": 63
+            },
+            {
+              "line": 2957,
+              "ticks": 21
+            }
+          ]
+        },
+        {
+          "frame": {
+            "functionName": "compareQuantities",
+            "scriptId": "159",
+            "url": "app.js",
+            "lineNumber": 2931,
+            "columnNumber": 30
+          },
+          "hitCount": 9,
+          "positionTicks": [
+            {
+              "line": 2936,
+              "ticks": 4
+            },
+            {
+              "line": 2934,
+              "ticks": 4
+            },
+            {
+              "line": 2932,
+              "ticks": 1
+            }
+          ]
+        },
+        {
+          "frame": {
+            "functionName": "compareQuantities",
+            "scriptId": "159",
+            "url": "app.js",
+            "lineNumber": 2931,
+            "columnNumber": 30
+          },
+          "hitCount": 1,
+          "positionTicks": [
+            {
+              "line": 2942,
+              "ticks": 1
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

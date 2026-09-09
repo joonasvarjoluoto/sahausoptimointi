@@ -1,0 +1,1410 @@
+{
+  "caseName": "fast",
+  "mode": "baseline",
+  "runId": "1",
+  "ids": [
+    1,
+    4,
+    17,
+    18
+  ],
+  "node": "v24.19.0",
+  "fixtureHash": "878e0666d7251fdb34e3806bc64ee9bee96a61f957a823cd27c6d9c37f2fb33f",
+  "inventoryHash": "faa23842fb5cdb9e581a4af0efc0302afc291dcfb11133dc6f97ba6b2b3f6c89",
+  "sourceHashes": {
+    "src/cutting-physics.js": "55b88ae8b7ad60e45a8a1bc1bcf2376d2d89291c3c64ff86ae9a1f2fbb1760aa",
+    "src/production-planning.js": "a5536192e4bc85dc4c2ad3236bfa9ad664095421db487618960c650f00ee4603",
+    "src/production-integration.js": "a311a73889d976e65b4171eed6f3e330166fadd1bfee9154a3125790e612f878",
+    "app.js": "b29499e0c0e4b9350d9afa5fd46965eb5772789cd06d9c0834745c165113a76d"
+  },
+  "planHash": "588c354271bd9c3ecb79a40cfc99da2e97c202b1d2516cf810fc412fac2559b1",
+  "exactReferenceMatch": true,
+  "elapsedMs": 2431.0371999999998,
+  "materialMs": 2416.0022,
+  "schedulerMs": 11.53229999999985,
+  "measurements": [
+    {
+      "profile": "uProfile",
+      "color": "gray",
+      "items": [
+        {
+          "length": 2712,
+          "quantity": 2
+        },
+        {
+          "length": 2451,
+          "quantity": 2
+        },
+        {
+          "length": 2809,
+          "quantity": 2
+        },
+        {
+          "length": 2792,
+          "quantity": 4
+        },
+        {
+          "length": 2790,
+          "quantity": 2
+        },
+        {
+          "length": 2784,
+          "quantity": 2
+        },
+        {
+          "length": 2477,
+          "quantity": 6
+        }
+      ],
+      "sources": [
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "gray",
+          "sourceLength": 3988.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "gray",
+          "sourceLength": 2591.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "gray",
+          "sourceLength": 1936.9,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "gray",
+          "sourceLength": 1209.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "gray",
+          "sourceLength": 1180.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "new",
+          "profileType": "uProfile",
+          "color": "gray",
+          "sourceLength": 6000,
+          "unlimited": true,
+          "quantity": null
+        }
+      ],
+      "calls": [],
+      "ms": 56.0941,
+      "stats": {
+        "statesExpanded": 200,
+        "statesGenerated": 2502,
+        "statesDeduplicated": 1271,
+        "completeSolutionsEvaluated": 51,
+        "maxBeamSize": 20,
+        "feasibilityFallback": {
+          "attempted": false,
+          "status": "not-needed",
+          "pieceCount": 0,
+          "sourceCount": 0,
+          "statesExpanded": 0,
+          "placementsTried": 0,
+          "memoHits": 0
+        }
+      },
+      "uniquePatternInputs": 0,
+      "uniqueDemandInputs": 0
+    },
+    {
+      "profile": "uProfile",
+      "color": "black",
+      "items": [
+        {
+          "length": 2322,
+          "quantity": 2
+        },
+        {
+          "length": 2325,
+          "quantity": 2
+        },
+        {
+          "length": 2316,
+          "quantity": 2
+        },
+        {
+          "length": 2060,
+          "quantity": 2
+        }
+      ],
+      "sources": [
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 3896.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 3882.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 3809.9,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 2900.1,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 1959.7,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 1910.6,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 1886.1,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 1705.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 1424.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 1408,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 1355.3,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 1336.6,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 1332.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "new",
+          "profileType": "uProfile",
+          "color": "black",
+          "sourceLength": 6000,
+          "unlimited": true,
+          "quantity": null
+        }
+      ],
+      "calls": [],
+      "ms": 23.00840000000001,
+      "stats": {
+        "statesExpanded": 81,
+        "statesGenerated": 1109,
+        "statesDeduplicated": 669,
+        "completeSolutionsEvaluated": 94,
+        "maxBeamSize": 20,
+        "feasibilityFallback": {
+          "attempted": false,
+          "status": "not-needed",
+          "pieceCount": 0,
+          "sourceCount": 0,
+          "statesExpanded": 0,
+          "placementsTried": 0,
+          "memoHits": 0
+        }
+      },
+      "uniquePatternInputs": 0,
+      "uniqueDemandInputs": 0
+    },
+    {
+      "profile": "verticalProfile",
+      "color": "gray",
+      "items": [
+        {
+          "length": 2605,
+          "quantity": 7
+        },
+        {
+          "length": 2344,
+          "quantity": 5
+        },
+        {
+          "length": 2702,
+          "quantity": 5
+        },
+        {
+          "length": 2685,
+          "quantity": 8
+        },
+        {
+          "length": 2683,
+          "quantity": 4
+        },
+        {
+          "length": 2677,
+          "quantity": 4
+        },
+        {
+          "length": 2370,
+          "quantity": 17
+        }
+      ],
+      "sources": [
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 3944.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 3340.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 3237.6,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1932.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1912.8,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1899.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1845.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1840.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1588.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1578.4,
+          "unlimited": false,
+          "quantity": 2
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1539.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1436.3,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1412.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1206.6,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 1198.1,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "new",
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "sourceLength": 6000,
+          "unlimited": true,
+          "quantity": null
+        }
+      ],
+      "calls": [],
+      "ms": 237.06780000000003,
+      "stats": {
+        "statesExpanded": 501,
+        "statesGenerated": 10092,
+        "statesDeduplicated": 4731,
+        "completeSolutionsEvaluated": 73,
+        "maxBeamSize": 20,
+        "feasibilityFallback": {
+          "attempted": false,
+          "status": "not-needed",
+          "pieceCount": 0,
+          "sourceCount": 0,
+          "statesExpanded": 0,
+          "placementsTried": 0,
+          "memoHits": 0
+        }
+      },
+      "uniquePatternInputs": 0,
+      "uniqueDemandInputs": 0
+    },
+    {
+      "profile": "verticalProfile",
+      "color": "black",
+      "items": [
+        {
+          "length": 2215,
+          "quantity": 6
+        },
+        {
+          "length": 2218,
+          "quantity": 6
+        },
+        {
+          "length": 2209,
+          "quantity": 4
+        },
+        {
+          "length": 1953,
+          "quantity": 2
+        }
+      ],
+      "sources": [
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 4413,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 4065,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 3965.9,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 3953.1,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 3896.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 2996.1,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 2995.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 2982.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1980.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1973.8,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1925.8,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1901.7,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1863.4,
+          "unlimited": false,
+          "quantity": 2
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1618.1,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1615.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1596,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1582.6,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1576.6,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1555.8,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 1205.7,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "new",
+          "profileType": "verticalProfile",
+          "color": "black",
+          "sourceLength": 6000,
+          "unlimited": true,
+          "quantity": null
+        }
+      ],
+      "calls": [],
+      "ms": 123.4966,
+      "stats": {
+        "statesExpanded": 181,
+        "statesGenerated": 5525,
+        "statesDeduplicated": 2571,
+        "completeSolutionsEvaluated": 165,
+        "maxBeamSize": 20,
+        "feasibilityFallback": {
+          "attempted": false,
+          "status": "not-needed",
+          "pieceCount": 0,
+          "sourceCount": 0,
+          "statesExpanded": 0,
+          "placementsTried": 0,
+          "memoHits": 0
+        }
+      },
+      "uniquePatternInputs": 0,
+      "uniqueDemandInputs": 0
+    },
+    {
+      "profile": "closingProfile",
+      "color": "gray",
+      "items": [
+        {
+          "length": 2605,
+          "quantity": 1
+        },
+        {
+          "length": 2344,
+          "quantity": 1
+        },
+        {
+          "length": 2702,
+          "quantity": 1
+        },
+        {
+          "length": 2370,
+          "quantity": 1
+        }
+      ],
+      "sources": [
+        {
+          "source": "remnant",
+          "profileType": "closingProfile",
+          "color": "gray",
+          "sourceLength": 3633.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "closingProfile",
+          "color": "gray",
+          "sourceLength": 3315,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "closingProfile",
+          "color": "gray",
+          "sourceLength": 3147.6,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "new",
+          "profileType": "closingProfile",
+          "color": "gray",
+          "sourceLength": 6000,
+          "unlimited": true,
+          "quantity": null
+        }
+      ],
+      "calls": [],
+      "ms": 5.47709999999995,
+      "stats": {
+        "statesExpanded": 51,
+        "statesGenerated": 339,
+        "statesDeduplicated": 171,
+        "completeSolutionsEvaluated": 79,
+        "maxBeamSize": 20,
+        "feasibilityFallback": {
+          "attempted": false,
+          "status": "not-needed",
+          "pieceCount": 0,
+          "sourceCount": 0,
+          "statesExpanded": 0,
+          "placementsTried": 0,
+          "memoHits": 0
+        }
+      },
+      "uniquePatternInputs": 0,
+      "uniqueDemandInputs": 0
+    },
+    {
+      "profile": "horizontalProfile",
+      "color": "gray",
+      "items": [
+        {
+          "length": 684,
+          "quantity": 8
+        },
+        {
+          "length": 762,
+          "quantity": 6
+        },
+        {
+          "length": 923,
+          "quantity": 6
+        },
+        {
+          "length": 880,
+          "quantity": 8
+        },
+        {
+          "length": 616,
+          "quantity": 4
+        },
+        {
+          "length": 705,
+          "quantity": 4
+        },
+        {
+          "length": 1047,
+          "quantity": 6
+        },
+        {
+          "length": 1136,
+          "quantity": 6
+        },
+        {
+          "length": 807,
+          "quantity": 6
+        }
+      ],
+      "sources": [
+        {
+          "source": "remnant",
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "sourceLength": 5447.8,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "sourceLength": 5172.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "sourceLength": 5005.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "sourceLength": 4901.7,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "new",
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "sourceLength": 6000,
+          "unlimited": true,
+          "quantity": null
+        }
+      ],
+      "calls": [],
+      "ms": 1900.9317,
+      "stats": {
+        "statesExpanded": 161,
+        "statesGenerated": 5670,
+        "statesDeduplicated": 1924,
+        "completeSolutionsEvaluated": 94,
+        "maxBeamSize": 20,
+        "feasibilityFallback": {
+          "attempted": false,
+          "status": "not-needed",
+          "pieceCount": 0,
+          "sourceCount": 0,
+          "statesExpanded": 0,
+          "placementsTried": 0,
+          "memoHits": 0
+        }
+      },
+      "uniquePatternInputs": 0,
+      "uniqueDemandInputs": 0
+    },
+    {
+      "profile": "horizontalProfile",
+      "color": "black",
+      "items": [
+        {
+          "length": 791,
+          "quantity": 6
+        },
+        {
+          "length": 775,
+          "quantity": 6
+        },
+        {
+          "length": 741,
+          "quantity": 4
+        },
+        {
+          "length": 1144,
+          "quantity": 2
+        }
+      ],
+      "sources": [
+        {
+          "source": "remnant",
+          "profileType": "horizontalProfile",
+          "color": "black",
+          "sourceLength": 3458.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "horizontalProfile",
+          "color": "black",
+          "sourceLength": 2278.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "horizontalProfile",
+          "color": "black",
+          "sourceLength": 2237.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "new",
+          "profileType": "horizontalProfile",
+          "color": "black",
+          "sourceLength": 6000,
+          "unlimited": true,
+          "quantity": null
+        }
+      ],
+      "calls": [],
+      "ms": 19.45659999999998,
+      "stats": {
+        "statesExpanded": 70,
+        "statesGenerated": 1356,
+        "statesDeduplicated": 775,
+        "completeSolutionsEvaluated": 125,
+        "maxBeamSize": 20,
+        "feasibilityFallback": {
+          "attempted": false,
+          "status": "not-needed",
+          "pieceCount": 0,
+          "sourceCount": 0,
+          "statesExpanded": 0,
+          "placementsTried": 0,
+          "memoHits": 0
+        }
+      },
+      "uniquePatternInputs": 0,
+      "uniqueDemandInputs": 0
+    },
+    {
+      "profile": "topRail",
+      "color": "gray",
+      "items": [
+        {
+          "length": 2688,
+          "quantity": 1
+        },
+        {
+          "length": 2257,
+          "quantity": 1
+        },
+        {
+          "length": 2741,
+          "quantity": 1
+        },
+        {
+          "length": 1748,
+          "quantity": 2
+        },
+        {
+          "length": 1220,
+          "quantity": 1
+        },
+        {
+          "length": 1399,
+          "quantity": 1
+        },
+        {
+          "length": 3112,
+          "quantity": 1
+        },
+        {
+          "length": 3379,
+          "quantity": 1
+        },
+        {
+          "length": 2391,
+          "quantity": 1
+        }
+      ],
+      "sources": [
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "gray",
+          "sourceLength": 4907.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "gray",
+          "sourceLength": 4184.3,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "gray",
+          "sourceLength": 3858.8,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "gray",
+          "sourceLength": 3799.6,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "gray",
+          "sourceLength": 1675.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "gray",
+          "sourceLength": 1085.3,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "new",
+          "profileType": "topRail",
+          "color": "gray",
+          "sourceLength": 6000,
+          "unlimited": true,
+          "quantity": null
+        }
+      ],
+      "calls": [],
+      "ms": 18.31770000000006,
+      "stats": {
+        "statesExpanded": 81,
+        "statesGenerated": 1646,
+        "statesDeduplicated": 578,
+        "completeSolutionsEvaluated": 74,
+        "maxBeamSize": 20,
+        "feasibilityFallback": {
+          "attempted": false,
+          "status": "not-needed",
+          "pieceCount": 0,
+          "sourceCount": 0,
+          "statesExpanded": 0,
+          "placementsTried": 0,
+          "memoHits": 0
+        }
+      },
+      "uniquePatternInputs": 0,
+      "uniqueDemandInputs": 0
+    },
+    {
+      "profile": "topRail",
+      "color": "black",
+      "items": [
+        {
+          "length": 2343,
+          "quantity": 1
+        },
+        {
+          "length": 2295,
+          "quantity": 1
+        },
+        {
+          "length": 1470,
+          "quantity": 1
+        },
+        {
+          "length": 2500,
+          "quantity": 1
+        }
+      ],
+      "sources": [
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "black",
+          "sourceLength": 5024.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "black",
+          "sourceLength": 4529.8,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "black",
+          "sourceLength": 4099.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "black",
+          "sourceLength": 3848.8,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "black",
+          "sourceLength": 1636.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "topRail",
+          "color": "black",
+          "sourceLength": 1106.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "new",
+          "profileType": "topRail",
+          "color": "black",
+          "sourceLength": 6000,
+          "unlimited": true,
+          "quantity": null
+        }
+      ],
+      "calls": [],
+      "ms": 3.6347999999998137,
+      "stats": {
+        "statesExpanded": 41,
+        "statesGenerated": 334,
+        "statesDeduplicated": 131,
+        "completeSolutionsEvaluated": 115,
+        "maxBeamSize": 20,
+        "feasibilityFallback": {
+          "attempted": false,
+          "status": "not-needed",
+          "pieceCount": 0,
+          "sourceCount": 0,
+          "statesExpanded": 0,
+          "placementsTried": 0,
+          "memoHits": 0
+        }
+      },
+      "uniquePatternInputs": 0,
+      "uniqueDemandInputs": 0
+    },
+    {
+      "profile": "bottomRail",
+      "color": "gray",
+      "items": [
+        {
+          "length": 2688,
+          "quantity": 1
+        },
+        {
+          "length": 2257,
+          "quantity": 1
+        },
+        {
+          "length": 2741,
+          "quantity": 1
+        },
+        {
+          "length": 1748,
+          "quantity": 2
+        },
+        {
+          "length": 1220,
+          "quantity": 1
+        },
+        {
+          "length": 1399,
+          "quantity": 1
+        },
+        {
+          "length": 3112,
+          "quantity": 1
+        },
+        {
+          "length": 3379,
+          "quantity": 1
+        },
+        {
+          "length": 2391,
+          "quantity": 1
+        }
+      ],
+      "sources": [
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "gray",
+          "sourceLength": 4184.3,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "gray",
+          "sourceLength": 4120.3,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "gray",
+          "sourceLength": 3062.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "gray",
+          "sourceLength": 2957.5,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "gray",
+          "sourceLength": 2826.7,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "gray",
+          "sourceLength": 1619.7,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "new",
+          "profileType": "bottomRail",
+          "color": "gray",
+          "sourceLength": 6000,
+          "unlimited": true,
+          "quantity": null
+        }
+      ],
+      "calls": [],
+      "ms": 19.76680000000033,
+      "stats": {
+        "statesExpanded": 81,
+        "statesGenerated": 1650,
+        "statesDeduplicated": 558,
+        "completeSolutionsEvaluated": 102,
+        "maxBeamSize": 20,
+        "feasibilityFallback": {
+          "attempted": false,
+          "status": "not-needed",
+          "pieceCount": 0,
+          "sourceCount": 0,
+          "statesExpanded": 0,
+          "placementsTried": 0,
+          "memoHits": 0
+        }
+      },
+      "uniquePatternInputs": 0,
+      "uniqueDemandInputs": 0
+    },
+    {
+      "profile": "bottomRail",
+      "color": "black",
+      "items": [
+        {
+          "length": 2343,
+          "quantity": 1
+        },
+        {
+          "length": 2295,
+          "quantity": 1
+        },
+        {
+          "length": 1470,
+          "quantity": 1
+        },
+        {
+          "length": 2500,
+          "quantity": 1
+        }
+      ],
+      "sources": [
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "black",
+          "sourceLength": 3848.8,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "black",
+          "sourceLength": 3798.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "black",
+          "sourceLength": 3055.1,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "black",
+          "sourceLength": 2087.4,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "black",
+          "sourceLength": 2078.6,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "remnant",
+          "profileType": "bottomRail",
+          "color": "black",
+          "sourceLength": 1431.2,
+          "unlimited": false,
+          "quantity": 1
+        },
+        {
+          "source": "new",
+          "profileType": "bottomRail",
+          "color": "black",
+          "sourceLength": 6000,
+          "unlimited": true,
+          "quantity": null
+        }
+      ],
+      "calls": [],
+      "ms": 4.430499999999938,
+      "stats": {
+        "statesExpanded": 41,
+        "statesGenerated": 340,
+        "statesDeduplicated": 150,
+        "completeSolutionsEvaluated": 73,
+        "maxBeamSize": 20,
+        "feasibilityFallback": {
+          "attempted": false,
+          "status": "not-needed",
+          "pieceCount": 0,
+          "sourceCount": 0,
+          "statesExpanded": 0,
+          "placementsTried": 0,
+          "memoHits": 0
+        }
+      },
+      "uniquePatternInputs": 0,
+      "uniqueDemandInputs": 0
+    }
+  ],
+  "settings": {
+    "beamWidth": 20,
+    "patternsPerState": 10,
+    "candidatePoolSize": 50,
+    "maxExtraBars": 2,
+    "feasibilityFallbackMaxPieces": 24,
+    "feasibilityFallbackMaxSources": 16,
+    "feasibilityFallbackMaxStates": 100000,
+    "scoreSettings": {
+      "minimumLength": 500,
+      "fullValueLength": 4500,
+      "curvePower": 2,
+      "minimumValueFactor": 0.1,
+      "maximumValueFactor": 0.87,
+      "scrapValueFactor": 0.1,
+      "kerfRecoveryFactor": 0,
+      "reusableRemnantHandlingPenalty": 20,
+      "newStockRemnantCreationPenalty": 50,
+      "freeScrapLength": 200,
+      "largeScrapPenaltyFactor": 1.7
+    }
+  },
+  "score": {
+    "sourceValueEquivalent": 418878.1043845403,
+    "recoveredRemnantValueEquivalent": 18234.45814961462,
+    "kerfRecoveredValueEquivalent": 0,
+    "newStockRemnantCreationPenaltyEquivalent": 1100,
+    "remnantHandlingPenaltyEquivalent": 580,
+    "largeScrapPenaltyEquivalent": 23446.399999999994,
+    "totalCostEquivalent": 425770.0462349256
+  }
+}
