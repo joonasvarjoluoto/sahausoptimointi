@@ -2825,6 +2825,291 @@ function findBestPatternDP(items, stockLength, kerf) {
 }
 
 
+function comparePatternQuantities(first, second) {
+
+    for (let i = 0; i < first.length; i++) {
+
+        if (first[i] !== second[i]) {
+            return second[i] - first[i];
+        }
+    }
+
+
+    return 0;
+}
+
+
+function patternQuantitiesAreEqual(first, second) {
+
+    if (first.length !== second.length) {
+        return false;
+    }
+
+
+    for (let i = 0; i < first.length; i++) {
+
+        if (first[i] !== second[i]) {
+            return false;
+        }
+    }
+
+
+    return true;
+}
+
+
+function mergeDistinctSortedPatterns(
+    existingPatterns,
+    newPatterns,
+    maxPatterns
+) {
+
+    const mergedPatterns = [];
+    let existingIndex = 0;
+    let newIndex = 0;
+
+
+    // DP:n molemmat syötelistat ovat jo samalla vertailijalla järjestettyjä.
+    // Tasatilanteessa vanha lista voittaa kuten aiemmassa old + new -syötteessä.
+    while (
+        mergedPatterns.length < maxPatterns &&
+        (
+            existingIndex < existingPatterns.length ||
+            newIndex < newPatterns.length
+        )
+    ) {
+
+        let nextPattern;
+
+
+        if (existingIndex >= existingPatterns.length) {
+            nextPattern = newPatterns[newIndex++];
+        } else if (newIndex >= newPatterns.length) {
+            nextPattern = existingPatterns[existingIndex++];
+        } else if (
+            comparePatternQuantities(
+                existingPatterns[existingIndex],
+                newPatterns[newIndex]
+            ) <= 0
+        ) {
+            nextPattern = existingPatterns[existingIndex++];
+        } else {
+            nextPattern = newPatterns[newIndex++];
+        }
+
+
+        const previousPattern =
+            mergedPatterns[mergedPatterns.length - 1];
+
+
+        if (
+            !previousPattern ||
+            !patternQuantitiesAreEqual(
+                previousPattern,
+                nextPattern
+            )
+        ) {
+            mergedPatterns.push(nextPattern);
+        }
+    }
+
+
+    return mergedPatterns;
+}
+
+
+function runCandidatePatternMergeRegressionTests() {
+
+    const assert = (condition, message) => {
+
+        if (!condition) {
+            throw new Error(message);
+        }
+    };
+
+    const referenceMerge = (
+        existingPatterns,
+        newPatterns,
+        maxPatterns
+    ) => {
+
+        const distinctPatterns = new Map();
+
+
+        for (const pattern of [
+            ...existingPatterns,
+            ...newPatterns
+        ]) {
+
+            const key = pattern.join(",");
+
+
+            if (!distinctPatterns.has(key)) {
+                distinctPatterns.set(key, pattern);
+            }
+        }
+
+
+        return [...distinctPatterns.values()]
+            .sort(comparePatternQuantities)
+            .slice(0, maxPatterns);
+    };
+
+    const cases = [
+        {
+            name: "duplicate vain vanhassa listassa",
+            existing: [[5, 0], [5, 0], [3, 0]],
+            added: [[4, 0]],
+            limit: 10,
+            oldWinners: [[0, 0]]
+        },
+        {
+            name: "duplicate vain uudessa listassa",
+            existing: [[5, 0]],
+            added: [[4, 0], [4, 0], [3, 0]],
+            limit: 10
+        },
+        {
+            name: "sama pattern molemmissa listoissa",
+            existing: [[5, 0], [3, 0]],
+            added: [[5, 0], [4, 0]],
+            limit: 10,
+            oldWinners: [[0, 0]]
+        },
+        {
+            name: "maxPatterns katkaisee järjestetyn tuloksen",
+            existing: [[7, 0], [4, 0], [1, 0]],
+            added: [[6, 0], [5, 0], [2, 0]],
+            limit: 3
+        },
+        {
+            name: "tyhjä vanha lista",
+            existing: [],
+            added: [[3, 1], [2, 2]],
+            limit: 10
+        },
+        {
+            name: "tyhjä uusi lista",
+            existing: [[3, 1], [2, 2]],
+            added: [],
+            limit: 10
+        },
+        {
+            name: "molemmat listat tyhjiä",
+            existing: [],
+            added: [],
+            limit: 10
+        },
+        {
+            name: "yhden alkion listat",
+            existing: [[2, 0]],
+            added: [[1, 4]],
+            limit: 10
+        },
+        {
+            name: "duplikaatit alussa keskellä ja lopussa",
+            existing: [[9, 0], [6, 0], [3, 0]],
+            added: [[9, 0], [7, 0], [6, 0], [4, 0], [3, 0], [1, 0]],
+            limit: 10,
+            oldWinners: [[0, 0], [2, 1], [4, 2]]
+        },
+        {
+            name: "comparator käyttää myöhempiä komponentteja",
+            existing: [[3, 4, 0], [3, 1, 2], [1, 9, 0]],
+            added: [[3, 3, 5], [2, 8, 1], [1, 9, 0]],
+            limit: 10
+        }
+    ];
+
+
+    for (const testCase of cases) {
+
+        const expected = referenceMerge(
+            testCase.existing,
+            testCase.added,
+            testCase.limit
+        );
+
+        const actual = mergeDistinctSortedPatterns(
+            testCase.existing,
+            testCase.added,
+            testCase.limit
+        );
+
+
+        assert(
+            JSON.stringify(actual) === JSON.stringify(expected),
+            testCase.name + ": merge-tulos muuttui."
+        );
+
+
+        for (const [resultIndex, existingIndex] of
+            testCase.oldWinners || []) {
+            assert(
+                actual[resultIndex] ===
+                    testCase.existing[existingIndex],
+                testCase.name + ": vanhan listan etusija muuttui."
+            );
+        }
+    }
+
+
+    for (const testCase of [
+        {
+            name: "yksi kappale täsmäsovituksena",
+            items: [{ length: 6000, quantity: 1 }],
+            stockLength: 6000,
+            kerf: 3,
+            quantity: 1,
+            waste: 0
+        },
+        {
+            name: "kahden kappaleen 3 mm kerf -täsmäsovitus",
+            items: [{ length: 2998.5, quantity: 2 }],
+            stockLength: 6000,
+            kerf: 3,
+            quantity: 2,
+            waste: 3
+        },
+        {
+            name: "kahden kappaleen 3,4 mm kerf -täsmäsovitus",
+            items: [{ length: 2998.3, quantity: 2 }],
+            stockLength: 6000,
+            kerf: 3.4,
+            quantity: 2,
+            waste: 3.4
+        },
+        {
+            name: "0,1 mm tarkkuusraja",
+            items: [{ length: 0.1, quantity: 100 }],
+            stockLength: 10,
+            kerf: 0,
+            quantity: 100,
+            waste: 0
+        }
+    ]) {
+
+        const result = findCandidatePatternsDP(
+            testCase.items,
+            testCase.stockLength,
+            testCase.kerf,
+            10
+        )[0];
+
+
+        assert(
+            result?.pattern[0]?.quantity === testCase.quantity &&
+                result.remaining === 0 &&
+                result.waste === testCase.waste,
+            testCase.name + ": täsmäsovituksen tulos muuttui."
+        );
+    }
+
+
+    return true;
+}
+
+
 function findCandidatePatternsDP(
     items,
     stockLength,
@@ -2929,42 +3214,6 @@ function findCandidatePatternsDP(
     }
 
 
-    function compareQuantities(first, second) {
-
-        for (let i = 0; i < first.length; i++) {
-
-            if (first[i] !== second[i]) {
-                return second[i] - first[i];
-            }
-        }
-
-
-        return 0;
-    }
-
-
-    function keepDistinctPatterns(patterns) {
-
-        const distinctPatterns = new Map();
-
-
-        for (const quantities of patterns) {
-
-            const key = quantities.join(",");
-
-
-            if (!distinctPatterns.has(key)) {
-                distinctPatterns.set(key, quantities);
-            }
-        }
-
-
-        return [...distinctPatterns.values()]
-            .sort(compareQuantities)
-            .slice(0, maxPatterns);
-    }
-
-
     const states = new Map();
 
     states.set(0, [new Array(items.length).fill(0)]);
@@ -2998,10 +3247,14 @@ function findCandidatePatternsDP(
             }
 
 
-            states.set(targetCapacity, keepDistinctPatterns([
-                ...(states.get(targetCapacity) || []),
-                ...newPatterns
-            ]));
+            states.set(
+                targetCapacity,
+                mergeDistinctSortedPatterns(
+                    states.get(targetCapacity) || [],
+                    newPatterns,
+                    maxPatterns
+                )
+            );
         }
     }
 

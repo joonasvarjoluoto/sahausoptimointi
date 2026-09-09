@@ -70,6 +70,22 @@ node benchmarks/batch-search/finalize-study.cjs
 node benchmarks/batch-search/inventory-report.cjs
 ```
 
+Saavutettujen kapasiteettien jälkeisen yksittäisen materiaalilaskennan profilointi ja pattern-mergen ennen/jälkeen-vertailu:
+
+```powershell
+node benchmarks/batch-search/profile-reachable.cjs hard baseline after-1
+node benchmarks/batch-search/profile-reachable.cjs hard baseline after-2
+node benchmarks/batch-search/profile-reachable.cjs hard baseline after-3
+node benchmarks/batch-search/profile-reachable.cjs fast baseline after-1
+node benchmarks/batch-search/profile-reachable.cjs fast baseline after-2
+node benchmarks/batch-search/profile-reachable.cjs fast baseline after-3
+node benchmarks/batch-search/profile-reachable.cjs hard counts after-1
+node benchmarks/batch-search/profile-reachable.cjs hard cpu after-1
+node benchmarks/batch-search/benchmark-pattern-merge.cjs
+```
+
+Ennen-mittaukset ja alkuperäinen CPU-/laskuriprofiili ovat `reachable-profile/`-hakemistossa commitin `404b885` checkpointina. `profile-reachable.cjs` tunnistaa sekä alkuperäisen Map/dedup/sort-polun että productionin suoran merge-polun ja lisää laskurit vain erilliseen VM-kopioon. `benchmark-pattern-merge.cjs` varmistaa vaikean ja nopean A-tapauksen tallennetut tulokset sekä ajaa jäännöksettömän 1/4/17/18-tapauksen kolme kertaa ennen- ja jälkeen-lähteillä. Koonti tallentuu `pattern-merge-results.json`-tiedostoon; tulkinta on `PATTERN_MERGE_RESULTS.md`-raportissa.
+
 `generate` tekee deterministisesti neljä historiallista 23 tilauksen kierrosta. Pituushäiriöt ovat ±30 mm (seed 230908), määrät/värit/profiilit säilyvät ja tilaus 16 puuttuu. Kevyt nykyinen materiaalihaku tuottaa fyysiset jäännökset; vain nykyinen `reusable`-disposition hyväksytään. Skenaarioiden yhteiset varianttikiintiöt perustuvat syntyneiden jäännösten määriin. A on satunnaisotos (seed 90823), B lyhyimpien ja C pisimpien palojen stressitesti. Jäännöspoolin jokaiseen lähdetankoon pääsee `provenance`-tiedoilla. Tämä ei mallinna varaston todellista kiertoa eikä aseta tuotantosaldoja.
 
 `pilot` mittaa 2–5 käsin valittua tilausta normaalilla haulla, ilman välimuistia, enintään 60 s per tapaus. `suite` ajaa A/B/C:n 600 s käyrät, F1/F2:n 120 s äärelliset testit ja neljä A-varaston 120 s lisäpermutaatioita. Viiden järjestyksen vertailussa käytetään myös alkuperäisen A-ajon 120 s checkpointia. Hakusiemen pysyy 230916:ssa, vain syöttöjärjestys muuttuu. F1/F2 sisältävät saldoihin mahtuvan aiemmin validoidun kokonaisen batchin toteutuskelpoisuustodistajan; epäonnistunut kevyt haku ei muuta tätä tosiasiaa.

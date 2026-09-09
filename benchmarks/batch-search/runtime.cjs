@@ -7,10 +7,18 @@ const files = ['src/cutting-physics.js', 'src/production-planning.js', 'src/prod
 const sources = files.map(file => ({ file, code: fs.readFileSync(path.join(root, file), 'utf8') }));
 const sourceHashes = Object.fromEntries(sources.map(s => [s.file, crypto.createHash('sha256').update(s.code).digest('hex')]));
 
-function createRuntime(data, { cache = false, patternCache = false, profile = false, sparsePatterns = false } = {}) {
+function createRuntime(data, { cache = false, patternCache = false, profile = false, sparsePatterns = false, sourceOverrides = {} } = {}) {
+    const runtimeSources = sources.map(source => ({
+        ...source,
+        code: sourceOverrides[source.file] ?? source.code
+    }));
+    const runtimeSourceHashes = Object.fromEntries(runtimeSources.map(source => [
+        source.file,
+        crypto.createHash('sha256').update(source.code).digest('hex')
+    ]));
     const ctx = vm.createContext({ data, useCache: cache, usePatternCache:patternCache, profilePatterns:profile,
         console: { log() {}, table() {}, warn() {}, error() {} } });
-    sources.forEach(s => new vm.Script(s.code, { filename: s.file }).runInContext(ctx, { timeout: 10000 }));
+    runtimeSources.forEach(s => new vm.Script(s.code, { filename: s.file }).runInContext(ctx, { timeout: 10000 }));
     if(sparsePatterns){
         const {transformPatternFunction}=require('./sparse-patterns.cjs');
         const original=vm.runInContext('findCandidatePatternsDP.toString()',ctx);
@@ -101,7 +109,7 @@ function createRuntime(data, { cache = false, patternCache = false, profile = fa
         }
     `, ctx, { timeout: 10000 });
     return {
-        sourceHashes,
+        sourceHashes: runtimeSourceHashes,
         patterns(items,length,kerf,limit) {
             ctx.patternRequest={items,length,kerf,limit};
             return JSON.parse(vm.runInContext('JSON.stringify(findCandidatePatternsDP(patternRequest.items,patternRequest.length,patternRequest.kerf,patternRequest.limit))',ctx,{timeout:60000}));

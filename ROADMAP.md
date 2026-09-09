@@ -23,6 +23,8 @@ Uusi checkpoint: puhdas tuotantokerros, batchin debug-näkymä, valinnainen auko
 
 Saavutettujen DP-kapasiteettien optimointi siirrettiin aktiiviseen `findCandidatePatternsDP()`-funktioon 9.9.2026. Se säilyttää kapasiteettien laskevan käsittelyjärjestyksen, binääriset määrälohkot, kuviokiintiöt ja sahausfysiikan. Vertailussa 1 354 kuviota sekä 14 tallennettua kokonaista suunnitelmaa scoreineen ja operaatioineen pysyivät identtisinä. Pienet vertailut nopeutuivat noin 2,7–16,6 sekunnista 0,06–0,50 sekuntiin; vaikea A-varaston batch 3/9/21 kesti edelleen noin 37,8 sekuntia.
 
+Pattern-listojen vakaa suora merge siirrettiin productioniin 9.9.2026. Se säilyttää comparatorin, vanhan listan etusijan, duplikaatit ja kuviokiintiön mutta poistaa kapasiteettipäivityksistä merkkijonoavaimet, Map-deduplikoinnin ja koko listan lajittelun. Vaikean A-varaston 3/9/21-batchin materiaalimediaani laski samalla koneella 34,69 sekunnista 20,23 sekuntiin; tulos, score, operaatiot ja beam-tilastot säilyivät.
+
 Checkpointin tarkistus 8.9.2026: 35/35 Node-testiryhmää ja 17 ohjaus-/persistenssitarkistusta läpäisty. Käyttäjän selaintestit ja agentin täydentävä HTTP-selaintestaus läpäisty, mukaan lukien pienennettävät tilauskortit kappalemäärineen, palautus, profiilieristys, kiskoniput, batch-koot ja saman tangon jatkosahaus. Tarkat syötteet ja rajaukset ovat tuotantosuunnitteludokumentissa.
 
 Valmiina ovat muun muassa:

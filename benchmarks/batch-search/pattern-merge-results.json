@@ -1,0 +1,78 @@
+{
+  "node": "v24.19.0",
+  "baselineCommit": "404b885",
+  "generatedAt": "2026-09-09T15:59:27.422Z",
+  "hardA": {
+    "planHash": "24306390ba723df1cb1c430c9b021731e26589256d1e372f963e84a56cdef9f2",
+    "score": 275865.03348940733,
+    "before": [
+      36998.887299999995,
+      34690.244399999996,
+      33800.318999999996
+    ],
+    "after": [
+      19556.6396,
+      22424.9555,
+      20227.089399999997
+    ],
+    "work": {
+      "patternCalls": 898,
+      "chunks": 14994,
+      "transitions": 6893183,
+      "copies": 17113286,
+      "copiedElements": 207647074,
+      "keepCalls": 6893183,
+      "inputPatterns": 48565146,
+      "retainedPatterns": 36884890,
+      "reachable": 1135146,
+      "removedJoinKeys": 48565146,
+      "removedMapAndGeneralSortCalls": 6893183
+    }
+  },
+  "fastA": {
+    "planHash": "588c354271bd9c3ecb79a40cfc99da2e97c202b1d2516cf810fc412fac2559b1",
+    "score": 425770.0462349256,
+    "before": [
+      2416.0022,
+      2308.6549,
+      2300.3401
+    ],
+    "after": [
+      1940.1996,
+      2077.4703,
+      1777.8429
+    ]
+  },
+  "noRemnants": {
+    "ids": [
+      "excel-1",
+      "excel-4",
+      "excel-17",
+      "excel-18"
+    ],
+    "planHash": "af542d8dac6bdd89bd9cb68a669759a24eb6fa244160f593f71e2319e3af6d54",
+    "score": 449276.0875053903,
+    "before": [
+      852,
+      889,
+      772
+    ],
+    "after": [
+      497,
+      492,
+      491
+    ],
+    "beforeSourceHashes": {
+      "src/cutting-physics.js": "55b88ae8b7ad60e45a8a1bc1bcf2376d2d89291c3c64ff86ae9a1f2fbb1760aa",
+      "src/production-planning.js": "a5536192e4bc85dc4c2ad3236bfa9ad664095421db487618960c650f00ee4603",
+      "src/production-integration.js": "a311a73889d976e65b4171eed6f3e330166fadd1bfee9154a3125790e612f878",
+      "app.js": "4a74aae5f617d6b592409db807711ae5e5cc83fd499e87db8773b661f9145645"
+    },
+    "afterSourceHashes": {
+      "src/cutting-physics.js": "55b88ae8b7ad60e45a8a1bc1bcf2376d2d89291c3c64ff86ae9a1f2fbb1760aa",
+      "src/production-planning.js": "a5536192e4bc85dc4c2ad3236bfa9ad664095421db487618960c650f00ee4603",
+      "src/production-integration.js": "a311a73889d976e65b4171eed6f3e330166fadd1bfee9154a3125790e612f878",
+      "app.js": "c4fee4f0f895136f34e610bb48a9bd9b1477e7c19332aea4deda17daef1fd61d"
+    }
+  }
+}

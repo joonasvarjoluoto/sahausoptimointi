@@ -18,6 +18,9 @@ const cases = { hard: [3, 9, 21], fast: [1, 4, 17, 18] };
 
 function instrument(code, mode) {
     code = code.replace(/\r\n/g, '\n');
+    if (code.includes('function mergeDistinctSortedPatterns(')) {
+        return instrumentMergedPatternSearch(code);
+    }
     const start = code.indexOf('function findCandidatePatternsDP(');
     const end = code.indexOf('function optimizeOrderDP(', start);
     assert(start >= 0 && end > start);
@@ -56,6 +59,47 @@ function instrument(code, mode) {
         meter.returned = candidates.length;
         return candidates;`);
     return code.slice(0, start) + part + code.slice(end);
+}
+
+function instrumentMergedPatternSearch(code) {
+    const replaceOnce = (source, from, to) => {
+        assert.equal(source.split(from).length, 2, 'Instrumentation anchor changed: ' + from);
+        return source.replace(from, to);
+    };
+    const mergeStart = code.indexOf('function mergeDistinctSortedPatterns(');
+    const searchStart = code.indexOf('function findCandidatePatternsDP(', mergeStart);
+    const searchEnd = code.indexOf('function optimizeOrderDP(', searchStart);
+    assert(mergeStart >= 0 && searchStart > mergeStart && searchEnd > searchStart);
+    let mergePart = code.slice(mergeStart, searchStart);
+    mergePart = replaceOnce(mergePart, '    const mergedPatterns = [];', `    const meter = activeCall;
+    meter.keepCalls++; meter.inputPatterns += existingPatterns.length + newPatterns.length;
+    meter.maxKeepInput = Math.max(meter.maxKeepInput, existingPatterns.length + newPatterns.length);
+    const sampleKeep = sampleMode && (Math.imul(meter.keepCalls + meter.ordinal * 104729, 2654435761) >>> 22) === 0;
+    const keepStart = sampleKeep ? performance.now() : 0;
+    const mergedPatterns = [];`);
+    mergePart = replaceOnce(mergePart, '    return mergedPatterns;', `    meter.retainedPatterns += mergedPatterns.length;
+    meter.maxKeepDistinct = Math.max(meter.maxKeepDistinct, mergedPatterns.length);
+    meter.mergeOutputs = (meter.mergeOutputs || 0) + mergedPatterns.length;
+    if (sampleKeep) { meter.keepSamples++; meter.dedupSampleMs += performance.now() - keepStart; }
+    return mergedPatterns;`);
+    let searchPart = code.slice(searchStart, searchEnd);
+    searchPart = replaceOnce(searchPart, 'const chunks = [];', 'const chunks = []; const meter = activeCall;');
+    searchPart = replaceOnce(searchPart, 'const states = new Map();', 'meter.chunks = chunks.length; const states = new Map();');
+    searchPart = replaceOnce(searchPart, 'for (const chunk of chunks) {', 'for (const chunk of chunks) { meter.capacityKeysSorted += states.size;');
+    searchPart = replaceOnce(searchPart, 'const newPatterns = [];', `const newPatterns = [];
+            meter.transitions++;
+            const copied = states.get(sourceCapacity).length;
+            meter.copies += copied; meter.copiedElements += copied * items.length;
+            const sampleCopy = sampleMode && (Math.imul(meter.transitions + meter.ordinal * 104729, 2654435761) >>> 22) === 0;
+            const copyStart = sampleCopy ? performance.now() : 0;`);
+    searchPart = replaceOnce(searchPart, '            states.set(\n                targetCapacity,\n                mergeDistinctSortedPatterns(', `            if (sampleCopy) { meter.copySamples++; meter.copySampleMs += performance.now() - copyStart; }
+            states.set(
+                targetCapacity,
+                mergeDistinctSortedPatterns(`);
+    searchPart = replaceOnce(searchPart, 'return candidates;', `meter.reachable = states.size;
+    meter.returned = candidates.length;
+    return candidates;`);
+    return code.slice(0, mergeStart) + mergePart + searchPart + code.slice(searchEnd);
 }
 
 async function run(caseName, mode, runId) {
