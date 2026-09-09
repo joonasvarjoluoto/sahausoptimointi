@@ -209,7 +209,7 @@ Pidä ajurin testilista eksplisiittisenä: lisää sinne vain ilman selainta toi
 
 `runOrderInputRegressionTests()` tarkistaa tilausadapterin, kiskoparit, tunnisteet ja neljän perustapauksen täsmälleen samat optimointitulokset. `runStoredOrderValidationRegressionTests()` tarkistaa skeeman 5 rakenteen ja kysynnän sekä skeeman 3 hylkäyksen. Nämä ja uusi `runProductionRegressionTests()` kuuluvat Node-ajurin 35 ryhmään. `runCoreProfileTypeValidationRegressionTests()` on eksplisiittisesti kahdeksan rivin taulukko (B-005 korjattu). Selaimen `runOrderInputUiRegressionTests()` testaa irrotetun tilauskortin turvallisen DOM-roundtripin muuttamatta avointa työtä. Fixture-loaderit käyttävät `createDevelopmentOrdersFromCuts()`-adapteria; eriävät ylä-/alakiskolistat hylätään ennen lomakkeen muuttamista. Tämä ei rajoita suoria core-testejä eikä ole tallennemigraatio.
 
-Aja tuotantoputken ohjaus- ja persistenssimuutoksissa myös `node run-production-ui-regressions.cjs`. Sen 17 tarkistusta käyttävät testikaksoisia; ne eivät korvaa todellista selaimen DOM-, palautus- tai asettelutestiä.
+Aja tuotantoputken ohjaus- ja persistenssimuutoksissa myös `node run-production-ui-regressions.cjs`. Sen 18 tarkistusta käyttävät testikaksoisia; ne eivät korvaa todellista selaimen DOM-, palautus- tai asettelutestiä.
 
 Käytä lisäksi tehtävään sopivia nimettyjä `run...RegressionTest(s)()`-funktioita. Selaimen `loadTestA()`, `loadTestAWithRemnants()`, `loadTestD1()` ja `loadTestProfileIsolation()` vaihtavat avoimen työn syötteet ja tallentavat ne; niiden palauttama `undefined` on normaali. Myös vanha `runAllRegressionTests()` käyttää näitä lomakelatauksia ja muuttaa avointa työtä. `runCurrentOrderSummaryTest()` laskee yhteenvedon nykyisestä lomakkeesta.
 

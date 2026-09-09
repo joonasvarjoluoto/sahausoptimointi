@@ -96,7 +96,8 @@ Loppuregressiot:
 node run-regressions.cjs
 node run-production-ui-regressions.cjs
 node benchmarks/batch-search/tests.cjs
+node benchmarks/batch-search/run-pattern-regressions.cjs
 node benchmarks/batch-search/run-sparse-regressions.cjs
 ```
 
-Viimeinen komento käyttää nykyisen core-ajurin täsmälleen samaa eksplisiittistä testilistaa ja onnistumissääntöjä. Sen eristetty tiedostonlukusovitin muuntaa vain VM:ään ladatun app.js:n; production-tiedostoa ei kirjoiteta. Selain-UI ei kuulu näihin Node-koemittauksiin.
+Kuvioregressio lukitsee eilisen 1 354 järjestetyn kuviotapauksen digestin sekä vertaa aiemmin tallennetut kokonaiset suunnitelmat scoreineen ja operaatioineen. Viimeinen komento käyttää nykyisen core-ajurin täsmälleen samaa eksplisiittistä testilistaa ja onnistumissääntöjä; ennen optimoinnin production-siirtoa se muunsi vain VM:ään ladatun `app.js`:n, ja siirron jälkeen se ajaa saman production-toteutuksen suoraan. Selain-UI ei kuulu näihin Node-koemittauksiin.

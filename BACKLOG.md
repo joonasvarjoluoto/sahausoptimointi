@@ -27,14 +27,15 @@ Prioriteetit:
 
 ### B-007 — Tyhjien DP-kapasiteettisolujen kustannus jäännösvarastolla
 
-- **Tila:** vahvistettu Node-benchmarkissa 2026-09-08; production-koodi ennallaan.
+- **Tila:** valmis 2026-09-09; saavutettujen kapasiteettien toteutus siirretty production-funktioon.
 - **Prioriteetti:** keskitaso ennen suuremman varaston koekäyttöä.
 - **Alue:** `findCandidatePatternsDP`, yksittäisen materiaaliratkaisun laskenta.
 - **Havainto:** 6 000 mm lähde ja 3 mm kerf muodostavat 0,1 mm tarkkuudella 60 031 kapasiteettisolua, joista jokainen alustetaan taulukoksi. Jokainen määrälohko käy myös tyhjät kapasiteetit läpi. Tätä toistetaan beam-tilojen eri jäännöspituuksille.
 - **Näyttö:** kanonisella 100 jäännöksen A-varastolla 4/5 tilauksen normaalit suunnitelmat kestivät noin 54/50 sekuntia; pitkien C-jäännösten vastaavat ajot katkaistiin 60 sekunnissa. Erillisessä profiloinnissa lähes kaikki aika kului kuviolaskentaan. Tarkat syötteet ja tulokset: `benchmarks/batch-search/inventory-study/`.
 - **Rajattu Node-koe:** saavutettujen kapasiteettien käsittely samassa järjestyksessä säilytti 1 354 kuviotestin tulokset sekä kaikki 14 valmistunutta normaalia vertailusuunnitelmaa pisteineen ja operaatioineen. 2–5 tilauksen manuaaliset testit valmistuivat noin 0,04–4,8 sekunnissa; myös kaksi aiemmin aikakatkaistua tapausta valmistui.
 - **Rajoite:** haun valitsema monimittainen samanvärinen kolmen tilauksen yhdistelmä 3/9/21 kesti erillisessä kylmässä A-varaston mittauksessa edelleen noin 32,8 s. Perusbatchien nopeutusta ei saa yleistää kaikkiin samankokoisiin valintoihin. Alkuperäisen ja Node-kokeen 35/35 regressioryhmää läpäistiin.
-- **Seuraava askel:** arvioi erillisessä toteutustehtävässä tämän täsmällisen muutoksen siirtäminen varsinaiseen funktioon, lisää rajatapaukset core-regressioihin ja varmista selaimessa. Node-kokeen lähdemuunnos ei ole production-toteutus eikä muuta 0,1 mm tarkkuutta, kerfiä tai pisteytystä.
+- **Toteutus ja varmistus:** production käyttää vain saavutettuja kapasiteetteja ja käsittelee ne samoissa laskevissa järjestyksissä. Ennen/jälkeen-vertailu säilytti 1 354 järjestettyä kuviotulosta sekä 14 tallennettua kokonaista suunnitelmaa scoreineen ja operaatioineen. Core 35/35, tuotannon ohjaus-/persistenssit 18/18 ja HTTP-selainpolku läpäistiin. Scorea, kerfiä, batch-hakua tai scheduleria ei muutettu.
+- **Jäljelle jäävä suorituskykyraja:** A-varaston monimittainen batch 3/9/21 kesti production-toteutuksella edelleen noin 37,8 s. Seuraava tutkimus kohdistetaan tämän yhden materiaalivariantin kuviotilojen määrään ja `keepDistinctPatterns()`-kustannukseen ilman tulosjärjestyksen muuttamista.
 
 ### B-006 — Batch-yhdistelmien synkroninen haku suurissa tilausjonoissa
 

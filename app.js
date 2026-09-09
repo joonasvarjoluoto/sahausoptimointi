@@ -2965,23 +2965,20 @@ function findCandidatePatternsDP(
     }
 
 
-    const states = Array.from(
-        { length: capacity + 1 },
-        () => []
-    );
+    const states = new Map();
 
-    states[0].push(new Array(items.length).fill(0));
+    states.set(0, [new Array(items.length).fill(0)]);
 
 
     for (const chunk of chunks) {
 
-        for (
-            let sourceCapacity = capacity - chunk.size;
-            sourceCapacity >= 0;
-            sourceCapacity--
-        ) {
+        // Tilannekuva ja laskeva järjestys säilyttävät 0/1-lohkon semantiikan:
+        // tämän kierroksen uusia tiloja ei käytetä saman lohkon kanssa uudelleen.
+        for (const sourceCapacity of [...states.keys()]
+            .filter(value => value <= capacity - chunk.size)
+            .sort((first, second) => second - first)) {
 
-            if (states[sourceCapacity].length === 0) {
+            if (states.get(sourceCapacity).length === 0) {
                 continue;
             }
 
@@ -2990,7 +2987,7 @@ function findCandidatePatternsDP(
             const newPatterns = [];
 
 
-            for (const quantities of states[sourceCapacity]) {
+            for (const quantities of states.get(sourceCapacity)) {
 
                 const nextQuantities = [...quantities];
 
@@ -3001,10 +2998,10 @@ function findCandidatePatternsDP(
             }
 
 
-            states[targetCapacity] = keepDistinctPatterns([
-                ...states[targetCapacity],
+            states.set(targetCapacity, keepDistinctPatterns([
+                ...(states.get(targetCapacity) || []),
                 ...newPatterns
-            ]);
+            ]));
         }
     }
 
@@ -3013,13 +3010,15 @@ function findCandidatePatternsDP(
     const returnedPatterns = new Set();
 
 
-    for (
-        let usedCapacity = capacity;
-        usedCapacity > 0 && candidates.length < maxPatterns;
-        usedCapacity--
-    ) {
+    for (const usedCapacity of [...states.keys()]
+        .filter(value => value > 0)
+        .sort((first, second) => second - first)) {
 
-        for (const quantities of states[usedCapacity]) {
+        if (candidates.length >= maxPatterns) {
+            break;
+        }
+
+        for (const quantities of states.get(usedCapacity)) {
 
             const key = quantities.join(",");
 
