@@ -40,6 +40,29 @@ assert.equal(patternDigest, expectedPatternDigest, 'Järjestettyjen DP-kuvioiden
 const scenarios = read('scenarios').scenarios;
 let completePlanComparisons = 0;
 let completedTimeoutComparisons = 0;
+const executionDigest = crypto.createHash('sha256');
+const profileBlockRank = new Map([
+    ['verticalProfile', 0], ['closingProfile', 1], ['horizontalProfile', 2],
+    ['uProfile', 3], ['bottomRail', 4], ['topRail', 4]
+]);
+
+function validateAndRecordExecution(execution) {
+    let previousRank = -1;
+    execution.operations.forEach((operation, index) => {
+        assert.equal(operation.id, `operation-${index + 1}`);
+        assert.equal(operation.number, index + 1);
+        const ranks = new Set(operation.sources.map(source => profileBlockRank.get(source.profileType)));
+        assert.equal(ranks.size, 1, 'Operaatio ylittää profiiliblokin');
+        const [rank] = ranks;
+        assert.ok(Number.isSafeInteger(rank) && rank >= previousRank, 'Profiiliblokkien järjestys rikkoutui');
+        previousRank = rank;
+        operation.dependencyIds.forEach(dependencyId => {
+            assert.ok(Number(dependencyId.split('-')[1]) < operation.number, 'Dependency ei edellä operaatiota');
+        });
+    });
+    executionDigest.update(JSON.stringify(execution) + '\n');
+}
+
 for (const reference of read('manual')) {
     const scenarioRuntime = createRuntime({
         ...data,
@@ -50,7 +73,7 @@ for (const reference of read('manual')) {
         assert.equal(result.status, 'complete');
         assert.equal(result.score, reference.score);
         assert.deepEqual(result.plan, reference.plan);
-        assert.deepEqual(result.execution, reference.execution);
+        validateAndRecordExecution(result.execution);
         completePlanComparisons++;
         continue;
     }
@@ -60,11 +83,15 @@ for (const reference of read('manual')) {
         assert.equal(result.status, 'complete');
         assert.equal(result.score, cached.score);
         assert.deepEqual(result.plan, cached.plan);
-        assert.deepEqual(result.execution, cached.execution);
+        validateAndRecordExecution(result.execution);
         completedTimeoutComparisons++;
     }
 }
 
+const executionResultDigest = executionDigest.digest('hex');
+const expectedExecutionDigest = '44d68957a1504764ba50e8f52fe2058bad0f363a1d961d75c5ff8aeb55fcc74d';
+assert.equal(executionResultDigest, expectedExecutionDigest, 'Tallennettujen suunnitelmien scheduler-tulos muuttui');
+
 console.log(`PASS ${patternComparisons} ordered DP pattern cases (${patternDigest})`);
-console.log(`PASS ${completePlanComparisons} stored complete plans with identical score and operations`);
+console.log(`PASS ${completePlanComparisons} stored complete material plans with identical score and validated profile-block operations`);
 console.log(`PASS ${completedTimeoutComparisons} former timeout against a completed reference`);

@@ -192,6 +192,21 @@ Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei p
 - Saman ajon jäännösten käyttö muodostaa eksplisiittiset operaatiodependencyt. Vanha syötetty jäännösvarasto säilyy erillisenä materiaalilähteenä.
 - Continuous-/rolling-/span-/age-plannerit, anti-starvation ja tuotantoaikakustannukset ovat myöhempää mahdollista kehitystä. Toteutuksen täsmällinen malli, testit ja rajaukset: `BATCH_AND_BUNDLE_SAWING_PLANNING.md`.
 
+### Fyysisen salon tunnistus ja poikkeama suunnitelmasta (9.9.2026)
+
+- **Lähde ja varmuus:** käyttäjän suora havainto todellisesta työstä. Työssä oli 25 sahausliikettä ja 64 kappaletta. Kolmanteen liikkeeseen suunniteltiin salonumerot 1, 2, 7 ja 4, mutta käytännössä sahalle otettiin salot 1, 2, 3 ja 4.
+- **Tuotantotarve:** työntekijän pitää voida merkitä fyysiset salot helposti ennen sahausta ja nähdä nykyisessä työvaiheessa suuret, yksiselitteiset salonumerot. Saman fyysisen salon jatkoleikkauksen ja saman ajon jäännöksen pitää säilyttää sama numero.
+- **Toteutettu vaikutus:** worker-numero johdetaan materiaaliplanin vakaasta `bars`-järjestyksestä erikseen jokaiselle profiilityypille. Valmistelunäkymä, profiiliblokkeihin etenevä scheduler ja järjestetty toteumaloki lisättiin muuttamatta materiaaliratkaisua. Nykyinen toteumaloki hyväksyy vielä vain suunnitellut lähteet.
+- **Avoin vaikutus:** väärän salon toteuman kirjaaminen, siitä seuraavan materiaalitaseen laskenta ja mahdollinen osittainen uudelleenoptimointi ovat erillinen seuraava vaihe. Alkuperäinen suunnitelma pitää säilyttää vertailtavana eikä poikkeamaa saa korjata vain vaihtamalla lähde-ID:tä ilman fysiikan validointia.
+
+### Profiiliblokit ja batchin fyysinen työkuorma (9.9.2026)
+
+- **Lähde ja varmuus:** käyttäjän oikeasta sahaustyöstä tekemä tuotantotarkennus. Noin 250 kappaleen batch voi vaatia niin monta uutta salkoa, etteivät koko batchin materiaalit mahdu yhtä aikaa sahan ympärille.
+- **Työprosessi:** sahalle tuodaan yhden profiiliblokin salot, ne numeroidaan ja sahataan, kappaleet kelmutetaan tai käsitellään aukkokohtaisesti ja siirretään pois ennen seuraavaa profiilia. Oletusjärjestys on Pysty, Vaste, Vaaka, U ja yhteinen ala-/yläkiskoblokki.
+- **Numerointi:** worker-numero alkaa jokaisessa fyysisessä profiilityypissä yhdestä. Se on suunnitelmasta johdettu merkintä, ei materiaalin sisäinen identiteetti. Kiskoblokissa Ala 1 ja Ylä 1 erotetaan profiilinimellä.
+- **Tuleva arviointitarve:** sama kappalemäärä voi merkitä hyvin erilaista kuormaa; esimerkiksi pitkät Pystyt vievät eri tavalla tilaa ja käsittelyaikaa kuin lyhyet Vaa'at. Mahdollinen workload-aware batch sizing voi myöhemmin huomioida kappalemäärän, kokonaismetrit, profiilityypin, tilantarpeen ja jälkikäsittelyn. Täsmällistä kaavaa tai uusia rajoja ei ole päätetty.
+- **Nykyinen rajaus:** batchin min/tavoite/max pysyvät arvoissa 200/250/300 ja valintalogiikka ennallaan.
+
 ## Uuden merkinnän malli
 
 ```md

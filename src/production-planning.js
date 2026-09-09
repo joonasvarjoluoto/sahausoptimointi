@@ -5,6 +5,21 @@ const PRODUCTION_PLANNING = (() => {
         ["uProfile", 4], ["verticalProfile", 4], ["closingProfile", 1],
         ["horizontalProfile", 4], ["topRail", 2], ["bottomRail", 2]
     ].map(([profile, maxStackSize]) => [profile, Object.freeze({ compatibilityGroup: profile, maxStackSize })])));
+    const profileBlocks = Object.freeze([
+        Object.freeze({ id: "verticalProfile", profileTypes: Object.freeze(["verticalProfile"]) }),
+        Object.freeze({ id: "closingProfile", profileTypes: Object.freeze(["closingProfile"]) }),
+        Object.freeze({ id: "horizontalProfile", profileTypes: Object.freeze(["horizontalProfile"]) }),
+        Object.freeze({ id: "uProfile", profileTypes: Object.freeze(["uProfile"]) }),
+        Object.freeze({ id: "rails", profileTypes: Object.freeze(["bottomRail", "topRail"]) })
+    ]);
+    const profileBlockByType = new Map(profileBlocks.flatMap((block, index) =>
+        block.profileTypes.map(profileType => [profileType, { ...block, index }])));
+
+    function getProfileBlock(profileType) {
+        return profileBlockByType.get(profileType) ?? {
+            id: "profile:" + profileType, profileTypes: [profileType], index: profileBlocks.length
+        };
+    }
 
     function batchSettings(options = {}) {
         const settings = { ...batchDefaults, ...options };
@@ -177,6 +192,14 @@ const PRODUCTION_PLANNING = (() => {
             const ready = [...states.values()].filter(s => s.pieces.length &&
                 (!s.source.parentSourceId || !states.get(s.source.parentSourceId).pieces.length));
             if (!ready.length) throw new Error("Materiaaliriippuvuudet estävät suorituksen.");
+            const pendingBlocks = [...states.values()].filter(s => s.pieces.length)
+                .map(s => getProfileBlock(s.source.profileType));
+            pendingBlocks.sort((a, b) => a.index - b.index || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+            const activeBlock = pendingBlocks[0];
+            const activeReady = ready.filter(s => getProfileBlock(s.source.profileType).id === activeBlock.id);
+            // Parenttilähde on validoitu samaan profiiliin, joten aikaisimmassa keskeneräisessä
+            // blokissa on aina vähintään yksi topologisesti valmis lähde.
+            if (!activeReady.length) throw new Error("Profiiliblokin materiaaliriippuvuudet estävät suorituksen.");
             // Jatkoleikkaus käyttää juuri syntynyttä, tarkasti tunnettua jäännöstä.
             const priority = s => s.lastOperation || s.source.parentSourceId ? 0 : 1;
             const previous = operations.at(-1);
@@ -184,13 +207,13 @@ const PRODUCTION_PLANNING = (() => {
             const adjacent = p => previousRail && isRail(p) && openingKey(p) &&
                 openingKey(p) === openingKey(previousRail) && p.length === previous.length;
             // Aukon saman mitan kiskot pidetään lähellä toisiaan ilman materiaalipisteitä.
-            for (const state of ready) {
+            for (const state of activeReady) {
                 const index = state.pieces.findIndex(adjacent);
                 if (index > 0) state.pieces.unshift(...state.pieces.splice(index, 1));
             }
-            ready.sort((a, b) => Number(!adjacent(a.pieces[0])) - Number(!adjacent(b.pieces[0])) ||
+            activeReady.sort((a, b) => Number(!adjacent(a.pieces[0])) - Number(!adjacent(b.pieces[0])) ||
                 priority(a) - priority(b) || (a.source.id < b.source.id ? -1 : 1));
-            const first = ready[0];
+            const first = activeReady[0];
             const piece = first.pieces[0];
             // Täsmälleen valmis loppukappale poimitaan ilman sahausliikettä.
             const kind = first.remaining === piece.length ? "release" : "cut";
@@ -201,7 +224,7 @@ const PRODUCTION_PLANNING = (() => {
             const pairKey = railPairs.get(piece.pieceId);
             // Eksplisiittinen poikkeus: vain nimetty aukko, yksi kumpaakin ja kaksi valmista lähdettä.
             if (kind === "cut" && pairKey && limit >= 2) {
-                for (const state of ready.slice(1)) {
+                for (const state of activeReady.slice(1)) {
                     const partner = state.pieces.find(p => railPairs.get(p.pieceId) === pairKey &&
                         p.profileType !== piece.profileType);
                     const other = getCompatibility(state.source, profiles);
@@ -213,7 +236,7 @@ const PRODUCTION_PLANNING = (() => {
                     }
                 }
             }
-            if (group.length === 1) for (const state of ready.slice(1)) {
+            if (group.length === 1) for (const state of activeReady.slice(1)) {
                 const other = getCompatibility(state.source, profiles);
                 const nextLimit = Math.min(limit, other.maxStackSize);
                 const candidate = state.pieces.find(p => p.length === piece.length &&
@@ -259,7 +282,8 @@ const PRODUCTION_PLANNING = (() => {
             bundleUtilization: cuts.length ? cuts.reduce((n, o) => n + o.sources.length, 0) / cuts.reduce((n, o) => n + o.maxStackSize, 0) : 0
         } };
     }
-    return Object.freeze({ batchDefaults, profileDefaults, batchSettings, selectBatch, attachPieces, getCompatibility, railPairCompatibility, schedule });
+    return Object.freeze({ batchDefaults, profileDefaults, profileBlocks, getProfileBlock,
+        batchSettings, selectBatch, attachPieces, getCompatibility, railPairCompatibility, schedule });
 })();
 
 if (typeof module !== "undefined" && module.exports) module.exports = PRODUCTION_PLANNING;

@@ -15,6 +15,8 @@ Ei-kiireelliset yksittäiset virheet ja parannukset kuuluvat `BACKLOG.md`:hen. T
 
 ## Nykyinen checkpoint
 
+Tuotannon suoritusnäkymän perusta toteutettu 9.9.2026. Fyysiset salot saavat profiilityyppikohtaiset 1..N-worker-numerot materiaaliplanin vakaasta järjestyksestä. Scheduler ja valmistelunäkymä etenevät yhtenäisinä Pysty–Vaste–Vaaka–U–kiskot-blokkeina, ja vain aktiivisen blokin salot valmistellaan. Skeema 6 tallentaa plan-digestiin sidotun kuittaustapahtumien etuliitteen ja viimeisin kuittaus voidaan perua. Materiaaliplani, score ja finalisoinnin varastosemantiikka säilyvät.
+
 Kiskojen yhteismäärä ja aukkokohtainen 1+1-sekanippu toteutettu 8.9.2026. Suuremmat määrät niputetaan profiileittain; saman aukon samaa mittaa suositaan peräkkäin. Skeema 5 säilyttää vanhojen töiden kysynnän skeeman 4 määrämuunnoksella.
 
 Sovellus muodostaa nyt avoimista tilauksista diskreetin tuotantobatchin (8.9.2026). Kokonaiset tilaukset valitaan materiaalipisteen perusteella, nykyinen inventory-aware optimizer tekee materiaaliratkaisun ja erillinen scheduler muodostaa nippusahausoperaatiot. Tilaus-/aukkokohdistus säilyy kappaleissa. Toteutuksen auktoritatiiviset säännöt ja rajat: `BATCH_AND_BUNDLE_SAWING_PLANNING.md`.
@@ -35,6 +37,7 @@ Valmiina ovat muun muassa:
 - ryhmitelty uuden materiaalin ja jäännösten käyttöliittymä;
 - materiaalivärien erottelu;
 - tankokohtainen `TEHTY`-tila;
+- järjestyksessä etenevä operaatioiden kuittaus ja viimeisimmän peruminen;
 - työn finalisointi ja authoritative post-order-varasto;
 - versioitu localStorage-työtila;
 - finalisoinnin persistoi-ensin/commitoi-sitten-turva;
@@ -62,6 +65,10 @@ Muistion ”Tuleva tilaus-UI, varastonhallinta ja sahaustoleranssit” päällek
 Tuotantofaktat ja alustavat luvut ovat `DOMAIN_NOTES.md`:ssä. Tämä päivitys ei muuta kerfin 3 mm:n oletusta, täsmäsovituksen hyväksymistä, pisteytystä tai tallennusversioita.
 
 ## Seuraava työvaihe
+
+Tuotannon suorituspolun seuraava rajattu vaihe on suunnitellun ja toteutuneen lähteen poikkeaman käsittely. Nykyinen tapahtumamalli varaa `actualSourceIds`-kentän, mutta skeeman 6 ensimmäinen versio hyväksyy vain suunnitelman lähteet. Ennen väärän salon korjausta pitää päättää lähteen valintakäyttöliittymä, vaikutus jäljellä oleviin operaatioihin ja se, milloin osittainen työ voidaan turvallisesti uudelleenoptimoida.
+
+Batch-kuorman myöhempi arviointi ei saa nojata automaattisesti pelkkään kappalemäärään. Workload-aware batch sizing voidaan tutkia erillisenä vaiheena kokonaismetrien, profiilityypin, fyysisen tilantarpeen ja sahaamisen jälkeisen käsittelyn avulla. Nykyisiä 200/250/300-rajoja tai selectorin logiikkaa ei muuteta ennen erillistä mallia ja mittauksia.
 
 Batch-/nippusahauspolun ja kiskosyötteen selaintarkistukset on tehty käyttäjän antamassa HTTP-osoitteessa. Seuraava tutkimuskohde on automaattisen batch-valinnan hakulaatu ajan funktiona. Erillinen Node-koeversio ja ensimmäinen 23 tilauksen / 10 minuutin mittaus ovat `benchmarks/batch-search/RESULTS.md`:ssä. Selain käyttää edelleen aiempaa exhaustive-selectoria.
 
@@ -202,6 +209,7 @@ Materiaaliratkaisun päälle rakennetaan erillinen tuotantonäkymä:
 - `maxStackSize` on profiilityyppikohtainen;
 - nippusahaus ja tilausten putkitus ovat ensimmäiset tuotantokehityksen tavoitteet; mittavasteen siirrot tuottavat myöhemmin erillisen työaikakustannuksen;
 - putkituksen vaatima työjärjestys ja tilauskohdistus rajataan ensimmäiseen toteutukseen; väri ja pakkaamisen muut preferenssit voidaan lisätä myöhemmin.
+- valmistelun worker-numerot sekä operaatioiden järjestetty kuittaus ovat toteutettuja; seuraava vaihe käsittelee suunnitellun ja toteutuneen lähteen poikkeaman ja vasta sen jälkeen mahdollisen osittaisen uudelleenoptimoinnin.
 
 Tilausten putkituksen tarkka merkitys rajataan ensin; 5–10 tilauksen rolling-horizon-yhteisoptimointi on mahdollinen myöhempi laajennus, ei putkituksen automaattinen määritelmä. Kappaleissa säilytetään `orderId` ja aukkokohtaisen mallin myötä `openingId`. Myöhemmin mukaan voidaan ottaa kiireellisyys, deadline, asentajien tarpeet ja materiaalin niukkuus.
 

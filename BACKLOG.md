@@ -25,6 +25,25 @@ Prioriteetit:
 
 ## Avoimet havainnot
 
+### B-010 — Kappalemäärä ei yksin kuvaa batchin fyysistä työkuormaa
+
+- **Tila:** havaittu 2026-09-09; tarkkaa mallia ei ole suunniteltu.
+- **Prioriteetti:** keskitaso tuotannon käyttökokemuksen mittaamisen jälkeen.
+- **Alue:** batch-kokojen käytettävyys ja myöhempi workload-aware sizing.
+- **Havainto:** nykyinen min/tavoite/max 200/250/300 perustuu fyysisten kappaleiden määrään. Esimerkiksi 250 noin 3000 mm Pystyä ja 250 noin 500 mm Vaakaa vaativat hyvin erilaisen tilan, materiaalinkäsittelyn ja sahaamisen jälkeisen työn.
+- **Rajaus:** nykyisiä rajoja, selectorin logiikkaa tai materiaalipistettä ei muuteta. Projektin rooli säilyy joustavana työntekijän ja työnjohdon apuvälineenä.
+- **Myöhempi arviointi:** mittaa ennen kaavaa ainakin kappalemäärä, kokonaismetrit, profiilityyppi, fyysinen tilantarve ja profiilikohtainen jälkikäsittely. Hyväksyttävän kuorman pitää pysyä käyttäjän hallittavana ilman pitkän aikavälin automaattiohjausta.
+
+### B-009 — Toteutunut materiaalilähde voi poiketa suunnitellusta
+
+- **Tila:** suunniteltu 2026-09-09; toteumalokin tietopohja on valmis, korjauspolkua ei ole toteutettu.
+- **Prioriteetti:** korkea ennen varsinaista tuotantokäyttöä.
+- **Alue:** tuotannon suoritusnäkymä, toteumaloki ja jäljellä olevan työn materiaalitase.
+- **Havainto:** työntekijä voi ottaa sahausliikkeeseen eri fyysisen salon kuin schedulerin suunnittelema lähde. Nykyinen skeeman 6 tapahtuma sisältää `actualSourceIds`-kentän, mutta validointi sallii siinä vielä vain suunnitellut lähteet.
+- **Toisto tai näyttö:** käyttäjän tuotantohavainnossa 25 sahausliikkeen ja 64 kappaleen työssä kolmannen liikkeen suunnitellut salonumerot olivat 1, 2, 7 ja 4, mutta toteutuneet 1, 2, 3 ja 4.
+- **Vaikutus:** poikkeama voi muuttaa seuraavien operaatioiden käytettävissä olevia pituuksia ja lopullista jäännösvarastoa. Pelkkä numeron vaihtaminen lokiin ei riitä materiaalitaseen varmistamiseen.
+- **Hyväksymiskriteeri:** käyttäjä voi valita toteutuneen salon, sovellus säilyttää muuttumattoman alkuperäisen suunnitelman, laskee jäljellä olevan työn fyysisesti kelvolliseksi ja estää virheellisen varastofinalisoinnin. Suunniteltu ja toteutunut lähde näkyvät jäljitettävästi. Osittainen uudelleenoptimointi rajataan ja testataan erikseen.
+
 ### B-008 — Replay tuottaa fyysistä varastoa enemmän pitkiä jäännöksiä
 
 - **Tila:** havaittu 2026-09-09

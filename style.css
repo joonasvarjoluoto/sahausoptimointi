@@ -546,6 +546,185 @@ input[type="number"]:disabled {
 }
 
 
+.worker-preparation,
+.production-execution {
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 2px solid #315f83;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+
+.worker-preparation summary {
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: 850;
+}
+
+
+.worker-source-manifest {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+
+
+.worker-source-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid #ccd7e0;
+    border-radius: 9px;
+    background: #f5f8fa;
+}
+
+
+.worker-source-row > strong,
+.worker-source-chip {
+    display: inline-grid;
+    place-items: center;
+    min-width: 52px;
+    min-height: 52px;
+    border-radius: 9px;
+    background: #173f61;
+    color: #ffffff;
+    font-size: 1.65rem;
+    font-variant-numeric: tabular-nums;
+}
+
+
+.worker-source-chip--profiled {
+    min-width: 72px;
+    padding: 5px 8px;
+    font-size: 1.45rem;
+}
+
+
+.worker-source-chip--profiled span {
+    display: block;
+    font-size: 0.62rem;
+    line-height: 1.15;
+}
+
+
+.production-total-progress,
+.production-operation-progress,
+.production-source-label,
+.production-piece-count {
+    margin: 0;
+    font-weight: 850;
+    text-align: center;
+}
+
+
+.production-total-progress {
+    margin-bottom: 12px;
+    color: #40586c;
+}
+
+
+.production-current {
+    padding: 18px;
+    border-radius: 12px;
+    background: #e9f4fc;
+    text-align: center;
+}
+
+
+.production-current--complete {
+    background: #eaf5ed;
+}
+
+
+.production-block-title {
+    margin: 0 0 8px;
+    font-size: 1.35rem;
+    letter-spacing: 0.08em;
+}
+
+
+.production-cut-length {
+    margin: 10px 0 16px;
+    color: #102d46;
+    font-size: clamp(2.6rem, 12vw, 4.8rem);
+    font-weight: 900;
+    line-height: 1;
+    text-align: center;
+}
+
+
+.worker-source-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 8px 0 14px;
+}
+
+
+.production-piece-count {
+    font-size: 1.2rem;
+}
+
+
+.production-operation-secondary {
+    margin: 10px 0 0;
+    color: #40586c;
+    line-height: 1.5;
+}
+
+
+.operation-completion-button,
+.operation-undo-button {
+    width: 100%;
+    min-height: 56px;
+    border-radius: 9px;
+    font-weight: 850;
+}
+
+
+.operation-completion-button {
+    margin-top: 16px;
+    border: 2px solid #175a36;
+    background: #247549;
+    color: #ffffff;
+    font-size: 1.15rem;
+}
+
+
+.operation-undo-button {
+    margin-top: 12px;
+    border: 1px solid #788895;
+    background: #ffffff;
+    color: #394d5d;
+}
+
+
+.operation-undo-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+
+.production-next,
+.production-completed {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid #ccd7e0;
+    border-radius: 9px;
+    background: #f5f8fa;
+}
+
+
+.production-completed summary {
+    cursor: pointer;
+    font-weight: 750;
+}
+
+
 .completion-progress {
     margin: 0 0 16px;
     padding: 14px 16px;
@@ -1000,6 +1179,48 @@ input[type="number"]:disabled {
 
     .bar-card--completed .bar-cuts {
         background: #19241e;
+    }
+
+
+    .worker-preparation,
+    .production-execution {
+        border-color: #4d7899;
+        background: #171e24;
+    }
+
+
+    .worker-source-row,
+    .production-next,
+    .production-completed {
+        border-color: #3b4650;
+        background: #202931;
+    }
+
+
+    .production-current {
+        background: #172938;
+    }
+
+
+    .production-current--complete {
+        background: #18271d;
+    }
+
+
+    .production-cut-length {
+        color: #e6f4ff;
+    }
+
+
+    .production-total-progress,
+    .production-operation-secondary {
+        color: #a7b9c7;
+    }
+
+
+    .operation-undo-button {
+        background: #1b2229;
+        color: #c7d5df;
     }
 
 

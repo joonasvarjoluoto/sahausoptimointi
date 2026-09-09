@@ -632,7 +632,7 @@ function runStoredOrderValidationRegressionTests() {
     const results = [];
     const record = (test, passed) => results.push({ test, result: passed ? "PASS" : "FAIL" });
     const valid = createStoredPlanSemanticRegressionState();
-    record("Skeema 5 hyväksytään", valid.schemaVersion === 5 && isValidStoredWorkState(valid));
+    record("Skeema 6 hyväksytään", valid.schemaVersion === 6 && isValidStoredWorkState(valid));
     record("Skeema 3 ei palaudu uuteen käyttöliittymään",
         !isValidStoredWorkState({ ...valid, schemaVersion: 3 }));
     record("Suljettu tilaus säilyttää kelvollisen suunnitelman",
@@ -679,7 +679,7 @@ function runStoredOrderValidationRegressionTests() {
         const before = JSON.stringify(state);
         record("Virheellinen tilausrakenne " + (index + 1),
             !isValidStoredWorkState(state) &&
-            !isValidStoredWorkState({ ...state, generatedPlan: null }) &&
+            !isValidStoredWorkState({ ...state, generatedPlan: null, executionState: null }) &&
             JSON.stringify(state) === before);
     });
     for (const [field, value] of [["length", "0"], ["length", "-1"], ["length", "2200.01"],
@@ -688,7 +688,7 @@ function runStoredOrderValidationRegressionTests() {
         state.orders[0].sections[0].rows[0][field] = value;
         record("Virheellinen laskettu mitta/määrä: " + field + "=" + value,
             !isValidStoredWorkState(state) &&
-            isValidStoredWorkState({ ...state, generatedPlan: null }));
+            isValidStoredWorkState({ ...state, generatedPlan: null, executionState: null }));
     }
     const blank = JSON.parse(JSON.stringify(valid));
     blank.orders[0].sections[4].rows.push({ length: "", quantity: "1" });
@@ -707,7 +707,7 @@ function runStoredOrderValidationRegressionTests() {
     withPartialU.orders[0].sections[2].rows.push({ length: "", quantity: "4" });
     record("U-rivin muokattu määrä ilman mittaa hylkää suunnitelman",
         !isValidStoredWorkState(withPartialU) &&
-        isValidStoredWorkState({ ...withPartialU, generatedPlan: null }));
+        isValidStoredWorkState({ ...withPartialU, generatedPlan: null, executionState: null }));
     blank.orders[0].sections[4].rows[0].length = "2000";
     record("Lisätty kiskopari vaatii myös molemmat profiilit suunnitelmaan",
         !isValidStoredWorkState(blank));
@@ -9254,6 +9254,7 @@ function runStoredWorkStateColorRegressionTest() {
             ],
             remainingItems: []
         },
+        executionState: null,
         completedBarIds: []
     };
 
@@ -9280,6 +9281,7 @@ function runStoredWorkStateColorRegressionTest() {
     const legacyDraftState = {
         ...legacyState,
         generatedPlan: null,
+        executionState: null,
         completedBarIds: []
     };
 
@@ -10028,6 +10030,7 @@ function runWorkFinalizationRegressionTest() {
             verticalProfile: [{ length: "2200", quantity: "1" }]
         })],
         generatedPlan: null,
+        executionState: null,
         completedBarIds: []
     };
 
@@ -10169,6 +10172,7 @@ function runWorkFinalizationPersistenceRegressionTest() {
         remnantRows: [],
         orders: orders,
         generatedPlan: completedPlan,
+        executionState: null,
         completedBarIds: ["bar-1"]
     };
 
@@ -10177,6 +10181,7 @@ function runWorkFinalizationPersistenceRegressionTest() {
         stockProfileRows: finalizedStockProfileRows,
         remnantRows: finalizedRemnantRows,
         generatedPlan: null,
+        executionState: null,
         completedBarIds: []
     };
 
@@ -11220,7 +11225,7 @@ function getRemnantStatusLabel(remnantStatus) {
 
 
 const WORK_STORAGE_KEY = "sahausoptimointi.currentWork";
-const WORK_STATE_SCHEMA_VERSION = 5;
+const WORK_STATE_SCHEMA_VERSION = 6;
 const WORK_STATE_ENGINE_VERSION = "material-v0.3";
 const MAX_STORED_FORM_ROW_COUNT = 1000;
 
@@ -11229,6 +11234,7 @@ const DEFAULT_KERF = "3";
 
 const completedBarIds = new Set();
 let currentGeneratedPlan = null;
+let currentProductionExecutionState = null;
 let workInputRevision = 0;
 
 
@@ -11676,6 +11682,7 @@ function isValidStoredWorkState(state) {
         !isValidStoredInputRows(state.remnantRows) ||
         !isValidStoredOrders(state.orders) ||
         !isValidStoredProductionSettings(state.batchSettings) ||
+        !(state.executionState === null || isPlainObject(state.executionState)) ||
         !Array.isArray(state.completedBarIds)
     ) {
         return false;
@@ -11683,7 +11690,7 @@ function isValidStoredWorkState(state) {
 
 
     if (state.generatedPlan === null) {
-        return state.completedBarIds.length === 0;
+        return state.completedBarIds.length === 0 && state.executionState === null;
     }
 
 
@@ -11694,6 +11701,11 @@ function isValidStoredWorkState(state) {
 
     try {
         verifyStoredGeneratedPlan(state);
+        const execution = state.generatedPlan.batch === undefined
+            ? null
+            : createProductionExecution(state.generatedPlan, state.orders, Number(state.kerf));
+        if (execution === null ? state.executionState !== null :
+            !isValidProductionExecutionState(state.executionState, state.generatedPlan, execution)) return false;
     } catch {
         return false;
     }
@@ -12142,9 +12154,22 @@ function createWorkStateSnapshot({
     generatedPlan =
     currentGeneratedPlan,
 
+    executionStateForStorage,
+
     completedBarIdsForStorage =
     [...completedBarIds]
 } = {}) {
+
+    const resolvedExecutionState = executionStateForStorage !== undefined
+        ? executionStateForStorage
+        : generatedPlan?.batch === undefined
+            ? null
+            : generatedPlan === currentGeneratedPlan && currentProductionExecutionState !== null
+                ? currentProductionExecutionState
+                : createInitialProductionExecutionState(
+                    generatedPlan,
+                    createProductionExecution(generatedPlan, orders, Number(kerf))
+                );
 
     return {
         schemaVersion: WORK_STATE_SCHEMA_VERSION,
@@ -12158,6 +12183,7 @@ function createWorkStateSnapshot({
         remnantRows: remnantRows,
         orders: orders,
         generatedPlan: generatedPlan,
+        executionState: resolvedExecutionState,
         completedBarIds: completedBarIdsForStorage
     };
 }
@@ -12220,6 +12246,7 @@ function resetWorkToDefaults() {
     cutList.replaceChildren(createOrderCard(createOrderInput("order-1")));
 
     currentGeneratedPlan = null;
+    currentProductionExecutionState = null;
     resetCompletedBarState();
 
     const resultElement = document.getElementById("result");
@@ -12264,6 +12291,31 @@ function migrateStoredRailQuantities(state) {
 }
 
 
+function migrateStoredExecutionState(state) {
+    if (state?.schemaVersion !== 5) return state;
+    const migrated = JSON.parse(JSON.stringify(state));
+    migrated.schemaVersion = 6;
+    migrated.executionState = null;
+    if (migrated.generatedPlan?.batch !== undefined) {
+        const execution = createProductionExecution(
+            migrated.generatedPlan,
+            migrated.orders,
+            Number(migrated.kerf)
+        );
+        migrated.executionState = createInitialProductionExecutionState(
+            migrated.generatedPlan,
+            execution
+        );
+    }
+    return migrated;
+}
+
+
+function migrateStoredWorkState(state) {
+    return migrateStoredExecutionState(migrateStoredRailQuantities(state));
+}
+
+
 function restoreSavedWorkState() {
 
     let serializedState;
@@ -12285,7 +12337,7 @@ function restoreSavedWorkState() {
 
 
     try {
-        state = migrateStoredRailQuantities(JSON.parse(serializedState));
+        state = migrateStoredWorkState(JSON.parse(serializedState));
     } catch {
         removeSavedWorkState();
         resetWorkToDefaults();
@@ -12348,6 +12400,7 @@ function restoreSavedWorkState() {
 
     restoreProductionSettings(state.batchSettings ?? state.generatedPlan?.batch?.settings);
     currentGeneratedPlan = state.generatedPlan;
+    currentProductionExecutionState = state.executionState;
     resetCompletedBarState();
 
 
@@ -12430,6 +12483,7 @@ function handleOrderInputChange() {
     const hadGeneratedPlan = currentGeneratedPlan !== null;
 
     currentGeneratedPlan = null;
+    currentProductionExecutionState = null;
     resetCompletedBarState();
 
 
@@ -12605,7 +12659,7 @@ function finalizeCurrentWork() {
 
     if (!isCurrentPlanReadyForFinalization()) {
         showFinalizationError(
-            "Merkitse kaikki tangot tehdyiksi ennen työn päättämistä."
+            "Merkitse kaikki salot valmiiksi ennen työn päättämistä."
         );
 
         return;
@@ -12662,6 +12716,7 @@ function finalizeCurrentWork() {
                     finalizedRemnantRowsForStorage,
 
                 generatedPlan: null,
+                executionStateForStorage: null,
                 completedBarIdsForStorage: []
             });
 
@@ -12681,6 +12736,7 @@ function finalizeCurrentWork() {
 
                     document.getElementById("cutList").replaceChildren(...remainingOrderCards);
                     currentGeneratedPlan = null;
+                    currentProductionExecutionState = null;
                     resetCompletedBarState();
                     workInputRevision++;
 
@@ -12748,8 +12804,8 @@ function toggleBarCompletion(button) {
     );
 
     button.textContent = isNowCompleted
-        ? "TEHTY ✓"
-        : "VALMIS";
+        ? "SALKO VALMIS ✓"
+        : "MERKITSE SALKO VALMIIKSI";
 
     button.setAttribute(
         "aria-pressed",
@@ -12759,14 +12815,73 @@ function toggleBarCompletion(button) {
     button.setAttribute(
         "aria-label",
         isNowCompleted
-            ? "Merkitse tanko " + barNumber + " keskeneräiseksi"
-            : "Merkitse tanko " + barNumber + " tehdyksi"
+            ? "Merkitse salko " + barNumber + " keskeneräiseksi"
+            : "Merkitse salko " + barNumber + " valmiiksi"
     );
 
 
     updateCompletionProgress();
     updateFinalizationActionAvailability();
     saveCurrentWorkState();
+}
+
+
+function persistProductionExecutionState(nextState) {
+    const snapshot = createWorkStateSnapshot({
+        executionStateForStorage: nextState
+    });
+    if (!writeWorkStateSnapshot(snapshot)) return false;
+    currentProductionExecutionState = nextState;
+    renderCuttingPlan(currentGeneratedPlan);
+    return true;
+}
+
+
+function completeCurrentProductionOperation() {
+    if (currentGeneratedPlan?.batch === undefined || currentProductionExecutionState === null) return;
+    try {
+        const execution = createProductionExecution(
+            currentGeneratedPlan,
+            getOrdersFromForm(),
+            Number(document.getElementById("kerf").value)
+        );
+        const nextState = completeNextProductionOperation(
+            currentProductionExecutionState,
+            currentGeneratedPlan,
+            execution
+        );
+        if (!persistProductionExecutionState(nextState)) {
+            document.getElementById("operationStatus").textContent =
+                "Kuittausta ei voitu tallentaa. Työvaihe jäi avoimeksi.";
+        }
+    } catch (error) {
+        const status = document.getElementById("operationStatus");
+        if (status) status.textContent = error instanceof Error ? error.message : "Työvaihetta ei voitu kuitata.";
+    }
+}
+
+
+function undoLatestProductionOperation() {
+    if (currentGeneratedPlan?.batch === undefined || currentProductionExecutionState === null) return;
+    try {
+        const execution = createProductionExecution(
+            currentGeneratedPlan,
+            getOrdersFromForm(),
+            Number(document.getElementById("kerf").value)
+        );
+        const nextState = undoLatestProductionOperationState(
+            currentProductionExecutionState,
+            currentGeneratedPlan,
+            execution
+        );
+        if (!persistProductionExecutionState(nextState)) {
+            document.getElementById("operationStatus").textContent =
+                "Perumista ei voitu tallentaa. Toteumatila ei muuttunut.";
+        }
+    } catch (error) {
+        const status = document.getElementById("operationStatus");
+        if (status) status.textContent = error instanceof Error ? error.message : "Kuittausta ei voitu perua.";
+    }
 }
 
 
@@ -12787,11 +12902,24 @@ function escapeHtml(value) {
 
 function renderCuttingPlan(plan) {
 
-    let result = renderProductionDetails(plan) + `
+    const workerManifest = plan.batch === undefined
+        ? plan.bars.map(bar => ({ sourceId: bar.id, profileType: bar.profileType, workerNumber: bar.number }))
+        : createWorkerSourceManifest(
+            plan,
+            createProductionExecution(plan, getOrdersFromForm(), Number(document.getElementById("kerf").value))
+        );
+    const workerSourceById = new Map(workerManifest.map(source => [source.sourceId, source]));
+    const workerSourceCountByProfile = new Map();
+    workerManifest.forEach(source => workerSourceCountByProfile.set(
+        source.profileType,
+        (workerSourceCountByProfile.get(source.profileType) ?? 0) + 1
+    ));
+
+    let result = renderProductionDetails(plan, currentProductionExecutionState) + `
         <section class="plan-summary">
             <h2>Laskettu sahaussuunnitelma</h2>
             <p>
-                Tankoja tarvitaan:
+                Salkoja tarvitaan:
                 <strong>${plan.bars.length}</strong>
             </p>
         </section>
@@ -12801,8 +12929,8 @@ function renderCuttingPlan(plan) {
             aria-live="polite"
             aria-atomic="true"
         >
-            Valmiina <strong id="completedBarCount">${completedBarIds.size}</strong>
-            / ${plan.bars.length} tankoa
+            Salot valmiina <strong id="completedBarCount">${completedBarIds.size}</strong>
+            / ${plan.bars.length}
         </p>
         <button
             id="finalizeWorkButton"
@@ -12822,6 +12950,9 @@ function renderCuttingPlan(plan) {
     for (const bar of plan.bars) {
 
         const isCompleted = completedBarIds.has(bar.id);
+        const workerSource = workerSourceById.get(bar.id);
+        const workerNumber = workerSource.workerNumber;
+        const workerSourceCount = workerSourceCountByProfile.get(bar.profileType);
         const color =
             typeof bar.color === "string" &&
                 bar.color.trim() !== ""
@@ -12834,14 +12965,14 @@ function renderCuttingPlan(plan) {
                 data-bar-id="${bar.id}"
             >
                 <h3 class="bar-card-title">
-                    TANKO ${bar.number}
+                    SALKO ${workerNumber}
                     <span>
                         ${PROFILE_TYPES[bar.profileType].label}
                         ${color === null
                 ? ""
                 : `<span class="bar-color">Väri: ${escapeHtml(getMaterialColorLabel(color))}</span>`
             }
-                        · ${bar.number}/${plan.bars.length}
+                        · ${workerNumber}/${workerSourceCount}
                      </span>
                 </h3>
                 <div class="bar-cuts">
@@ -12889,15 +13020,15 @@ function renderCuttingPlan(plan) {
                     class="bar-completion-button${isCompleted ? " bar-completion-button--completed" : ""}"
                     type="button"
                     data-bar-id="${bar.id}"
-                    data-bar-number="${bar.number}"
+                    data-bar-number="${workerNumber}"
                     aria-pressed="${isCompleted}"
                     aria-label="${isCompleted
-                ? "Merkitse tanko " + bar.number + " keskeneräiseksi"
-                : "Merkitse tanko " + bar.number + " tehdyksi"
+                ? "Merkitse salko " + workerNumber + " keskeneräiseksi"
+                : "Merkitse salko " + workerNumber + " valmiiksi"
             }"
                     onclick="toggleBarCompletion(this)"
                 >
-                    ${isCompleted ? "TEHTY ✓" : "VALMIS"}
+                    ${isCompleted ? "SALKO VALMIS ✓" : "MERKITSE SALKO VALMIIKSI"}
                 </button>
             </article>
         `;
@@ -13122,6 +13253,7 @@ async function calculate() {
 
 
     currentGeneratedPlan = null;
+    currentProductionExecutionState = null;
     resetCompletedBarState();
     saveCurrentWorkState();
     const calculationInputRevision = workInputRevision;
@@ -13224,9 +13356,10 @@ async function calculate() {
 
 
         plan.batch = { version: 1, orderIds: batch.orders.map(o => o.id), settings: batch.settings };
-        createProductionExecution(plan, getOrdersFromForm(), kerf);
+        const productionExecution = createProductionExecution(plan, getOrdersFromForm(), kerf);
         resetCompletedBarState();
         currentGeneratedPlan = plan;
+        currentProductionExecutionState = createInitialProductionExecutionState(plan, productionExecution);
         renderCuttingPlan(plan);
         saveCurrentWorkState();
 

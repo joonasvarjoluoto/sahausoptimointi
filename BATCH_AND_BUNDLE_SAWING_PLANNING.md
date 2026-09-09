@@ -56,6 +56,8 @@ Profiilikohtaiset `profileDefaults`-asetukset:
 
 `getCompatibility()` lukee profiilin `compatibilityGroup`- ja `maxStackSize`-säännöt. Oletuksena kukin profiili muodostaa oman ryhmänsä. Aukkokohtainen `railPairCompatibility` sallii erikseen täsmälleen yhden ala- ja yläkiskon sekanipun; yleinen ryhmäasetus ei ohita tätä kiskorajausta. Tulevia poikkeuksia voi määrittää datalla; sekaryhmässä noudatetaan mukana olevien profiilien pienintä kapasiteettia. Värit saavat sekoittua sahausliikkeessä, mutta kappaleen ja materiaalilähteen värin on edelleen täsmättävä.
 
+Scheduler käsittelee valmiit lähteet yhtenäisinä profiiliblokkeina järjestyksessä Pysty, Vaste, Vaaka, U ja viimeisenä yhteinen kiskoblokki. Se valitsee jokaisella kierroksella aikaisimman keskeneräisen blokin ready-lähteet ja käyttää niiden sisällä aiempaa priorisointia, niputusta ja tie-breakeja. Ala- ja yläkisko ovat samassa blokissa, joten `railPairCompatibility` ja saman aukon läheisyys säilyvät. Lähteen parent-riippuvuus validoidaan jo samaan profiilityyppiin, joten nykyarkkitehtuurissa ei ole sallittua blokit ylittävää dependencyä.
+
 `cutPiece()` tarkistaa alkuperäiset lähteet ja jokaisen operaation. Scheduler ei lisää kerfiä, toleranssia, päävaraa eikä muuta dispositionia. Nimellinen täsmäsovitus säilyy nykyisen fysiikan mukaisena. Täsmälleen oikean mittainen loppukappale on `kind: "release"` -poiminta, joka näkyy suoritusjärjestyksessä mutta ei kasvata sahausliikkeiden määrää. Muut leikkaukset ovat `kind: "cut"` -operaatioita.
 
 ## Saman batchin jäännökset ja DAG
@@ -68,15 +70,17 @@ Valmis saman ajon jäännöksen käyttö priorisoidaan ennen riippumatonta uutta
 
 Vanha fyysinen jäännösvarasto voi tuotannossa olla epätarkka (käyttäjän havainto 7.9.2026). Nykyisen sovelluksen syötetty varasto säilyy optimizerin auktoritatiivisena lähtötietona. Saman ajon välijäännökset tunnetaan laskennallisesti tarkasti; niitä ei sekoiteta vanhaan varastoon.
 
-## UI, tallennus ja finalisointi
+## UI, toteumaloki ja finalisointi
 
-Batchin tilaukset, kappalemäärät, kokorajat ja materiaalipisteen komponentit näkyvät tuloksessa. Nykyinen materiaalinäkymä säilyy. Avattava sahausjärjestys näyttää operaatiot, lähteet, värit, alkuperän sekä tilaus-, aukko- ja kappaletunnisteet.
+Batchin tilaukset, kappalemäärät, kokorajat ja materiaalipisteen komponentit näkyvät tuloksessa. Valmistelunäkymä listaa vain aktiivisen profiiliblokin fyysiset salot worker-numerolla, profiililla, värillä, lähtöpituudella ja lähdetyypillä. Blokin valmistuttua lista vaihtuu seuraavaan käytössä olevaan profiiliin. Worker-numero muodostetaan profiilityypeittäin 1..N materiaaliplanin vakaassa `bars`-järjestyksessä; worker-label voidaan aina johtaa uudelleen eikä sitä tallenneta. Schedulerin sama `sourceId` ja saman ajon jäännös säilyttävät saman numeron koko batchin ajan.
 
-Skeema 5 säilyttää skeeman 4 valinnaiset lisäkentät: luonnoksen `batchSettings` (lomakemerkkijonot), mittarivin `openingId` ja `generatedPlan.batch = { version: 1, orderIds, settings }`. Vanha kelvollinen skeeman 4 työ migroidaan kaksinkertaistamalla kiskojen lomakemäärät; sen suunnitelma tarkoittaa entiseen tapaan koko kysyntää. Materiaalimoottoriversio `material-v0.3` säilyy, koska materiaalifysiikka ja score-yhteensopivuus eivät muutu. Uuden batch-metadatan oma versio validoidaan.
+Operaatiokeskeinen näkymä näyttää aktiivisen profiiliblokin, sen edistymisen, koko batchin edistymisen ja seuraavan työvaiheen hallitsevana. Sahaus- tai poimintamitta, suuret profiilityyppikohtaiset salonumerot, nipun koko ja kappaleet näkyvät ennen toissijaisia tilaus- ja aukkotietoja. Kiskojen sekanipussa numeron yhteydessä näkyy myös kiskoprofiili, koska sekä Ala- että Yläkiskolla voi olla Salko 1. Valmiit vaiheet tiivistyvät ja seuraava näkyy esikatseluna. Operaatiot voi kuitata vain schedulerin järjestyksessä. Vain viimeisin kuittaus voidaan perua.
 
-Operaatiolistaa ei tallenneta toisena totuutena: se muodostetaan uudelleen validoidusta materiaalista ja kysynnästä. Palautus tarkistaa valitut kokonaiset tilaukset, materiaalitaseen, varastorajat, sahausfysiikan ja tuotantokohdistuksen. Korruptti/puutteellinen batch tai osittainen suunnitelma ei palaudu valmiina.
+Skeema 6 säilyttää skeeman 5 kentät ja lisää `executionState = { version: 1, planDigest, events }`. Skeeman 4 työ migroidaan ensin kaksinkertaistamalla kiskojen lomakemäärät. Skeeman 5 batch saa tyhjän toteumalokin, joten vanha tallennettu työ alkaa operaatiosta 1. Materiaalimoottoriversio `material-v0.3` säilyy, koska materiaalifysiikka ja score-yhteensopivuus eivät muutu.
 
-TEHTY pysyy salon UI-tilana. Finalisointi persistoi lopullisen varaston ja jäljelle jäävän tilausjonon ennen live-tilan vaihtamista. Vain valitun batchin tilaukset poistuvat jonosta; tallennusvirhe säilyttää koko työn. Vanhan batchittoman suunnitelman finalisointi säilyttää aiemman tilauslomakekäyttäytymisen. Batch-historiaa, operaatiokohtaista kuittausta tai osittain sahatun batchin uudelleenoptimointia ei vielä ole.
+Operaatiolistaa tai valmistelulistaa ei tallenneta toisena totuutena: ne muodostetaan uudelleen validoidusta materiaalista ja kysynnästä. Toteumaloki sisältää vain plan-digestin ja järjestetyt kuittaustapahtumat. Tapahtuma varaa `actualSourceIds`-kentän myöhemmälle toteutuneen lähteen käsittelylle, mutta versio 1 hyväksyy vain suunnitellut lähteet. Palautus tarkistaa valitut kokonaiset tilaukset, materiaalitaseen, varastorajat, sahausfysiikan, tuotantokohdistuksen, digestin ja tapahtumien järjestyksen.
+
+`SAHAUS TEHTY` tai `POIMINTA TEHTY` tarkoittaa yhtä kuitattua scheduler-operaatiota. `SALKO VALMIS` tarkoittaa fyysisen salon koko käsittelyn valmistumista ja säilyttää aiemman finalisointiehdon. Kuittaus ei päivitä varastoa. Finalisointi persistoi lopullisen varaston ja jäljelle jäävän tilausjonon ennen live-tilan vaihtamista. Vain valitun batchin tilaukset poistuvat jonosta; tallennusvirhe säilyttää koko työn ja toteumalokin. Suunnitellun ja toteutuneen lähteen poikkeamaa, osittain sahatun batchin uudelleenoptimointia tai batch-historiaa ei vielä ole.
 
 ## Mittarit ja myöhempi työ
 
@@ -86,13 +90,15 @@ Mittarit ovat raportointia. Työaika, mittavasteen siirto, nippuhyöty, käsitte
 
 ## Testaus
 
-Tulokset 8.9.2026: koko Node-paketti 35/35 ryhmää, tuotantoryhmä 65 tarkistusta ja ohjaus-/persistenssiajuri 17 tarkistusta. Viiden 50 kappaleen Pysty-tilauksen mittaus (1000/1010/1020/1030/1040 mm, rajaton musta 6000 mm materiaali, kerf 3): kuusi alueen batch-ehdokasta, noin 27,4 s, valittu 200 kappaletta ja 41 salkoa. Tämä on yksi synteettinen Node-mittaus, ei todistus hakulaadusta tai 10 tilauksen laskenta-ajasta.
+Tulokset 9.9.2026: koko Node-paketti 36/36 ryhmää ja ohjaus-/persistenssiajuri 32 tarkistusta. Viiden 50 kappaleen Pysty-tilauksen aiempi mittaus (1000/1010/1020/1030/1040 mm, rajaton musta 6000 mm materiaali, kerf 3): kuusi alueen batch-ehdokasta, noin 27,4 s, valittu 200 kappaletta ja 41 salkoa. Tämä on yksi synteettinen Node-mittaus, ei todistus hakulaadusta tai 10 tilauksen laskenta-ajasta.
 
 - `node run-regressions.cjs`: vanhat materiaaliregressiot ja uusi `production-regressions.js`-ryhmä.
 - `node run-production-ui-regressions.cjs`: oikean calculate-/restore-/finalize-ohjauksen testit DOM-/storage-testikaksoisella; ei selaimen layout-testi.
 - Uudet tapaukset kattavat batch-koot, kokonaiset tilaukset, oversizedin, deterministisyyden, todellisen ei-FIFO-materiaalivalinnan, nippukapasiteetit, värit, profiilieristyksen, laajennettavan yhteensopivuuden, kappale-/aukkokohdistuksen, riippuvuudet, materiaalitaseen, pisteiden säilymisen ja palautuksen virheet.
-- Ohjaustestit kattavat batchin tallennuksen/palautuksen, TEHTY-tilan, finalisoinnin tallennusvirheen ja onnistumisen, jälkivaraston sekä seuraavan batchin muodostamisen ilman jo valmistuneita tilauksia.
+- Ohjaustestit kattavat batchin tallennuksen/palautuksen, skeeman 5 nollasta alkavan migraation, operaation kuittauksen ja perumisen, toteuman palautumisen, salon valmistumistilan, finalisoinnin tallennusvirheen ja onnistumisen sekä jälkivaraston.
 - Todellinen selaintesti suoritettiin 8.9.2026 käyttäjän antamassa osoitteessa `http://127.0.0.1:5500/index.html`. Aiempi tiedostosivun avaus estyi; nykyinen HTTP-testi valmistui onnistuneesti.
+
+Production execution -selaintesti 9.9.2026: yhden mustan tilauksen Pysty 4000 mm × 2, Vaaka 4000 mm × 2, U 1000 mm × 2 ja 4000 mm:n kiskopari tuottivat seitsemän fyysistä salkoa ja viisi sahausliikettä materiaalipisteellä 35449,5. Valmistelu ja operaatiot etenivät Pysty → Vaaka → U → kiskot; puuttuva Vaste ohitettiin. Pysty ja Vaaka numeroituivat kumpikin erikseen 1–2, U numeroksi 1 sekä Ala- ja Yläkisko kumpikin numeroksi 1. Valmistelulista näytti vain aktiivisen blokin salot. Pysty-blokin kuittaus aktivoi Vaakan, reload säilytti tilanteen ja peruminen palautti Pystyn; uudelleenkuittauksen jälkeen eteneminen jatkui Vaakasta. U-blokin jälkeen kiskojen 1+1-sekanippu näytti tunnukset Yläkisko 1 ja Alakisko 1. Erillinen `SALKO VALMIS` -tila säilyi reloadissa. Tumma näkymä tarkistettiin kuvasta.
 
 ### Käyttäjän selaintarkistus
 
