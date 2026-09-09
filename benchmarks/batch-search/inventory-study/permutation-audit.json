@@ -1,0 +1,876 @@
+{
+  "sharedCandidatesAtLeastThreeSeeds": 55,
+  "largestScoreSpreads": [
+    {
+      "observations": [
+        {
+          "seed": 1,
+          "score": 338199.4821916421,
+          "ids": [
+            "excel-3",
+            "excel-9",
+            "excel-11",
+            "excel-19",
+            "excel-21"
+          ],
+          "level": "light",
+          "pieces": 236,
+          "newBars": 52,
+          "oldRemnants": 16,
+          "scrapMm": 6793.3,
+          "reusableMm": 39484.9
+        },
+        {
+          "seed": 2,
+          "score": 337686.019995464,
+          "ids": [
+            "excel-9",
+            "excel-19",
+            "excel-21",
+            "excel-3",
+            "excel-11"
+          ],
+          "level": "light",
+          "pieces": 236,
+          "newBars": 51,
+          "oldRemnants": 17,
+          "scrapMm": 7738.700000000001,
+          "reusableMm": 35569.6
+        },
+        {
+          "seed": 3,
+          "score": 337814.84570218145,
+          "ids": [
+            "excel-9",
+            "excel-19",
+            "excel-3",
+            "excel-11",
+            "excel-21"
+          ],
+          "level": "light",
+          "pieces": 236,
+          "newBars": 51,
+          "oldRemnants": 17,
+          "scrapMm": 7741.700000000001,
+          "reusableMm": 35567.6
+        },
+        {
+          "seed": 4,
+          "score": 338616.7867120216,
+          "ids": [
+            "excel-21",
+            "excel-11",
+            "excel-3",
+            "excel-19",
+            "excel-9"
+          ],
+          "level": "light",
+          "pieces": 236,
+          "newBars": 52,
+          "oldRemnants": 16,
+          "scrapMm": 6643,
+          "reusableMm": 40020.3
+        },
+        {
+          "seed": 5,
+          "score": 341222.2658030177,
+          "ids": [
+            "excel-11",
+            "excel-3",
+            "excel-21",
+            "excel-9",
+            "excel-19"
+          ],
+          "level": "light",
+          "pieces": 236,
+          "newBars": 52,
+          "oldRemnants": 16,
+          "scrapMm": 8174,
+          "reusableMm": 38487.600000000006
+        }
+      ],
+      "best": 337686.019995464,
+      "worst": 341222.2658030177,
+      "spreadPercent": 1.0471993503317734
+    },
+    {
+      "observations": [
+        {
+          "seed": 1,
+          "score": 307351.6328421129,
+          "ids": [
+            "excel-1",
+            "excel-2",
+            "excel-9"
+          ],
+          "level": "full",
+          "pieces": 200,
+          "newBars": 45,
+          "oldRemnants": 20,
+          "scrapMm": 12075,
+          "reusableMm": 54578.799999999996
+        },
+        {
+          "seed": 2,
+          "score": 304522.2030205616,
+          "ids": [
+            "excel-9",
+            "excel-1",
+            "excel-2"
+          ],
+          "level": "full",
+          "pieces": 200,
+          "newBars": 46,
+          "oldRemnants": 18,
+          "scrapMm": 9622,
+          "reusableMm": 55846
+        },
+        {
+          "seed": 3,
+          "score": 304522.2030205616,
+          "ids": [
+            "excel-9",
+            "excel-2",
+            "excel-1"
+          ],
+          "level": "full",
+          "pieces": 200,
+          "newBars": 46,
+          "oldRemnants": 18,
+          "scrapMm": 9622,
+          "reusableMm": 55846
+        },
+        {
+          "seed": 4,
+          "score": 304522.2030205616,
+          "ids": [
+            "excel-9",
+            "excel-2",
+            "excel-1"
+          ],
+          "level": "full",
+          "pieces": 200,
+          "newBars": 46,
+          "oldRemnants": 18,
+          "scrapMm": 9622,
+          "reusableMm": 55846
+        },
+        {
+          "seed": 5,
+          "score": 307351.6328421129,
+          "ids": [
+            "excel-2",
+            "excel-1",
+            "excel-9"
+          ],
+          "level": "full",
+          "pieces": 200,
+          "newBars": 45,
+          "oldRemnants": 20,
+          "scrapMm": 12075,
+          "reusableMm": 54578.8
+        }
+      ],
+      "best": 304522.2030205616,
+      "worst": 307351.6328421129,
+      "spreadPercent": 0.9291374466249502
+    },
+    {
+      "observations": [
+        {
+          "seed": 1,
+          "score": 398408.3538692343,
+          "ids": [
+            "excel-2",
+            "excel-3",
+            "excel-9",
+            "excel-11",
+            "excel-21"
+          ],
+          "level": "light",
+          "pieces": 280,
+          "newBars": 63,
+          "oldRemnants": 15,
+          "scrapMm": 10105.099999999999,
+          "reusableMm": 53049.3
+        },
+        {
+          "seed": 2,
+          "score": 397894.89167305623,
+          "ids": [
+            "excel-9",
+            "excel-21",
+            "excel-2",
+            "excel-3",
+            "excel-11"
+          ],
+          "level": "light",
+          "pieces": 280,
+          "newBars": 62,
+          "oldRemnants": 16,
+          "scrapMm": 11050.499999999998,
+          "reusableMm": 49134
+        },
+        {
+          "seed": 3,
+          "score": 398023.7173797737,
+          "ids": [
+            "excel-9",
+            "excel-2",
+            "excel-3",
+            "excel-11",
+            "excel-21"
+          ],
+          "level": "light",
+          "pieces": 280,
+          "newBars": 62,
+          "oldRemnants": 16,
+          "scrapMm": 11053.499999999998,
+          "reusableMm": 49132
+        },
+        {
+          "seed": 4,
+          "score": 398825.6583896139,
+          "ids": [
+            "excel-21",
+            "excel-11",
+            "excel-3",
+            "excel-9",
+            "excel-2"
+          ],
+          "level": "light",
+          "pieces": 280,
+          "newBars": 63,
+          "oldRemnants": 15,
+          "scrapMm": 9954.8,
+          "reusableMm": 53584.700000000004
+        },
+        {
+          "seed": 5,
+          "score": 401431.13748060993,
+          "ids": [
+            "excel-11",
+            "excel-3",
+            "excel-21",
+            "excel-2",
+            "excel-9"
+          ],
+          "level": "light",
+          "pieces": 280,
+          "newBars": 63,
+          "oldRemnants": 15,
+          "scrapMm": 11485.8,
+          "reusableMm": 52052.00000000001
+        }
+      ],
+      "best": 397894.89167305623,
+      "worst": 401431.13748060993,
+      "spreadPercent": 0.8887386798771324
+    },
+    {
+      "observations": [
+        {
+          "seed": 1,
+          "score": 288821.3968580164,
+          "ids": [
+            "excel-3",
+            "excel-9",
+            "excel-19",
+            "excel-20"
+          ],
+          "level": "light",
+          "pieces": 204,
+          "newBars": 41,
+          "oldRemnants": 20,
+          "scrapMm": 9096,
+          "reusableMm": 35272.9
+        },
+        {
+          "seed": 2,
+          "score": 290976.4564954666,
+          "ids": [
+            "excel-9",
+            "excel-19",
+            "excel-20",
+            "excel-3"
+          ],
+          "level": "light",
+          "pieces": 204,
+          "newBars": 42,
+          "oldRemnants": 20,
+          "scrapMm": 10611,
+          "reusableMm": 36435.3
+        },
+        {
+          "seed": 3,
+          "score": 290976.4564954666,
+          "ids": [
+            "excel-9",
+            "excel-19",
+            "excel-3",
+            "excel-20"
+          ],
+          "level": "light",
+          "pieces": 204,
+          "newBars": 42,
+          "oldRemnants": 20,
+          "scrapMm": 10611,
+          "reusableMm": 36435.3
+        },
+        {
+          "seed": 4,
+          "score": 288753.39685801644,
+          "ids": [
+            "excel-20",
+            "excel-3",
+            "excel-19",
+            "excel-9"
+          ],
+          "level": "light",
+          "pieces": 204,
+          "newBars": 41,
+          "oldRemnants": 20,
+          "scrapMm": 9096,
+          "reusableMm": 35272.9
+        },
+        {
+          "seed": 5,
+          "score": 288753.39685801644,
+          "ids": [
+            "excel-20",
+            "excel-3",
+            "excel-9",
+            "excel-19"
+          ],
+          "level": "light",
+          "pieces": 204,
+          "newBars": 41,
+          "oldRemnants": 20,
+          "scrapMm": 9096,
+          "reusableMm": 35272.9
+        }
+      ],
+      "best": 288753.39685801644,
+      "worst": 290976.4564954666,
+      "spreadPercent": 0.7698817266358349
+    },
+    {
+      "observations": [
+        {
+          "seed": 1,
+          "score": 297730.702054518,
+          "ids": [
+            "excel-2",
+            "excel-3",
+            "excel-9"
+          ],
+          "level": "light",
+          "pieces": 212,
+          "newBars": 46,
+          "oldRemnants": 15,
+          "scrapMm": 10088.699999999999,
+          "reusableMm": 53940.9
+        },
+        {
+          "seed": 2,
+          "score": 299885.7616919683,
+          "ids": [
+            "excel-9",
+            "excel-2",
+            "excel-3"
+          ],
+          "level": "light",
+          "pieces": 212,
+          "newBars": 47,
+          "oldRemnants": 15,
+          "scrapMm": 11603.699999999999,
+          "reusableMm": 55103.3
+        },
+        {
+          "seed": 3,
+          "score": 299885.7616919683,
+          "ids": [
+            "excel-9",
+            "excel-2",
+            "excel-3"
+          ],
+          "level": "light",
+          "pieces": 212,
+          "newBars": 47,
+          "oldRemnants": 15,
+          "scrapMm": 11603.699999999999,
+          "reusableMm": 55103.3
+        },
+        {
+          "seed": 4,
+          "score": 297730.70205451804,
+          "ids": [
+            "excel-3",
+            "excel-9",
+            "excel-2"
+          ],
+          "level": "light",
+          "pieces": 212,
+          "newBars": 46,
+          "oldRemnants": 15,
+          "scrapMm": 10088.699999999999,
+          "reusableMm": 53940.9
+        },
+        {
+          "seed": 5,
+          "score": 297730.70205451804,
+          "ids": [
+            "excel-3",
+            "excel-2",
+            "excel-9"
+          ],
+          "level": "light",
+          "pieces": 212,
+          "newBars": 46,
+          "oldRemnants": 15,
+          "scrapMm": 10088.699999999999,
+          "reusableMm": 53940.9
+        }
+      ],
+      "best": 297730.702054518,
+      "worst": 299885.7616919683,
+      "spreadPercent": 0.7238284874818479
+    },
+    {
+      "observations": [
+        {
+          "seed": 1,
+          "score": 406703.2612605291,
+          "ids": [
+            "excel-1",
+            "excel-2",
+            "excel-3",
+            "excel-9",
+            "excel-11"
+          ],
+          "level": "light",
+          "pieces": 276,
+          "newBars": 63,
+          "oldRemnants": 18,
+          "scrapMm": 10458.7,
+          "reusableMm": 55856.1
+        },
+        {
+          "seed": 2,
+          "score": 403781.56085954746,
+          "ids": [
+            "excel-9",
+            "excel-1",
+            "excel-2",
+            "excel-3",
+            "excel-11"
+          ],
+          "level": "light",
+          "pieces": 276,
+          "newBars": 63,
+          "oldRemnants": 18,
+          "scrapMm": 9386.500000000002,
+          "reusableMm": 56223.7
+        },
+        {
+          "seed": 3,
+          "score": 405229.2006675236,
+          "ids": [
+            "excel-9",
+            "excel-2",
+            "excel-3",
+            "excel-1",
+            "excel-11"
+          ],
+          "level": "light",
+          "pieces": 276,
+          "newBars": 63,
+          "oldRemnants": 18,
+          "scrapMm": 9821.700000000003,
+          "reusableMm": 56496.1
+        },
+        {
+          "seed": 4,
+          "score": 405584.9393571494,
+          "ids": [
+            "excel-11",
+            "excel-3",
+            "excel-9",
+            "excel-2",
+            "excel-1"
+          ],
+          "level": "light",
+          "pieces": 276,
+          "newBars": 64,
+          "oldRemnants": 17,
+          "scrapMm": 9799.700000000003,
+          "reusableMm": 57616.9
+        },
+        {
+          "seed": 5,
+          "score": 406667.905555556,
+          "ids": [
+            "excel-11",
+            "excel-3",
+            "excel-2",
+            "excel-1",
+            "excel-9"
+          ],
+          "level": "light",
+          "pieces": 276,
+          "newBars": 65,
+          "oldRemnants": 15,
+          "scrapMm": 9944.700000000003,
+          "reusableMm": 53293.8
+        }
+      ],
+      "best": 403781.56085954746,
+      "worst": 406703.2612605291,
+      "spreadPercent": 0.7235844040926809
+    },
+    {
+      "observations": [
+        {
+          "seed": 1,
+          "score": 397494.6609698564,
+          "ids": [
+            "excel-2",
+            "excel-9",
+            "excel-12",
+            "excel-19"
+          ],
+          "level": "light",
+          "pieces": 268,
+          "newBars": 59,
+          "oldRemnants": 26,
+          "scrapMm": 12544.3,
+          "reusableMm": 36999.6
+        },
+        {
+          "seed": 2,
+          "score": 400303.04296985647,
+          "ids": [
+            "excel-12",
+            "excel-9",
+            "excel-19",
+            "excel-2"
+          ],
+          "level": "light",
+          "pieces": 268,
+          "newBars": 60,
+          "oldRemnants": 25,
+          "scrapMm": 13532.599999999999,
+          "reusableMm": 36999.6
+        },
+        {
+          "seed": 3,
+          "score": 397494.6609698565,
+          "ids": [
+            "excel-9",
+            "excel-2",
+            "excel-12",
+            "excel-19"
+          ],
+          "level": "light",
+          "pieces": 268,
+          "newBars": 59,
+          "oldRemnants": 26,
+          "scrapMm": 12544.3,
+          "reusableMm": 36999.6
+        },
+        {
+          "seed": 4,
+          "score": 397494.6609698565,
+          "ids": [
+            "excel-19",
+            "excel-9",
+            "excel-2",
+            "excel-12"
+          ],
+          "level": "light",
+          "pieces": 268,
+          "newBars": 59,
+          "oldRemnants": 26,
+          "scrapMm": 12544.3,
+          "reusableMm": 36999.6
+        },
+        {
+          "seed": 5,
+          "score": 400303.04296985647,
+          "ids": [
+            "excel-12",
+            "excel-2",
+            "excel-9",
+            "excel-19"
+          ],
+          "level": "light",
+          "pieces": 268,
+          "newBars": 60,
+          "oldRemnants": 25,
+          "scrapMm": 13532.599999999999,
+          "reusableMm": 36999.6
+        }
+      ],
+      "best": 397494.6609698564,
+      "worst": 400303.04296985647,
+      "spreadPercent": 0.7065206846169403
+    },
+    {
+      "observations": [
+        {
+          "seed": 1,
+          "score": 305447.5696085362,
+          "ids": [
+            "excel-3",
+            "excel-5",
+            "excel-9"
+          ],
+          "level": "light",
+          "pieces": 204,
+          "newBars": 44,
+          "oldRemnants": 19,
+          "scrapMm": 8857.9,
+          "reusableMm": 47684.5
+        },
+        {
+          "seed": 2,
+          "score": 307602.62924598635,
+          "ids": [
+            "excel-9",
+            "excel-5",
+            "excel-3"
+          ],
+          "level": "light",
+          "pieces": 204,
+          "newBars": 45,
+          "oldRemnants": 19,
+          "scrapMm": 10372.9,
+          "reusableMm": 48846.9
+        },
+        {
+          "seed": 3,
+          "score": 307602.6292459863,
+          "ids": [
+            "excel-5",
+            "excel-9",
+            "excel-3"
+          ],
+          "level": "light",
+          "pieces": 204,
+          "newBars": 45,
+          "oldRemnants": 19,
+          "scrapMm": 10372.9,
+          "reusableMm": 48846.9
+        },
+        {
+          "seed": 4,
+          "score": 305447.5696085362,
+          "ids": [
+            "excel-3",
+            "excel-9",
+            "excel-5"
+          ],
+          "level": "light",
+          "pieces": 204,
+          "newBars": 44,
+          "oldRemnants": 19,
+          "scrapMm": 8857.9,
+          "reusableMm": 47684.5
+        },
+        {
+          "seed": 5,
+          "score": 305447.56960853614,
+          "ids": [
+            "excel-5",
+            "excel-3",
+            "excel-9"
+          ],
+          "level": "light",
+          "pieces": 204,
+          "newBars": 44,
+          "oldRemnants": 19,
+          "scrapMm": 8857.9,
+          "reusableMm": 47684.5
+        }
+      ],
+      "best": 305447.56960853614,
+      "worst": 307602.62924598635,
+      "spreadPercent": 0.705541589416514
+    },
+    {
+      "observations": [
+        {
+          "seed": 1,
+          "score": 308099.4027626796,
+          "ids": [
+            "excel-2",
+            "excel-3",
+            "excel-9",
+            "excel-19"
+          ],
+          "level": "light",
+          "pieces": 220,
+          "newBars": 48,
+          "oldRemnants": 20,
+          "scrapMm": 11259.2,
+          "reusableMm": 62966.5
+        },
+        {
+          "seed": 2,
+          "score": 310254.4624001299,
+          "ids": [
+            "excel-9",
+            "excel-19",
+            "excel-2",
+            "excel-3"
+          ],
+          "level": "light",
+          "pieces": 220,
+          "newBars": 49,
+          "oldRemnants": 20,
+          "scrapMm": 12774.2,
+          "reusableMm": 64128.9
+        },
+        {
+          "seed": 3,
+          "score": 310254.4624001299,
+          "ids": [
+            "excel-9",
+            "excel-2",
+            "excel-19",
+            "excel-3"
+          ],
+          "level": "light",
+          "pieces": 220,
+          "newBars": 49,
+          "oldRemnants": 20,
+          "scrapMm": 12774.2,
+          "reusableMm": 64128.9
+        },
+        {
+          "seed": 4,
+          "score": 308099.4027626797,
+          "ids": [
+            "excel-3",
+            "excel-19",
+            "excel-9",
+            "excel-2"
+          ],
+          "level": "light",
+          "pieces": 220,
+          "newBars": 48,
+          "oldRemnants": 20,
+          "scrapMm": 11259.2,
+          "reusableMm": 62966.5
+        },
+        {
+          "seed": 5,
+          "score": 308099.4027626797,
+          "ids": [
+            "excel-3",
+            "excel-2",
+            "excel-9",
+            "excel-19"
+          ],
+          "level": "light",
+          "pieces": 220,
+          "newBars": 48,
+          "oldRemnants": 20,
+          "scrapMm": 11259.2,
+          "reusableMm": 62966.5
+        }
+      ],
+      "best": 308099.4027626796,
+      "worst": 310254.4624001299,
+      "spreadPercent": 0.6994689435052992
+    },
+    {
+      "observations": [
+        {
+          "seed": 1,
+          "score": 341490.52236927266,
+          "ids": [
+            "excel-1",
+            "excel-3",
+            "excel-9",
+            "excel-21"
+          ],
+          "level": "light",
+          "pieces": 236,
+          "newBars": 51,
+          "oldRemnants": 11,
+          "scrapMm": 7681.6,
+          "reusableMm": 13615.099999999999
+        },
+        {
+          "seed": 2,
+          "score": 339596.0845959837,
+          "ids": [
+            "excel-9",
+            "excel-1",
+            "excel-21",
+            "excel-3"
+          ],
+          "level": "light",
+          "pieces": 236,
+          "newBars": 51,
+          "oldRemnants": 11,
+          "scrapMm": 6346.3,
+          "reusableMm": 14950.9
+        },
+        {
+          "seed": 3,
+          "score": 339596.0845959837,
+          "ids": [
+            "excel-9",
+            "excel-3",
+            "excel-1",
+            "excel-21"
+          ],
+          "level": "light",
+          "pieces": 236,
+          "newBars": 51,
+          "oldRemnants": 11,
+          "scrapMm": 6346.3,
+          "reusableMm": 14950.9
+        },
+        {
+          "seed": 4,
+          "score": 339505.8969954769,
+          "ids": [
+            "excel-21",
+            "excel-3",
+            "excel-9",
+            "excel-1"
+          ],
+          "level": "light",
+          "pieces": 236,
+          "newBars": 51,
+          "oldRemnants": 11,
+          "scrapMm": 6245.3,
+          "reusableMm": 15055.8
+        },
+        {
+          "seed": 5,
+          "score": 341838.08901134314,
+          "ids": [
+            "excel-3",
+            "excel-21",
+            "excel-1",
+            "excel-9"
+          ],
+          "level": "light",
+          "pieces": 236,
+          "newBars": 51,
+          "oldRemnants": 11,
+          "scrapMm": 7939.8,
+          "reusableMm": 13355.8
+        }
+      ],
+      "best": 339505.8969954769,
+      "worst": 341838.08901134314,
+      "spreadPercent": 0.6869371155274306
+    }
+  ],
+  "interpretation": "Same batch and evaluation level in the same inventory; differing scores here reflect material optimizer input ordering, not candidate selection alone. mergeGroupedCuts preserves first occurrence order; pattern ties compare quantity vectors in that order."
+}

@@ -1,0 +1,2082 @@
+{
+  "sourceFile": "Order_history_tarkistettu.xlsx",
+  "sha256": "95f7ed05ba83ca47af307d7fa2192665f832c16dc815dff164e36908451fbeaa",
+  "excludedOrders": [
+    16
+  ],
+  "openingCount": 79,
+  "stockLength": 6000,
+  "kerf": 3,
+  "inventoryAssumption": "Unlimited gray/black/white stock in all profiles; no old remnants",
+  "orders": [
+    {
+      "id": "excel-1",
+      "name": "Tilaus 1",
+      "color": "gray",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2605",
+            "quantity": "7",
+            "openingId": "9"
+          },
+          {
+            "length": "2344",
+            "quantity": "5",
+            "openingId": "10"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "684",
+            "quantity": "8",
+            "openingId": "9"
+          },
+          {
+            "length": "762",
+            "quantity": "6",
+            "openingId": "10"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2712",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2451",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "2605",
+            "quantity": "1",
+            "openingId": "9"
+          },
+          {
+            "length": "2344",
+            "quantity": "1",
+            "openingId": "10"
+          }
+        ],
+        "rails": [
+          {
+            "length": "2688",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2257",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-2",
+      "name": "Tilaus 2",
+      "color": "white",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "1078",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "1968",
+            "quantity": "4",
+            "openingId": "10"
+          },
+          {
+            "length": "1078",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "2108",
+            "quantity": "4",
+            "openingId": "12"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "571",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "568",
+            "quantity": "4",
+            "openingId": "10"
+          },
+          {
+            "length": "496",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "688",
+            "quantity": "4",
+            "openingId": "12"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "1185",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2075",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "1185",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2215",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ],
+        "closingProfile": [],
+        "rails": [
+          {
+            "length": "1130",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "1125",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "1460",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "1365",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-3",
+      "name": "Tilaus 3",
+      "color": "gray",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "1098",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "1178",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "2058",
+            "quantity": "6",
+            "openingId": "11"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "585",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "488",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "581",
+            "quantity": "6",
+            "openingId": "11"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "1205",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "1285",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2165",
+            "quantity": "2",
+            "openingId": "11"
+          }
+        ],
+        "closingProfile": [],
+        "rails": [
+          {
+            "length": "1725",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "1435",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "1715",
+            "quantity": "2",
+            "openingId": "11"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-4",
+      "name": "Tilaus 4",
+      "color": "gray",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2702",
+            "quantity": "5",
+            "openingId": "9"
+          },
+          {
+            "length": "2685",
+            "quantity": "4",
+            "openingId": "10"
+          },
+          {
+            "length": "2685",
+            "quantity": "4",
+            "openingId": "11"
+          },
+          {
+            "length": "2683",
+            "quantity": "4",
+            "openingId": "12"
+          },
+          {
+            "length": "2677",
+            "quantity": "4",
+            "openingId": "13"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "923",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "880",
+            "quantity": "4",
+            "openingId": "10"
+          },
+          {
+            "length": "880",
+            "quantity": "4",
+            "openingId": "11"
+          },
+          {
+            "length": "616",
+            "quantity": "4",
+            "openingId": "12"
+          },
+          {
+            "length": "705",
+            "quantity": "4",
+            "openingId": "13"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2809",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2792",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2792",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2790",
+            "quantity": "2",
+            "openingId": "12"
+          },
+          {
+            "length": "2784",
+            "quantity": "2",
+            "openingId": "13"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "2702",
+            "quantity": "1",
+            "openingId": "9"
+          }
+        ],
+        "rails": [
+          {
+            "length": "2741",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "1748",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "1748",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "1220",
+            "quantity": "2",
+            "openingId": "12"
+          },
+          {
+            "length": "1399",
+            "quantity": "2",
+            "openingId": "13"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-5",
+      "name": "Tilaus 5",
+      "color": "black",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "1918",
+            "quantity": "3",
+            "openingId": "9"
+          },
+          {
+            "length": "1908",
+            "quantity": "10",
+            "openingId": "10"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "933",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "955",
+            "quantity": "12",
+            "openingId": "10"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2025",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2015",
+            "quantity": "4",
+            "openingId": "10"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "1918",
+            "quantity": "1",
+            "openingId": "9"
+          },
+          {
+            "length": "1908",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ],
+        "rails": [
+          {
+            "length": "1855",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2835",
+            "quantity": "4",
+            "openingId": "10"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-6",
+      "name": "Tilaus 6",
+      "color": "black",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2508",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "2508",
+            "quantity": "4",
+            "openingId": "10"
+          },
+          {
+            "length": "2508",
+            "quantity": "5",
+            "openingId": "11"
+          },
+          {
+            "length": "2508",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "1340",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "1298",
+            "quantity": "4",
+            "openingId": "10"
+          },
+          {
+            "length": "1306",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "886",
+            "quantity": "4",
+            "openingId": "12"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2615",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2615",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2615",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2615",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "2508",
+            "quantity": "1",
+            "openingId": "11"
+          },
+          {
+            "length": "2508",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ],
+        "rails": [
+          {
+            "length": "2668",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2585",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "3890",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "1760",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-7",
+      "name": "Tilaus 7",
+      "color": "gray",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2213",
+            "quantity": "8",
+            "openingId": "9"
+          },
+          {
+            "length": "2213",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "2804",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "2808",
+            "quantity": "6",
+            "openingId": "12"
+          },
+          {
+            "length": "2810",
+            "quantity": "6",
+            "openingId": "13"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "917",
+            "quantity": "8",
+            "openingId": "9"
+          },
+          {
+            "length": "970",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "1059",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "1061",
+            "quantity": "6",
+            "openingId": "12"
+          },
+          {
+            "length": "1005",
+            "quantity": "6",
+            "openingId": "13"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2320",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2320",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2911",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2915",
+            "quantity": "2",
+            "openingId": "12"
+          },
+          {
+            "length": "2917",
+            "quantity": "2",
+            "openingId": "13"
+          }
+        ],
+        "closingProfile": [],
+        "rails": [
+          {
+            "length": "3620",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2881",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "3149",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "3153",
+            "quantity": "2",
+            "openingId": "12"
+          },
+          {
+            "length": "2985",
+            "quantity": "2",
+            "openingId": "13"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-8",
+      "name": "Tilaus 8",
+      "color": "gray",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2854",
+            "quantity": "3",
+            "openingId": "9"
+          },
+          {
+            "length": "2854",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "2851",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "2854",
+            "quantity": "6",
+            "openingId": "12"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "1080",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "804",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "999",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "993",
+            "quantity": "6",
+            "openingId": "12"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2961",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2961",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2958",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2961",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "2854",
+            "quantity": "1",
+            "openingId": "9"
+          }
+        ],
+        "rails": [
+          {
+            "length": "2149",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2382",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2967",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2950",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-9",
+      "name": "Tilaus 9",
+      "color": "gray",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "1128",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "1128",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "2056",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "2056",
+            "quantity": "5",
+            "openingId": "12"
+          },
+          {
+            "length": "2056",
+            "quantity": "6",
+            "openingId": "13"
+          },
+          {
+            "length": "1148",
+            "quantity": "6",
+            "openingId": "14"
+          },
+          {
+            "length": "1148",
+            "quantity": "6",
+            "openingId": "15"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "1001",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "638",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "640",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "717",
+            "quantity": "6",
+            "openingId": "12"
+          },
+          {
+            "length": "643",
+            "quantity": "6",
+            "openingId": "13"
+          },
+          {
+            "length": "634",
+            "quantity": "6",
+            "openingId": "14"
+          },
+          {
+            "length": "1011",
+            "quantity": "6",
+            "openingId": "15"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "1235",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "1235",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2163",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2163",
+            "quantity": "2",
+            "openingId": "12"
+          },
+          {
+            "length": "2163",
+            "quantity": "2",
+            "openingId": "13"
+          },
+          {
+            "length": "1255",
+            "quantity": "2",
+            "openingId": "14"
+          },
+          {
+            "length": "1255",
+            "quantity": "2",
+            "openingId": "15"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "2056",
+            "quantity": "1",
+            "openingId": "12"
+          }
+        ],
+        "rails": [
+          {
+            "length": "2975",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "1885",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "1890",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2123",
+            "quantity": "2",
+            "openingId": "12"
+          },
+          {
+            "length": "1900",
+            "quantity": "2",
+            "openingId": "13"
+          },
+          {
+            "length": "1873",
+            "quantity": "2",
+            "openingId": "14"
+          },
+          {
+            "length": "3005",
+            "quantity": "2",
+            "openingId": "15"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-10",
+      "name": "Tilaus 10",
+      "color": "black",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "3018",
+            "quantity": "8",
+            "openingId": "9"
+          },
+          {
+            "length": "3018",
+            "quantity": "6",
+            "openingId": "10"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "1011",
+            "quantity": "8",
+            "openingId": "9"
+          },
+          {
+            "length": "995",
+            "quantity": "6",
+            "openingId": "10"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "3125",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "3125",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ],
+        "closingProfile": [],
+        "rails": [
+          {
+            "length": "3995",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2955",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-11",
+      "name": "Tilaus 11",
+      "color": "gray",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "1913",
+            "quantity": "7",
+            "openingId": "9"
+          },
+          {
+            "length": "1913",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "874",
+            "quantity": "8",
+            "openingId": "9"
+          },
+          {
+            "length": "889",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2020",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2020",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "1913",
+            "quantity": "1",
+            "openingId": "9"
+          }
+        ],
+        "rails": [
+          {
+            "length": "3447",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "896",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-12",
+      "name": "Tilaus 12",
+      "color": "gray",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "1772",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "1772",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "1772",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "1779",
+            "quantity": "6",
+            "openingId": "12"
+          },
+          {
+            "length": "1778",
+            "quantity": "6",
+            "openingId": "13"
+          },
+          {
+            "length": "2772",
+            "quantity": "5",
+            "openingId": "14"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "950",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "1013",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "1030",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "1031",
+            "quantity": "6",
+            "openingId": "12"
+          },
+          {
+            "length": "987",
+            "quantity": "6",
+            "openingId": "13"
+          },
+          {
+            "length": "1008",
+            "quantity": "6",
+            "openingId": "14"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "1879",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "1879",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "1879",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "1885",
+            "quantity": "2",
+            "openingId": "12"
+          },
+          {
+            "length": "1885",
+            "quantity": "2",
+            "openingId": "13"
+          },
+          {
+            "length": "2879",
+            "quantity": "2",
+            "openingId": "14"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "2772",
+            "quantity": "1",
+            "openingId": "14"
+          }
+        ],
+        "rails": [
+          {
+            "length": "2822",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "3011",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "3062",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "3065",
+            "quantity": "2",
+            "openingId": "12"
+          },
+          {
+            "length": "2932",
+            "quantity": "2",
+            "openingId": "13"
+          },
+          {
+            "length": "2995",
+            "quantity": "2",
+            "openingId": "14"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-13",
+      "name": "Tilaus 13",
+      "color": "black",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2208",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "2206",
+            "quantity": "4",
+            "openingId": "10"
+          },
+          {
+            "length": "2207",
+            "quantity": "8",
+            "openingId": "11"
+          },
+          {
+            "length": "2202",
+            "quantity": "6",
+            "openingId": "12"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "796",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "930",
+            "quantity": "4",
+            "openingId": "10"
+          },
+          {
+            "length": "875",
+            "quantity": "8",
+            "openingId": "11"
+          },
+          {
+            "length": "809",
+            "quantity": "6",
+            "openingId": "12"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2315",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2313",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2314",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2309",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ],
+        "closingProfile": [],
+        "rails": [
+          {
+            "length": "2360",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "1849",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "3453",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2397",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-14",
+      "name": "Tilaus 14",
+      "color": "black",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2053",
+            "quantity": "14",
+            "openingId": "9"
+          },
+          {
+            "length": "2059",
+            "quantity": "3",
+            "openingId": "10"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "1108",
+            "quantity": "16",
+            "openingId": "9"
+          },
+          {
+            "length": "947",
+            "quantity": "4",
+            "openingId": "10"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2160",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "2166",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "2053",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2059",
+            "quantity": "1",
+            "openingId": "10"
+          }
+        ],
+        "rails": [
+          {
+            "length": "4385",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "1883",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-15",
+      "name": "Tilaus 15",
+      "color": "white",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2030",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "2034",
+            "quantity": "7",
+            "openingId": "10"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "816",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "1161",
+            "quantity": "8",
+            "openingId": "10"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2137",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2141",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "2030",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2034",
+            "quantity": "1",
+            "openingId": "10"
+          }
+        ],
+        "rails": [
+          {
+            "length": "2418",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "4598",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-17",
+      "name": "Tilaus 17",
+      "color": "black",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2215",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "2218",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "2209",
+            "quantity": "4",
+            "openingId": "11"
+          },
+          {
+            "length": "1953",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "791",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "775",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "741",
+            "quantity": "4",
+            "openingId": "11"
+          },
+          {
+            "length": "1144",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2322",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2325",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2316",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2060",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ],
+        "closingProfile": [],
+        "rails": [
+          {
+            "length": "2343",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2295",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "1470",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2500",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-18",
+      "name": "Tilaus 18",
+      "color": "gray",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2370",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "2370",
+            "quantity": "5",
+            "openingId": "10"
+          },
+          {
+            "length": "2370",
+            "quantity": "6",
+            "openingId": "11"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "1047",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "1136",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "807",
+            "quantity": "6",
+            "openingId": "11"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2477",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2477",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2477",
+            "quantity": "2",
+            "openingId": "11"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "2370",
+            "quantity": "1",
+            "openingId": "10"
+          }
+        ],
+        "rails": [
+          {
+            "length": "3112",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "3379",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2391",
+            "quantity": "2",
+            "openingId": "11"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-19",
+      "name": "Tilaus 19",
+      "color": "black",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "1968",
+            "quantity": "1",
+            "openingId": "9"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "994",
+            "quantity": "2",
+            "openingId": "9"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2075",
+            "quantity": "2",
+            "openingId": "9"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "1968",
+            "quantity": "1",
+            "openingId": "9"
+          }
+        ],
+        "rails": [
+          {
+            "length": "1001",
+            "quantity": "2",
+            "openingId": "9"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-20",
+      "name": "Tilaus 20",
+      "color": "black",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "1578",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "2008",
+            "quantity": "6",
+            "openingId": "10"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "891",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "710",
+            "quantity": "8",
+            "openingId": "10"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "1685",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2115",
+            "quantity": "4",
+            "openingId": "10"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "2008",
+            "quantity": "2",
+            "openingId": "10"
+          }
+        ],
+        "rails": [
+          {
+            "length": "1770",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "1409",
+            "quantity": "4",
+            "openingId": "10"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-21",
+      "name": "Tilaus 21",
+      "color": "gray",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "1758",
+            "quantity": "3",
+            "openingId": "9"
+          },
+          {
+            "length": "1758",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "1503",
+            "quantity": "4",
+            "openingId": "11"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "906",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "1046",
+            "quantity": "6",
+            "openingId": "10"
+          },
+          {
+            "length": "563",
+            "quantity": "4",
+            "openingId": "11"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "1865",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "1865",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "1610",
+            "quantity": "2",
+            "openingId": "11"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "1758",
+            "quantity": "1",
+            "openingId": "9"
+          }
+        ],
+        "rails": [
+          {
+            "length": "1800",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "3110",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "1115",
+            "quantity": "2",
+            "openingId": "11"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-22",
+      "name": "Tilaus 22",
+      "color": "black",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2003",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "2071",
+            "quantity": "7",
+            "openingId": "10"
+          },
+          {
+            "length": "2003",
+            "quantity": "6",
+            "openingId": "11"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "770",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "992",
+            "quantity": "8",
+            "openingId": "10"
+          },
+          {
+            "length": "770",
+            "quantity": "6",
+            "openingId": "11"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2110",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "2178",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2110",
+            "quantity": "2",
+            "openingId": "11"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "2071",
+            "quantity": "1",
+            "openingId": "10"
+          }
+        ],
+        "rails": [
+          {
+            "length": "2280",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "3920",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2281",
+            "quantity": "2",
+            "openingId": "11"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-23",
+      "name": "Tilaus 23",
+      "color": "black",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "1923",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "1923",
+            "quantity": "3",
+            "openingId": "10"
+          },
+          {
+            "length": "1923",
+            "quantity": "6",
+            "openingId": "11"
+          },
+          {
+            "length": "1923",
+            "quantity": "6",
+            "openingId": "12"
+          },
+          {
+            "length": "1923",
+            "quantity": "6",
+            "openingId": "13"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "976",
+            "quantity": "6",
+            "openingId": "9"
+          },
+          {
+            "length": "1090",
+            "quantity": "4",
+            "openingId": "10"
+          },
+          {
+            "length": "995",
+            "quantity": "9",
+            "openingId": "11"
+          },
+          {
+            "length": "979",
+            "quantity": "6",
+            "openingId": "12"
+          },
+          {
+            "length": "976",
+            "quantity": "6",
+            "openingId": "13"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2030",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2030",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2030",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2030",
+            "quantity": "2",
+            "openingId": "12"
+          },
+          {
+            "length": "2030",
+            "quantity": "2",
+            "openingId": "13"
+          }
+        ],
+        "closingProfile": [
+          {
+            "length": "1923",
+            "quantity": "1",
+            "openingId": "10"
+          }
+        ],
+        "rails": [
+          {
+            "length": "2900",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2169",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2955",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2908",
+            "quantity": "2",
+            "openingId": "12"
+          },
+          {
+            "length": "2900",
+            "quantity": "2",
+            "openingId": "13"
+          }
+        ]
+      }
+    },
+    {
+      "id": "excel-24",
+      "name": "Tilaus 24",
+      "color": "gray",
+      "sections": {
+        "verticalProfile": [
+          {
+            "length": "2288",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "2288",
+            "quantity": "4",
+            "openingId": "10"
+          },
+          {
+            "length": "2288",
+            "quantity": "4",
+            "openingId": "11"
+          },
+          {
+            "length": "2288",
+            "quantity": "4",
+            "openingId": "12"
+          }
+        ],
+        "horizontalProfile": [
+          {
+            "length": "1083",
+            "quantity": "4",
+            "openingId": "9"
+          },
+          {
+            "length": "1098",
+            "quantity": "4",
+            "openingId": "10"
+          },
+          {
+            "length": "1098",
+            "quantity": "4",
+            "openingId": "11"
+          },
+          {
+            "length": "1123",
+            "quantity": "4",
+            "openingId": "12"
+          }
+        ],
+        "uProfile": [
+          {
+            "length": "2395",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2395",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2395",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2395",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ],
+        "closingProfile": [],
+        "rails": [
+          {
+            "length": "2155",
+            "quantity": "2",
+            "openingId": "9"
+          },
+          {
+            "length": "2185",
+            "quantity": "2",
+            "openingId": "10"
+          },
+          {
+            "length": "2185",
+            "quantity": "2",
+            "openingId": "11"
+          },
+          {
+            "length": "2235",
+            "quantity": "2",
+            "openingId": "12"
+          }
+        ]
+      }
+    }
+  ]
+}

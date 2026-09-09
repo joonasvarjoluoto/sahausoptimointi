@@ -1,0 +1,6549 @@
+[
+  {
+    "scenario": "A",
+    "ids": [
+      "excel-3",
+      "excel-9",
+      "excel-21"
+    ],
+    "status": "complete",
+    "materialMs": 32738,
+    "schedulerMs": 10,
+    "score": 275865.03348940733,
+    "scoreComponents": {
+      "sourceValueEquivalent": 289819.9773667667,
+      "recoveredRemnantValueEquivalent": 17482.023877359377,
+      "kerfRecoveredValueEquivalent": 0,
+      "newStockRemnantCreationPenaltyEquivalent": 350,
+      "remnantHandlingPenaltyEquivalent": 300,
+      "largeScrapPenaltyEquivalent": 2877.08,
+      "totalCostEquivalent": 275865.03348940733
+    },
+    "pieceCount": 200,
+    "requiredLengthMm": 263726,
+    "newBars": 41,
+    "newLengthMm": 246000,
+    "oldRemnantSources": 15,
+    "kerfMm": 581,
+    "scrapMm": 5063.400000000001,
+    "reusableCount": 15,
+    "reusableMm": 32103.599999999995,
+    "cutOperations": 90,
+    "cache": {
+      "hits": 0,
+      "misses": 6,
+      "evictions": 0,
+      "eligibleRepeats": 0
+    },
+    "plan": {
+      "complete": true,
+      "bars": [
+        {
+          "id": "bar-1",
+          "number": 1,
+          "profileType": "uProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1205,
+              "quantity": 1
+            },
+            {
+              "length": 1285,
+              "quantity": 1
+            },
+            {
+              "length": 1865,
+              "quantity": 1
+            },
+            {
+              "length": 1610,
+              "quantity": 1
+            }
+          ],
+          "remaining": 23,
+          "waste": 12,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-2",
+          "number": 2,
+          "profileType": "uProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1235,
+              "quantity": 1
+            },
+            {
+              "length": 1255,
+              "quantity": 1
+            },
+            {
+              "length": 1865,
+              "quantity": 1
+            },
+            {
+              "length": 1610,
+              "quantity": 1
+            }
+          ],
+          "remaining": 23,
+          "waste": 12,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-3",
+          "number": 3,
+          "profileType": "uProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1285,
+              "quantity": 1
+            },
+            {
+              "length": 1235,
+              "quantity": 1
+            },
+            {
+              "length": 2163,
+              "quantity": 1
+            },
+            {
+              "length": 1255,
+              "quantity": 1
+            }
+          ],
+          "remaining": 50,
+          "waste": 12,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-4",
+          "number": 4,
+          "profileType": "uProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1235,
+              "quantity": 1
+            },
+            {
+              "length": 2163,
+              "quantity": 1
+            },
+            {
+              "length": 1255,
+              "quantity": 2
+            }
+          ],
+          "remaining": 80,
+          "waste": 12,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-5",
+          "number": 5,
+          "profileType": "uProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2163,
+              "quantity": 1
+            },
+            {
+              "length": 1865,
+              "quantity": 2
+            }
+          ],
+          "remaining": 98,
+          "waste": 9,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-6",
+          "number": 6,
+          "profileType": "uProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1235,
+              "quantity": 1
+            },
+            {
+              "length": 2163,
+              "quantity": 2
+            }
+          ],
+          "remaining": 430,
+          "waste": 9,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-7",
+          "number": 7,
+          "profileType": "uProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2165,
+              "quantity": 1
+            },
+            {
+              "length": 2163,
+              "quantity": 1
+            }
+          ],
+          "remaining": 1666,
+          "waste": 6,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-8",
+          "number": 8,
+          "profileType": "uProfile",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 2591.5,
+          "groupedCuts": [
+            {
+              "length": 2165,
+              "quantity": 1
+            }
+          ],
+          "remaining": 423.5,
+          "waste": 3,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-9",
+          "number": 9,
+          "profileType": "uProfile",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 1209.2,
+          "groupedCuts": [
+            {
+              "length": 1205,
+              "quantity": 1
+            }
+          ],
+          "remaining": 1.2,
+          "waste": 3,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-10",
+          "number": 10,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1098,
+              "quantity": 1
+            },
+            {
+              "length": 1128,
+              "quantity": 3
+            },
+            {
+              "length": 1503,
+              "quantity": 1
+            }
+          ],
+          "remaining": 0,
+          "waste": 15,
+          "remnantStatus": "none"
+        },
+        {
+          "id": "bar-11",
+          "number": 11,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1098,
+              "quantity": 1
+            },
+            {
+              "length": 1128,
+              "quantity": 3
+            },
+            {
+              "length": 1503,
+              "quantity": 1
+            }
+          ],
+          "remaining": 0,
+          "waste": 15,
+          "remnantStatus": "none"
+        },
+        {
+          "id": "bar-12",
+          "number": 12,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1098,
+              "quantity": 1
+            },
+            {
+              "length": 1128,
+              "quantity": 3
+            },
+            {
+              "length": 1503,
+              "quantity": 1
+            }
+          ],
+          "remaining": 0,
+          "waste": 15,
+          "remnantStatus": "none"
+        },
+        {
+          "id": "bar-13",
+          "number": 13,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1098,
+              "quantity": 1
+            },
+            {
+              "length": 1128,
+              "quantity": 3
+            },
+            {
+              "length": 1503,
+              "quantity": 1
+            }
+          ],
+          "remaining": 0,
+          "waste": 15,
+          "remnantStatus": "none"
+        },
+        {
+          "id": "bar-14",
+          "number": 14,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1098,
+              "quantity": 1
+            },
+            {
+              "length": 1178,
+              "quantity": 4
+            }
+          ],
+          "remaining": 175,
+          "waste": 15,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-15",
+          "number": 15,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1178,
+              "quantity": 1
+            },
+            {
+              "length": 1148,
+              "quantity": 4
+            }
+          ],
+          "remaining": 215,
+          "waste": 15,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-16",
+          "number": 16,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1098,
+              "quantity": 1
+            },
+            {
+              "length": 1178,
+              "quantity": 1
+            },
+            {
+              "length": 1148,
+              "quantity": 3
+            }
+          ],
+          "remaining": 265,
+          "waste": 15,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-17",
+          "number": 17,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1148,
+              "quantity": 2
+            },
+            {
+              "length": 1758,
+              "quantity": 2
+            }
+          ],
+          "remaining": 176,
+          "waste": 12,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-18",
+          "number": 18,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1148,
+              "quantity": 2
+            },
+            {
+              "length": 1758,
+              "quantity": 2
+            }
+          ],
+          "remaining": 176,
+          "waste": 12,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-19",
+          "number": 19,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2056,
+              "quantity": 2
+            },
+            {
+              "length": 1758,
+              "quantity": 1
+            }
+          ],
+          "remaining": 121,
+          "waste": 9,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-20",
+          "number": 20,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2056,
+              "quantity": 2
+            },
+            {
+              "length": 1758,
+              "quantity": 1
+            }
+          ],
+          "remaining": 121,
+          "waste": 9,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-21",
+          "number": 21,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2058,
+              "quantity": 1
+            },
+            {
+              "length": 2056,
+              "quantity": 1
+            },
+            {
+              "length": 1758,
+              "quantity": 1
+            }
+          ],
+          "remaining": 119,
+          "waste": 9,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-22",
+          "number": 22,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2056,
+              "quantity": 2
+            },
+            {
+              "length": 1758,
+              "quantity": 1
+            }
+          ],
+          "remaining": 121,
+          "waste": 9,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-23",
+          "number": 23,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2056,
+              "quantity": 2
+            },
+            {
+              "length": 1758,
+              "quantity": 1
+            }
+          ],
+          "remaining": 121,
+          "waste": 9,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-24",
+          "number": 24,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2056,
+              "quantity": 2
+            },
+            {
+              "length": 1148,
+              "quantity": 1
+            }
+          ],
+          "remaining": 731,
+          "waste": 9,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-25",
+          "number": 25,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2056,
+              "quantity": 2
+            }
+          ],
+          "remaining": 1882,
+          "waste": 6,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-26",
+          "number": 26,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2056,
+              "quantity": 2
+            }
+          ],
+          "remaining": 1882,
+          "waste": 6,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-27",
+          "number": 27,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2058,
+              "quantity": 2
+            }
+          ],
+          "remaining": 1878,
+          "waste": 6,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-28",
+          "number": 28,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 3237.6,
+          "groupedCuts": [
+            {
+              "length": 2058,
+              "quantity": 1
+            }
+          ],
+          "remaining": 1176.6,
+          "waste": 3,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-29",
+          "number": 29,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 3340.5,
+          "groupedCuts": [
+            {
+              "length": 2058,
+              "quantity": 1
+            }
+          ],
+          "remaining": 1279.5,
+          "waste": 3,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-30",
+          "number": 30,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2056,
+              "quantity": 1
+            }
+          ],
+          "remaining": 3941,
+          "waste": 3,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-31",
+          "number": 31,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2058,
+              "quantity": 1
+            }
+          ],
+          "remaining": 3939,
+          "waste": 3,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-32",
+          "number": 32,
+          "profileType": "verticalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2056,
+              "quantity": 1
+            }
+          ],
+          "remaining": 3941,
+          "waste": 3,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-33",
+          "number": 33,
+          "profileType": "closingProfile",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 3147.6,
+          "groupedCuts": [
+            {
+              "length": 2056,
+              "quantity": 1
+            }
+          ],
+          "remaining": 1088.6,
+          "waste": 3,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-34",
+          "number": 34,
+          "profileType": "closingProfile",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 3315,
+          "groupedCuts": [
+            {
+              "length": 1758,
+              "quantity": 1
+            }
+          ],
+          "remaining": 1554,
+          "waste": 3,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-35",
+          "number": 35,
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 585,
+              "quantity": 4
+            },
+            {
+              "length": 488,
+              "quantity": 1
+            },
+            {
+              "length": 581,
+              "quantity": 1
+            },
+            {
+              "length": 638,
+              "quantity": 1
+            },
+            {
+              "length": 640,
+              "quantity": 1
+            },
+            {
+              "length": 643,
+              "quantity": 2
+            }
+          ],
+          "remaining": 0,
+          "waste": 27,
+          "remnantStatus": "none"
+        },
+        {
+          "id": "bar-36",
+          "number": 36,
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 585,
+              "quantity": 2
+            },
+            {
+              "length": 488,
+              "quantity": 1
+            },
+            {
+              "length": 581,
+              "quantity": 4
+            },
+            {
+              "length": 640,
+              "quantity": 1
+            },
+            {
+              "length": 717,
+              "quantity": 1
+            },
+            {
+              "length": 634,
+              "quantity": 1
+            }
+          ],
+          "remaining": 0,
+          "waste": 27,
+          "remnantStatus": "none"
+        },
+        {
+          "id": "bar-37",
+          "number": 37,
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 488,
+              "quantity": 4
+            },
+            {
+              "length": 638,
+              "quantity": 1
+            },
+            {
+              "length": 640,
+              "quantity": 2
+            },
+            {
+              "length": 634,
+              "quantity": 1
+            },
+            {
+              "length": 906,
+              "quantity": 1
+            },
+            {
+              "length": 563,
+              "quantity": 1
+            }
+          ],
+          "remaining": 0,
+          "waste": 27,
+          "remnantStatus": "none"
+        },
+        {
+          "id": "bar-38",
+          "number": 38,
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 581,
+              "quantity": 1
+            },
+            {
+              "length": 638,
+              "quantity": 2
+            },
+            {
+              "length": 643,
+              "quantity": 1
+            },
+            {
+              "length": 634,
+              "quantity": 3
+            },
+            {
+              "length": 1011,
+              "quantity": 1
+            },
+            {
+              "length": 563,
+              "quantity": 1
+            }
+          ],
+          "remaining": 0,
+          "waste": 24,
+          "remnantStatus": "none"
+        },
+        {
+          "id": "bar-39",
+          "number": 39,
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 638,
+              "quantity": 2
+            },
+            {
+              "length": 643,
+              "quantity": 3
+            },
+            {
+              "length": 634,
+              "quantity": 1
+            },
+            {
+              "length": 1011,
+              "quantity": 1
+            },
+            {
+              "length": 563,
+              "quantity": 2
+            }
+          ],
+          "remaining": 0,
+          "waste": 24,
+          "remnantStatus": "none"
+        },
+        {
+          "id": "bar-40",
+          "number": 40,
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 640,
+              "quantity": 2
+            },
+            {
+              "length": 717,
+              "quantity": 4
+            },
+            {
+              "length": 906,
+              "quantity": 2
+            }
+          ],
+          "remaining": 16,
+          "waste": 24,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-41",
+          "number": 41,
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1001,
+              "quantity": 1
+            },
+            {
+              "length": 1011,
+              "quantity": 4
+            },
+            {
+              "length": 906,
+              "quantity": 1
+            }
+          ],
+          "remaining": 31,
+          "waste": 18,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-42",
+          "number": 42,
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1001,
+              "quantity": 1
+            },
+            {
+              "length": 717,
+              "quantity": 1
+            },
+            {
+              "length": 1046,
+              "quantity": 4
+            }
+          ],
+          "remaining": 80,
+          "waste": 18,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-43",
+          "number": 43,
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 5172.5,
+          "groupedCuts": [
+            {
+              "length": 1001,
+              "quantity": 3
+            },
+            {
+              "length": 1046,
+              "quantity": 2
+            }
+          ],
+          "remaining": 62.5,
+          "waste": 15,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-44",
+          "number": 44,
+          "profileType": "horizontalProfile",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 5447.8,
+          "groupedCuts": [
+            {
+              "length": 1001,
+              "quantity": 1
+            }
+          ],
+          "remaining": 4443.8,
+          "waste": 3,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-45",
+          "number": 45,
+          "profileType": "topRail",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1725,
+              "quantity": 1
+            },
+            {
+              "length": 1435,
+              "quantity": 1
+            },
+            {
+              "length": 1715,
+              "quantity": 1
+            },
+            {
+              "length": 1115,
+              "quantity": 1
+            }
+          ],
+          "remaining": 0,
+          "waste": 10,
+          "remnantStatus": "none"
+        },
+        {
+          "id": "bar-46",
+          "number": 46,
+          "profileType": "topRail",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1885,
+              "quantity": 1
+            },
+            {
+              "length": 1890,
+              "quantity": 1
+            },
+            {
+              "length": 2123,
+              "quantity": 1
+            }
+          ],
+          "remaining": 93,
+          "waste": 9,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-47",
+          "number": 47,
+          "profileType": "topRail",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 4907.5,
+          "groupedCuts": [
+            {
+              "length": 1873,
+              "quantity": 1
+            },
+            {
+              "length": 3005,
+              "quantity": 1
+            }
+          ],
+          "remaining": 23.5,
+          "waste": 6,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-48",
+          "number": 48,
+          "profileType": "topRail",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 3858.8,
+          "groupedCuts": [
+            {
+              "length": 1900,
+              "quantity": 1
+            },
+            {
+              "length": 1800,
+              "quantity": 1
+            }
+          ],
+          "remaining": 152.8,
+          "waste": 6,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-49",
+          "number": 49,
+          "profileType": "topRail",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 4184.3,
+          "groupedCuts": [
+            {
+              "length": 2975,
+              "quantity": 1
+            }
+          ],
+          "remaining": 1206.3,
+          "waste": 3,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-50",
+          "number": 50,
+          "profileType": "topRail",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 3799.6,
+          "groupedCuts": [
+            {
+              "length": 3110,
+              "quantity": 1
+            }
+          ],
+          "remaining": 686.6,
+          "waste": 3,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-51",
+          "number": 51,
+          "profileType": "bottomRail",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1725,
+              "quantity": 1
+            },
+            {
+              "length": 1435,
+              "quantity": 1
+            },
+            {
+              "length": 1715,
+              "quantity": 1
+            },
+            {
+              "length": 1115,
+              "quantity": 1
+            }
+          ],
+          "remaining": 0,
+          "waste": 10,
+          "remnantStatus": "none"
+        },
+        {
+          "id": "bar-52",
+          "number": 52,
+          "profileType": "bottomRail",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 1885,
+              "quantity": 1
+            },
+            {
+              "length": 1890,
+              "quantity": 1
+            },
+            {
+              "length": 2123,
+              "quantity": 1
+            }
+          ],
+          "remaining": 93,
+          "waste": 9,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-53",
+          "number": 53,
+          "profileType": "bottomRail",
+          "color": "gray",
+          "source": "new",
+          "sourceLength": 6000,
+          "groupedCuts": [
+            {
+              "length": 2975,
+              "quantity": 1
+            },
+            {
+              "length": 3005,
+              "quantity": 1
+            }
+          ],
+          "remaining": 14,
+          "waste": 6,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-54",
+          "number": 54,
+          "profileType": "bottomRail",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 4120.3,
+          "groupedCuts": [
+            {
+              "length": 1900,
+              "quantity": 1
+            },
+            {
+              "length": 1873,
+              "quantity": 1
+            }
+          ],
+          "remaining": 341.3,
+          "waste": 6,
+          "remnantStatus": "scrap"
+        },
+        {
+          "id": "bar-55",
+          "number": 55,
+          "profileType": "bottomRail",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 4184.3,
+          "groupedCuts": [
+            {
+              "length": 3110,
+              "quantity": 1
+            }
+          ],
+          "remaining": 1071.3,
+          "waste": 3,
+          "remnantStatus": "reusable"
+        },
+        {
+          "id": "bar-56",
+          "number": 56,
+          "profileType": "bottomRail",
+          "color": "gray",
+          "source": "remnant",
+          "sourceLength": 2957.5,
+          "groupedCuts": [
+            {
+              "length": 1800,
+              "quantity": 1
+            }
+          ],
+          "remaining": 1154.5,
+          "waste": 3,
+          "remnantStatus": "reusable"
+        }
+      ],
+      "remainingItems": []
+    },
+    "execution": {
+      "operations": [
+        {
+          "id": "operation-1",
+          "number": 1,
+          "kind": "cut",
+          "compatibilityGroup": "uProfile",
+          "length": 1205,
+          "sources": [
+            {
+              "id": "bar-1",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4792,
+              "waste": 3
+            },
+            {
+              "id": "bar-9",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 1209.2,
+              "after": 1.2,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1205,
+              "quantity": 1,
+              "pieceId": "piece-7-1",
+              "sourceId": "bar-1"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1205,
+              "quantity": 1,
+              "pieceId": "piece-7-2",
+              "sourceId": "bar-9"
+            }
+          ],
+          "dependencyIds": [],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-2",
+          "number": 2,
+          "kind": "cut",
+          "compatibilityGroup": "uProfile",
+          "length": 1285,
+          "sources": [
+            {
+              "id": "bar-1",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4792,
+              "after": 3504,
+              "waste": 3
+            },
+            {
+              "id": "bar-3",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4712,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1285,
+              "quantity": 1,
+              "pieceId": "piece-8-1",
+              "sourceId": "bar-1"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1285,
+              "quantity": 1,
+              "pieceId": "piece-8-2",
+              "sourceId": "bar-3"
+            }
+          ],
+          "dependencyIds": [
+            "operation-1"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-3",
+          "number": 3,
+          "kind": "cut",
+          "compatibilityGroup": "uProfile",
+          "length": 1865,
+          "sources": [
+            {
+              "id": "bar-1",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3504,
+              "after": 1636,
+              "waste": 3
+            },
+            {
+              "id": "bar-2",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4132,
+              "waste": 3
+            },
+            {
+              "id": "bar-5",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4132,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1865,
+              "quantity": 1,
+              "pieceId": "piece-58-1",
+              "sourceId": "bar-1"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1865,
+              "quantity": 1,
+              "pieceId": "piece-58-2",
+              "sourceId": "bar-2"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1865,
+              "quantity": 1,
+              "pieceId": "piece-59-1",
+              "sourceId": "bar-5"
+            }
+          ],
+          "dependencyIds": [
+            "operation-2"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-4",
+          "number": 4,
+          "kind": "cut",
+          "compatibilityGroup": "uProfile",
+          "length": 1610,
+          "sources": [
+            {
+              "id": "bar-1",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1636,
+              "after": 23,
+              "waste": 3
+            },
+            {
+              "id": "bar-2",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4132,
+              "after": 2519,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1610,
+              "quantity": 1,
+              "pieceId": "piece-60-1",
+              "sourceId": "bar-1"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1610,
+              "quantity": 1,
+              "pieceId": "piece-60-2",
+              "sourceId": "bar-2"
+            }
+          ],
+          "dependencyIds": [
+            "operation-3"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-5",
+          "number": 5,
+          "kind": "cut",
+          "compatibilityGroup": "uProfile",
+          "length": 1235,
+          "sources": [
+            {
+              "id": "bar-2",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2519,
+              "after": 1281,
+              "waste": 3
+            },
+            {
+              "id": "bar-3",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4712,
+              "after": 3474,
+              "waste": 3
+            },
+            {
+              "id": "bar-4",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4762,
+              "waste": 3
+            },
+            {
+              "id": "bar-6",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4762,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1235,
+              "quantity": 1,
+              "pieceId": "piece-30-1",
+              "sourceId": "bar-2"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1235,
+              "quantity": 1,
+              "pieceId": "piece-30-2",
+              "sourceId": "bar-3"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1235,
+              "quantity": 1,
+              "pieceId": "piece-31-1",
+              "sourceId": "bar-4"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1235,
+              "quantity": 1,
+              "pieceId": "piece-31-2",
+              "sourceId": "bar-6"
+            }
+          ],
+          "dependencyIds": [
+            "operation-4",
+            "operation-2"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-6",
+          "number": 6,
+          "kind": "cut",
+          "compatibilityGroup": "uProfile",
+          "length": 1255,
+          "sources": [
+            {
+              "id": "bar-2",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1281,
+              "after": 23,
+              "waste": 3
+            },
+            {
+              "id": "bar-3",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3474,
+              "after": 2216,
+              "waste": 3
+            },
+            {
+              "id": "bar-4",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4762,
+              "after": 3504,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1255,
+              "quantity": 1,
+              "pieceId": "piece-35-1",
+              "sourceId": "bar-2"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1255,
+              "quantity": 1,
+              "pieceId": "piece-35-2",
+              "sourceId": "bar-3"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1255,
+              "quantity": 1,
+              "pieceId": "piece-36-1",
+              "sourceId": "bar-4"
+            }
+          ],
+          "dependencyIds": [
+            "operation-5"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-7",
+          "number": 7,
+          "kind": "cut",
+          "compatibilityGroup": "uProfile",
+          "length": 2163,
+          "sources": [
+            {
+              "id": "bar-3",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2216,
+              "after": 50,
+              "waste": 3
+            },
+            {
+              "id": "bar-4",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3504,
+              "after": 1338,
+              "waste": 3
+            },
+            {
+              "id": "bar-5",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4132,
+              "after": 1966,
+              "waste": 3
+            },
+            {
+              "id": "bar-6",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4762,
+              "after": 2596,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 2163,
+              "quantity": 1,
+              "pieceId": "piece-32-1",
+              "sourceId": "bar-3"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 2163,
+              "quantity": 1,
+              "pieceId": "piece-32-2",
+              "sourceId": "bar-4"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 2163,
+              "quantity": 1,
+              "pieceId": "piece-33-1",
+              "sourceId": "bar-5"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 2163,
+              "quantity": 1,
+              "pieceId": "piece-33-2",
+              "sourceId": "bar-6"
+            }
+          ],
+          "dependencyIds": [
+            "operation-6",
+            "operation-3",
+            "operation-5"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-8",
+          "number": 8,
+          "kind": "cut",
+          "compatibilityGroup": "uProfile",
+          "length": 1255,
+          "sources": [
+            {
+              "id": "bar-4",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1338,
+              "after": 80,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1255,
+              "quantity": 1,
+              "pieceId": "piece-36-2",
+              "sourceId": "bar-4"
+            }
+          ],
+          "dependencyIds": [
+            "operation-7"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-9",
+          "number": 9,
+          "kind": "cut",
+          "compatibilityGroup": "uProfile",
+          "length": 1865,
+          "sources": [
+            {
+              "id": "bar-5",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1966,
+              "after": 98,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 1865,
+              "quantity": 1,
+              "pieceId": "piece-59-2",
+              "sourceId": "bar-5"
+            }
+          ],
+          "dependencyIds": [
+            "operation-7"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-10",
+          "number": 10,
+          "kind": "cut",
+          "compatibilityGroup": "uProfile",
+          "length": 2163,
+          "sources": [
+            {
+              "id": "bar-6",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2596,
+              "after": 430,
+              "waste": 3
+            },
+            {
+              "id": "bar-7",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 3834,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 2163,
+              "quantity": 1,
+              "pieceId": "piece-34-1",
+              "sourceId": "bar-6"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 2163,
+              "quantity": 1,
+              "pieceId": "piece-34-2",
+              "sourceId": "bar-7"
+            }
+          ],
+          "dependencyIds": [
+            "operation-7"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-11",
+          "number": 11,
+          "kind": "cut",
+          "compatibilityGroup": "uProfile",
+          "length": 2165,
+          "sources": [
+            {
+              "id": "bar-7",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3834,
+              "after": 1666,
+              "waste": 3
+            },
+            {
+              "id": "bar-8",
+              "profileType": "uProfile",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 2591.5,
+              "after": 423.5,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 2165,
+              "quantity": 1,
+              "pieceId": "piece-9-1",
+              "sourceId": "bar-7"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "uProfile",
+              "color": "gray",
+              "length": 2165,
+              "quantity": 1,
+              "pieceId": "piece-9-2",
+              "sourceId": "bar-8"
+            }
+          ],
+          "dependencyIds": [
+            "operation-10"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-12",
+          "number": 12,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1098,
+          "sources": [
+            {
+              "id": "bar-10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4899,
+              "waste": 3
+            },
+            {
+              "id": "bar-11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4899,
+              "waste": 3
+            },
+            {
+              "id": "bar-12",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4899,
+              "waste": 3
+            },
+            {
+              "id": "bar-13",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4899,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1098,
+              "quantity": 1,
+              "pieceId": "piece-1-1",
+              "sourceId": "bar-10"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1098,
+              "quantity": 1,
+              "pieceId": "piece-1-2",
+              "sourceId": "bar-11"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1098,
+              "quantity": 1,
+              "pieceId": "piece-1-3",
+              "sourceId": "bar-12"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1098,
+              "quantity": 1,
+              "pieceId": "piece-1-4",
+              "sourceId": "bar-13"
+            }
+          ],
+          "dependencyIds": [],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-13",
+          "number": 13,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1128,
+          "sources": [
+            {
+              "id": "bar-10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4899,
+              "after": 3768,
+              "waste": 3
+            },
+            {
+              "id": "bar-11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4899,
+              "after": 3768,
+              "waste": 3
+            },
+            {
+              "id": "bar-12",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4899,
+              "after": 3768,
+              "waste": 3
+            },
+            {
+              "id": "bar-13",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4899,
+              "after": 3768,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-16-1",
+              "sourceId": "bar-10"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-16-4",
+              "sourceId": "bar-11"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-17-1",
+              "sourceId": "bar-12"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-17-4",
+              "sourceId": "bar-13"
+            }
+          ],
+          "dependencyIds": [
+            "operation-12"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-14",
+          "number": 14,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1128,
+          "sources": [
+            {
+              "id": "bar-10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3768,
+              "after": 2637,
+              "waste": 3
+            },
+            {
+              "id": "bar-11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3768,
+              "after": 2637,
+              "waste": 3
+            },
+            {
+              "id": "bar-12",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3768,
+              "after": 2637,
+              "waste": 3
+            },
+            {
+              "id": "bar-13",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3768,
+              "after": 2637,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-16-2",
+              "sourceId": "bar-10"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-16-5",
+              "sourceId": "bar-11"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-17-2",
+              "sourceId": "bar-12"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-17-5",
+              "sourceId": "bar-13"
+            }
+          ],
+          "dependencyIds": [
+            "operation-13"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-15",
+          "number": 15,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1128,
+          "sources": [
+            {
+              "id": "bar-10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2637,
+              "after": 1506,
+              "waste": 3
+            },
+            {
+              "id": "bar-11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2637,
+              "after": 1506,
+              "waste": 3
+            },
+            {
+              "id": "bar-12",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2637,
+              "after": 1506,
+              "waste": 3
+            },
+            {
+              "id": "bar-13",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2637,
+              "after": 1506,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-16-3",
+              "sourceId": "bar-10"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-16-6",
+              "sourceId": "bar-11"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-17-3",
+              "sourceId": "bar-12"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1128,
+              "quantity": 1,
+              "pieceId": "piece-17-6",
+              "sourceId": "bar-13"
+            }
+          ],
+          "dependencyIds": [
+            "operation-14"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-16",
+          "number": 16,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1503,
+          "sources": [
+            {
+              "id": "bar-10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1506,
+              "after": 0,
+              "waste": 3
+            },
+            {
+              "id": "bar-11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1506,
+              "after": 0,
+              "waste": 3
+            },
+            {
+              "id": "bar-12",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1506,
+              "after": 0,
+              "waste": 3
+            },
+            {
+              "id": "bar-13",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1506,
+              "after": 0,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1503,
+              "quantity": 1,
+              "pieceId": "piece-54-1",
+              "sourceId": "bar-10"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1503,
+              "quantity": 1,
+              "pieceId": "piece-54-2",
+              "sourceId": "bar-11"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1503,
+              "quantity": 1,
+              "pieceId": "piece-54-3",
+              "sourceId": "bar-12"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1503,
+              "quantity": 1,
+              "pieceId": "piece-54-4",
+              "sourceId": "bar-13"
+            }
+          ],
+          "dependencyIds": [
+            "operation-15"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-17",
+          "number": 17,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1098,
+          "sources": [
+            {
+              "id": "bar-14",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4899,
+              "waste": 3
+            },
+            {
+              "id": "bar-16",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4899,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1098,
+              "quantity": 1,
+              "pieceId": "piece-1-5",
+              "sourceId": "bar-14"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1098,
+              "quantity": 1,
+              "pieceId": "piece-1-6",
+              "sourceId": "bar-16"
+            }
+          ],
+          "dependencyIds": [],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-18",
+          "number": 18,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1178,
+          "sources": [
+            {
+              "id": "bar-14",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4899,
+              "after": 3718,
+              "waste": 3
+            },
+            {
+              "id": "bar-16",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4899,
+              "after": 3718,
+              "waste": 3
+            },
+            {
+              "id": "bar-15",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4819,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1178,
+              "quantity": 1,
+              "pieceId": "piece-2-1",
+              "sourceId": "bar-14"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1178,
+              "quantity": 1,
+              "pieceId": "piece-2-6",
+              "sourceId": "bar-16"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1178,
+              "quantity": 1,
+              "pieceId": "piece-2-5",
+              "sourceId": "bar-15"
+            }
+          ],
+          "dependencyIds": [
+            "operation-17"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-19",
+          "number": 19,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1178,
+          "sources": [
+            {
+              "id": "bar-14",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3718,
+              "after": 2537,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1178,
+              "quantity": 1,
+              "pieceId": "piece-2-2",
+              "sourceId": "bar-14"
+            }
+          ],
+          "dependencyIds": [
+            "operation-18"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-20",
+          "number": 20,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1178,
+          "sources": [
+            {
+              "id": "bar-14",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2537,
+              "after": 1356,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1178,
+              "quantity": 1,
+              "pieceId": "piece-2-3",
+              "sourceId": "bar-14"
+            }
+          ],
+          "dependencyIds": [
+            "operation-19"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-21",
+          "number": 21,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1178,
+          "sources": [
+            {
+              "id": "bar-14",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1356,
+              "after": 175,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1178,
+              "quantity": 1,
+              "pieceId": "piece-2-4",
+              "sourceId": "bar-14"
+            }
+          ],
+          "dependencyIds": [
+            "operation-20"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-22",
+          "number": 22,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1148,
+          "sources": [
+            {
+              "id": "bar-15",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4819,
+              "after": 3668,
+              "waste": 3
+            },
+            {
+              "id": "bar-16",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3718,
+              "after": 2567,
+              "waste": 3
+            },
+            {
+              "id": "bar-17",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4849,
+              "waste": 3
+            },
+            {
+              "id": "bar-18",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4849,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-21-1",
+              "sourceId": "bar-15"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-21-5",
+              "sourceId": "bar-16"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-22-2",
+              "sourceId": "bar-17"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-22-4",
+              "sourceId": "bar-18"
+            }
+          ],
+          "dependencyIds": [
+            "operation-18"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-23",
+          "number": 23,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1148,
+          "sources": [
+            {
+              "id": "bar-15",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3668,
+              "after": 2517,
+              "waste": 3
+            },
+            {
+              "id": "bar-16",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2567,
+              "after": 1416,
+              "waste": 3
+            },
+            {
+              "id": "bar-17",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4849,
+              "after": 3698,
+              "waste": 3
+            },
+            {
+              "id": "bar-18",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4849,
+              "after": 3698,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-21-2",
+              "sourceId": "bar-15"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-21-6",
+              "sourceId": "bar-16"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-22-3",
+              "sourceId": "bar-17"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-22-5",
+              "sourceId": "bar-18"
+            }
+          ],
+          "dependencyIds": [
+            "operation-22"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-24",
+          "number": 24,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1148,
+          "sources": [
+            {
+              "id": "bar-15",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2517,
+              "after": 1366,
+              "waste": 3
+            },
+            {
+              "id": "bar-16",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1416,
+              "after": 265,
+              "waste": 3
+            },
+            {
+              "id": "bar-24",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4849,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-21-3",
+              "sourceId": "bar-15"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-22-1",
+              "sourceId": "bar-16"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-22-6",
+              "sourceId": "bar-24"
+            }
+          ],
+          "dependencyIds": [
+            "operation-23"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-25",
+          "number": 25,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1148,
+          "sources": [
+            {
+              "id": "bar-15",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1366,
+              "after": 215,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1148,
+              "quantity": 1,
+              "pieceId": "piece-21-4",
+              "sourceId": "bar-15"
+            }
+          ],
+          "dependencyIds": [
+            "operation-24"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-26",
+          "number": 26,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1758,
+          "sources": [
+            {
+              "id": "bar-17",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3698,
+              "after": 1937,
+              "waste": 3
+            },
+            {
+              "id": "bar-18",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3698,
+              "after": 1937,
+              "waste": 3
+            },
+            {
+              "id": "bar-19",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4239,
+              "waste": 3
+            },
+            {
+              "id": "bar-20",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4239,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1758,
+              "quantity": 1,
+              "pieceId": "piece-52-1",
+              "sourceId": "bar-17"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1758,
+              "quantity": 1,
+              "pieceId": "piece-52-3",
+              "sourceId": "bar-18"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1758,
+              "quantity": 1,
+              "pieceId": "piece-53-2",
+              "sourceId": "bar-19"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1758,
+              "quantity": 1,
+              "pieceId": "piece-53-3",
+              "sourceId": "bar-20"
+            }
+          ],
+          "dependencyIds": [
+            "operation-23"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-27",
+          "number": 27,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1758,
+          "sources": [
+            {
+              "id": "bar-17",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1937,
+              "after": 176,
+              "waste": 3
+            },
+            {
+              "id": "bar-18",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1937,
+              "after": 176,
+              "waste": 3
+            },
+            {
+              "id": "bar-21",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4239,
+              "waste": 3
+            },
+            {
+              "id": "bar-22",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4239,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1758,
+              "quantity": 1,
+              "pieceId": "piece-52-2",
+              "sourceId": "bar-17"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1758,
+              "quantity": 1,
+              "pieceId": "piece-53-1",
+              "sourceId": "bar-18"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1758,
+              "quantity": 1,
+              "pieceId": "piece-53-4",
+              "sourceId": "bar-21"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1758,
+              "quantity": 1,
+              "pieceId": "piece-53-5",
+              "sourceId": "bar-22"
+            }
+          ],
+          "dependencyIds": [
+            "operation-26"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-28",
+          "number": 28,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 2056,
+          "sources": [
+            {
+              "id": "bar-19",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4239,
+              "after": 2180,
+              "waste": 3
+            },
+            {
+              "id": "bar-20",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4239,
+              "after": 2180,
+              "waste": 3
+            },
+            {
+              "id": "bar-21",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4239,
+              "after": 2180,
+              "waste": 3
+            },
+            {
+              "id": "bar-22",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4239,
+              "after": 2180,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-18-1",
+              "sourceId": "bar-19"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-18-3",
+              "sourceId": "bar-20"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-18-5",
+              "sourceId": "bar-21"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-18-6",
+              "sourceId": "bar-22"
+            }
+          ],
+          "dependencyIds": [
+            "operation-26",
+            "operation-27"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-29",
+          "number": 29,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 2056,
+          "sources": [
+            {
+              "id": "bar-19",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2180,
+              "after": 121,
+              "waste": 3
+            },
+            {
+              "id": "bar-20",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2180,
+              "after": 121,
+              "waste": 3
+            },
+            {
+              "id": "bar-22",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2180,
+              "after": 121,
+              "waste": 3
+            },
+            {
+              "id": "bar-24",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4849,
+              "after": 2790,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-18-2",
+              "sourceId": "bar-19"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-18-4",
+              "sourceId": "bar-20"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-19-1",
+              "sourceId": "bar-22"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-19-4",
+              "sourceId": "bar-24"
+            }
+          ],
+          "dependencyIds": [
+            "operation-28",
+            "operation-24"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-30",
+          "number": 30,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 2058,
+          "sources": [
+            {
+              "id": "bar-21",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2180,
+              "after": 119,
+              "waste": 3
+            },
+            {
+              "id": "bar-27",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 3939,
+              "waste": 3
+            },
+            {
+              "id": "bar-28",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 3237.6,
+              "after": 1176.6,
+              "waste": 3
+            },
+            {
+              "id": "bar-29",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 3340.5,
+              "after": 1279.5,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2058,
+              "quantity": 1,
+              "pieceId": "piece-3-1",
+              "sourceId": "bar-21"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2058,
+              "quantity": 1,
+              "pieceId": "piece-3-2",
+              "sourceId": "bar-27"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2058,
+              "quantity": 1,
+              "pieceId": "piece-3-4",
+              "sourceId": "bar-28"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2058,
+              "quantity": 1,
+              "pieceId": "piece-3-5",
+              "sourceId": "bar-29"
+            }
+          ],
+          "dependencyIds": [
+            "operation-28"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-31",
+          "number": 31,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 2056,
+          "sources": [
+            {
+              "id": "bar-24",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2790,
+              "after": 731,
+              "waste": 3
+            },
+            {
+              "id": "bar-23",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 3941,
+              "waste": 3
+            },
+            {
+              "id": "bar-25",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 3941,
+              "waste": 3
+            },
+            {
+              "id": "bar-26",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 3941,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-19-5",
+              "sourceId": "bar-24"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-19-2",
+              "sourceId": "bar-23"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-20-1",
+              "sourceId": "bar-25"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-20-3",
+              "sourceId": "bar-26"
+            }
+          ],
+          "dependencyIds": [
+            "operation-29"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-32",
+          "number": 32,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 2056,
+          "sources": [
+            {
+              "id": "bar-23",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3941,
+              "after": 1882,
+              "waste": 3
+            },
+            {
+              "id": "bar-25",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3941,
+              "after": 1882,
+              "waste": 3
+            },
+            {
+              "id": "bar-26",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3941,
+              "after": 1882,
+              "waste": 3
+            },
+            {
+              "id": "bar-30",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 3941,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-19-3",
+              "sourceId": "bar-23"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-20-2",
+              "sourceId": "bar-25"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-20-4",
+              "sourceId": "bar-26"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-20-5",
+              "sourceId": "bar-30"
+            }
+          ],
+          "dependencyIds": [
+            "operation-31"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-33",
+          "number": 33,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 1758,
+          "sources": [
+            {
+              "id": "bar-23",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1882,
+              "after": 121,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 1758,
+              "quantity": 1,
+              "pieceId": "piece-53-6",
+              "sourceId": "bar-23"
+            }
+          ],
+          "dependencyIds": [
+            "operation-32"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-34",
+          "number": 34,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 2058,
+          "sources": [
+            {
+              "id": "bar-27",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3939,
+              "after": 1878,
+              "waste": 3
+            },
+            {
+              "id": "bar-31",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 3939,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2058,
+              "quantity": 1,
+              "pieceId": "piece-3-3",
+              "sourceId": "bar-27"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2058,
+              "quantity": 1,
+              "pieceId": "piece-3-6",
+              "sourceId": "bar-31"
+            }
+          ],
+          "dependencyIds": [
+            "operation-30"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-35",
+          "number": 35,
+          "kind": "cut",
+          "compatibilityGroup": "verticalProfile",
+          "length": 2056,
+          "sources": [
+            {
+              "id": "bar-32",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 3941,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "verticalProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-20-6",
+              "sourceId": "bar-32"
+            }
+          ],
+          "dependencyIds": [],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-36",
+          "number": 36,
+          "kind": "cut",
+          "compatibilityGroup": "closingProfile",
+          "length": 2056,
+          "sources": [
+            {
+              "id": "bar-33",
+              "profileType": "closingProfile",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 3147.6,
+              "after": 1088.6,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "closingProfile",
+              "color": "gray",
+              "length": 2056,
+              "quantity": 1,
+              "pieceId": "piece-37-1",
+              "sourceId": "bar-33"
+            }
+          ],
+          "dependencyIds": [],
+          "maxStackSize": 1
+        },
+        {
+          "id": "operation-37",
+          "number": 37,
+          "kind": "cut",
+          "compatibilityGroup": "closingProfile",
+          "length": 1758,
+          "sources": [
+            {
+              "id": "bar-34",
+              "profileType": "closingProfile",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 3315,
+              "after": 1554,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "closingProfile",
+              "color": "gray",
+              "length": 1758,
+              "quantity": 1,
+              "pieceId": "piece-61-1",
+              "sourceId": "bar-34"
+            }
+          ],
+          "dependencyIds": [],
+          "maxStackSize": 1
+        },
+        {
+          "id": "operation-38",
+          "number": 38,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 585,
+          "sources": [
+            {
+              "id": "bar-35",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 5412,
+              "waste": 3
+            },
+            {
+              "id": "bar-36",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 5412,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 585,
+              "quantity": 1,
+              "pieceId": "piece-4-1",
+              "sourceId": "bar-35"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 585,
+              "quantity": 1,
+              "pieceId": "piece-4-5",
+              "sourceId": "bar-36"
+            }
+          ],
+          "dependencyIds": [],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-39",
+          "number": 39,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 585,
+          "sources": [
+            {
+              "id": "bar-35",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 5412,
+              "after": 4824,
+              "waste": 3
+            },
+            {
+              "id": "bar-36",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 5412,
+              "after": 4824,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 585,
+              "quantity": 1,
+              "pieceId": "piece-4-2",
+              "sourceId": "bar-35"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 585,
+              "quantity": 1,
+              "pieceId": "piece-4-6",
+              "sourceId": "bar-36"
+            }
+          ],
+          "dependencyIds": [
+            "operation-38"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-40",
+          "number": 40,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 585,
+          "sources": [
+            {
+              "id": "bar-35",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4824,
+              "after": 4236,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 585,
+              "quantity": 1,
+              "pieceId": "piece-4-3",
+              "sourceId": "bar-35"
+            }
+          ],
+          "dependencyIds": [
+            "operation-39"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-41",
+          "number": 41,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 585,
+          "sources": [
+            {
+              "id": "bar-35",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4236,
+              "after": 3648,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 585,
+              "quantity": 1,
+              "pieceId": "piece-4-4",
+              "sourceId": "bar-35"
+            }
+          ],
+          "dependencyIds": [
+            "operation-40"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-42",
+          "number": 42,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 488,
+          "sources": [
+            {
+              "id": "bar-35",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3648,
+              "after": 3157,
+              "waste": 3
+            },
+            {
+              "id": "bar-36",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4824,
+              "after": 4333,
+              "waste": 3
+            },
+            {
+              "id": "bar-37",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 5509,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 488,
+              "quantity": 1,
+              "pieceId": "piece-5-1",
+              "sourceId": "bar-35"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 488,
+              "quantity": 1,
+              "pieceId": "piece-5-2",
+              "sourceId": "bar-36"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 488,
+              "quantity": 1,
+              "pieceId": "piece-5-3",
+              "sourceId": "bar-37"
+            }
+          ],
+          "dependencyIds": [
+            "operation-41",
+            "operation-39"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-43",
+          "number": 43,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 581,
+          "sources": [
+            {
+              "id": "bar-35",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3157,
+              "after": 2573,
+              "waste": 3
+            },
+            {
+              "id": "bar-36",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4333,
+              "after": 3749,
+              "waste": 3
+            },
+            {
+              "id": "bar-38",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 5416,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 581,
+              "quantity": 1,
+              "pieceId": "piece-6-1",
+              "sourceId": "bar-35"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 581,
+              "quantity": 1,
+              "pieceId": "piece-6-2",
+              "sourceId": "bar-36"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 581,
+              "quantity": 1,
+              "pieceId": "piece-6-6",
+              "sourceId": "bar-38"
+            }
+          ],
+          "dependencyIds": [
+            "operation-42"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-44",
+          "number": 44,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 638,
+          "sources": [
+            {
+              "id": "bar-35",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2573,
+              "after": 1932,
+              "waste": 3
+            },
+            {
+              "id": "bar-37",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 5509,
+              "after": 4868,
+              "waste": 3
+            },
+            {
+              "id": "bar-38",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 5416,
+              "after": 4775,
+              "waste": 3
+            },
+            {
+              "id": "bar-39",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 5359,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 638,
+              "quantity": 1,
+              "pieceId": "piece-24-1",
+              "sourceId": "bar-35"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 638,
+              "quantity": 1,
+              "pieceId": "piece-24-2",
+              "sourceId": "bar-37"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 638,
+              "quantity": 1,
+              "pieceId": "piece-24-3",
+              "sourceId": "bar-38"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 638,
+              "quantity": 1,
+              "pieceId": "piece-24-5",
+              "sourceId": "bar-39"
+            }
+          ],
+          "dependencyIds": [
+            "operation-43",
+            "operation-42"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-45",
+          "number": 45,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 640,
+          "sources": [
+            {
+              "id": "bar-35",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1932,
+              "after": 1289,
+              "waste": 3
+            },
+            {
+              "id": "bar-36",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3749,
+              "after": 3106,
+              "waste": 3
+            },
+            {
+              "id": "bar-37",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4868,
+              "after": 4225,
+              "waste": 3
+            },
+            {
+              "id": "bar-40",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 5357,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 640,
+              "quantity": 1,
+              "pieceId": "piece-25-1",
+              "sourceId": "bar-35"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 640,
+              "quantity": 1,
+              "pieceId": "piece-25-2",
+              "sourceId": "bar-36"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 640,
+              "quantity": 1,
+              "pieceId": "piece-25-3",
+              "sourceId": "bar-37"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 640,
+              "quantity": 1,
+              "pieceId": "piece-25-5",
+              "sourceId": "bar-40"
+            }
+          ],
+          "dependencyIds": [
+            "operation-44",
+            "operation-43"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-46",
+          "number": 46,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 643,
+          "sources": [
+            {
+              "id": "bar-35",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1289,
+              "after": 643,
+              "waste": 3
+            },
+            {
+              "id": "bar-38",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4775,
+              "after": 4129,
+              "waste": 3
+            },
+            {
+              "id": "bar-39",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 5359,
+              "after": 4713,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 643,
+              "quantity": 1,
+              "pieceId": "piece-27-1",
+              "sourceId": "bar-35"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 643,
+              "quantity": 1,
+              "pieceId": "piece-27-3",
+              "sourceId": "bar-38"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 643,
+              "quantity": 1,
+              "pieceId": "piece-27-4",
+              "sourceId": "bar-39"
+            }
+          ],
+          "dependencyIds": [
+            "operation-45",
+            "operation-44"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-47",
+          "number": 47,
+          "kind": "release",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 643,
+          "sources": [
+            {
+              "id": "bar-35",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 643,
+              "after": 0,
+              "waste": 0
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 643,
+              "quantity": 1,
+              "pieceId": "piece-27-2",
+              "sourceId": "bar-35"
+            }
+          ],
+          "dependencyIds": [
+            "operation-46"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-48",
+          "number": 48,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 581,
+          "sources": [
+            {
+              "id": "bar-36",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3106,
+              "after": 2522,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 581,
+              "quantity": 1,
+              "pieceId": "piece-6-3",
+              "sourceId": "bar-36"
+            }
+          ],
+          "dependencyIds": [
+            "operation-45"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-49",
+          "number": 49,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 581,
+          "sources": [
+            {
+              "id": "bar-36",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2522,
+              "after": 1938,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 581,
+              "quantity": 1,
+              "pieceId": "piece-6-4",
+              "sourceId": "bar-36"
+            }
+          ],
+          "dependencyIds": [
+            "operation-48"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-50",
+          "number": 50,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 581,
+          "sources": [
+            {
+              "id": "bar-36",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1938,
+              "after": 1354,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 581,
+              "quantity": 1,
+              "pieceId": "piece-6-5",
+              "sourceId": "bar-36"
+            }
+          ],
+          "dependencyIds": [
+            "operation-49"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-51",
+          "number": 51,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 717,
+          "sources": [
+            {
+              "id": "bar-36",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1354,
+              "after": 634,
+              "waste": 3
+            },
+            {
+              "id": "bar-40",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 5357,
+              "after": 4637,
+              "waste": 3
+            },
+            {
+              "id": "bar-42",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 5280,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 717,
+              "quantity": 1,
+              "pieceId": "piece-26-1",
+              "sourceId": "bar-36"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 717,
+              "quantity": 1,
+              "pieceId": "piece-26-2",
+              "sourceId": "bar-40"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 717,
+              "quantity": 1,
+              "pieceId": "piece-26-6",
+              "sourceId": "bar-42"
+            }
+          ],
+          "dependencyIds": [
+            "operation-50",
+            "operation-45"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-52",
+          "number": 52,
+          "kind": "release",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 634,
+          "sources": [
+            {
+              "id": "bar-36",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 634,
+              "after": 0,
+              "waste": 0
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 634,
+              "quantity": 1,
+              "pieceId": "piece-28-1",
+              "sourceId": "bar-36"
+            }
+          ],
+          "dependencyIds": [
+            "operation-51"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-53",
+          "number": 53,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 488,
+          "sources": [
+            {
+              "id": "bar-37",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4225,
+              "after": 3734,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 488,
+              "quantity": 1,
+              "pieceId": "piece-5-4",
+              "sourceId": "bar-37"
+            }
+          ],
+          "dependencyIds": [
+            "operation-45"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-54",
+          "number": 54,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 488,
+          "sources": [
+            {
+              "id": "bar-37",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3734,
+              "after": 3243,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 488,
+              "quantity": 1,
+              "pieceId": "piece-5-5",
+              "sourceId": "bar-37"
+            }
+          ],
+          "dependencyIds": [
+            "operation-53"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-55",
+          "number": 55,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 488,
+          "sources": [
+            {
+              "id": "bar-37",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3243,
+              "after": 2752,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 488,
+              "quantity": 1,
+              "pieceId": "piece-5-6",
+              "sourceId": "bar-37"
+            }
+          ],
+          "dependencyIds": [
+            "operation-54"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-56",
+          "number": 56,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 640,
+          "sources": [
+            {
+              "id": "bar-37",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2752,
+              "after": 2109,
+              "waste": 3
+            },
+            {
+              "id": "bar-40",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4637,
+              "after": 3994,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 640,
+              "quantity": 1,
+              "pieceId": "piece-25-4",
+              "sourceId": "bar-37"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 640,
+              "quantity": 1,
+              "pieceId": "piece-25-6",
+              "sourceId": "bar-40"
+            }
+          ],
+          "dependencyIds": [
+            "operation-55",
+            "operation-51"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-57",
+          "number": 57,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 634,
+          "sources": [
+            {
+              "id": "bar-37",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2109,
+              "after": 1472,
+              "waste": 3
+            },
+            {
+              "id": "bar-38",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4129,
+              "after": 3492,
+              "waste": 3
+            },
+            {
+              "id": "bar-39",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4713,
+              "after": 4076,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 634,
+              "quantity": 1,
+              "pieceId": "piece-28-2",
+              "sourceId": "bar-37"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 634,
+              "quantity": 1,
+              "pieceId": "piece-28-3",
+              "sourceId": "bar-38"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 634,
+              "quantity": 1,
+              "pieceId": "piece-28-6",
+              "sourceId": "bar-39"
+            }
+          ],
+          "dependencyIds": [
+            "operation-56",
+            "operation-46"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-58",
+          "number": 58,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 906,
+          "sources": [
+            {
+              "id": "bar-37",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1472,
+              "after": 563,
+              "waste": 3
+            },
+            {
+              "id": "bar-40",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3994,
+              "after": 3085,
+              "waste": 3
+            },
+            {
+              "id": "bar-41",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 5091,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 906,
+              "quantity": 1,
+              "pieceId": "piece-55-1",
+              "sourceId": "bar-37"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 906,
+              "quantity": 1,
+              "pieceId": "piece-55-2",
+              "sourceId": "bar-40"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 906,
+              "quantity": 1,
+              "pieceId": "piece-55-4",
+              "sourceId": "bar-41"
+            }
+          ],
+          "dependencyIds": [
+            "operation-57",
+            "operation-56"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-59",
+          "number": 59,
+          "kind": "release",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 563,
+          "sources": [
+            {
+              "id": "bar-37",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 563,
+              "after": 0,
+              "waste": 0
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 563,
+              "quantity": 1,
+              "pieceId": "piece-57-1",
+              "sourceId": "bar-37"
+            }
+          ],
+          "dependencyIds": [
+            "operation-58"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-60",
+          "number": 60,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 638,
+          "sources": [
+            {
+              "id": "bar-38",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3492,
+              "after": 2851,
+              "waste": 3
+            },
+            {
+              "id": "bar-39",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4076,
+              "after": 3435,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 638,
+              "quantity": 1,
+              "pieceId": "piece-24-4",
+              "sourceId": "bar-38"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 638,
+              "quantity": 1,
+              "pieceId": "piece-24-6",
+              "sourceId": "bar-39"
+            }
+          ],
+          "dependencyIds": [
+            "operation-57"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-61",
+          "number": 61,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 634,
+          "sources": [
+            {
+              "id": "bar-38",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2851,
+              "after": 2214,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 634,
+              "quantity": 1,
+              "pieceId": "piece-28-4",
+              "sourceId": "bar-38"
+            }
+          ],
+          "dependencyIds": [
+            "operation-60"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-62",
+          "number": 62,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 634,
+          "sources": [
+            {
+              "id": "bar-38",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2214,
+              "after": 1577,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 634,
+              "quantity": 1,
+              "pieceId": "piece-28-5",
+              "sourceId": "bar-38"
+            }
+          ],
+          "dependencyIds": [
+            "operation-61"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-63",
+          "number": 63,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 1011,
+          "sources": [
+            {
+              "id": "bar-38",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1577,
+              "after": 563,
+              "waste": 3
+            },
+            {
+              "id": "bar-39",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3435,
+              "after": 2421,
+              "waste": 3
+            },
+            {
+              "id": "bar-41",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 5091,
+              "after": 4077,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1011,
+              "quantity": 1,
+              "pieceId": "piece-29-1",
+              "sourceId": "bar-38"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1011,
+              "quantity": 1,
+              "pieceId": "piece-29-2",
+              "sourceId": "bar-39"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1011,
+              "quantity": 1,
+              "pieceId": "piece-29-3",
+              "sourceId": "bar-41"
+            }
+          ],
+          "dependencyIds": [
+            "operation-62",
+            "operation-60",
+            "operation-58"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-64",
+          "number": 64,
+          "kind": "release",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 563,
+          "sources": [
+            {
+              "id": "bar-38",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 563,
+              "after": 0,
+              "waste": 0
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 563,
+              "quantity": 1,
+              "pieceId": "piece-57-2",
+              "sourceId": "bar-38"
+            }
+          ],
+          "dependencyIds": [
+            "operation-63"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-65",
+          "number": 65,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 643,
+          "sources": [
+            {
+              "id": "bar-39",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2421,
+              "after": 1775,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 643,
+              "quantity": 1,
+              "pieceId": "piece-27-5",
+              "sourceId": "bar-39"
+            }
+          ],
+          "dependencyIds": [
+            "operation-63"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-66",
+          "number": 66,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 643,
+          "sources": [
+            {
+              "id": "bar-39",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1775,
+              "after": 1129,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 643,
+              "quantity": 1,
+              "pieceId": "piece-27-6",
+              "sourceId": "bar-39"
+            }
+          ],
+          "dependencyIds": [
+            "operation-65"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-67",
+          "number": 67,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 563,
+          "sources": [
+            {
+              "id": "bar-39",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1129,
+              "after": 563,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 563,
+              "quantity": 1,
+              "pieceId": "piece-57-3",
+              "sourceId": "bar-39"
+            }
+          ],
+          "dependencyIds": [
+            "operation-66"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-68",
+          "number": 68,
+          "kind": "release",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 563,
+          "sources": [
+            {
+              "id": "bar-39",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 563,
+              "after": 0,
+              "waste": 0
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 563,
+              "quantity": 1,
+              "pieceId": "piece-57-4",
+              "sourceId": "bar-39"
+            }
+          ],
+          "dependencyIds": [
+            "operation-67"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-69",
+          "number": 69,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 717,
+          "sources": [
+            {
+              "id": "bar-40",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3085,
+              "after": 2365,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 717,
+              "quantity": 1,
+              "pieceId": "piece-26-3",
+              "sourceId": "bar-40"
+            }
+          ],
+          "dependencyIds": [
+            "operation-58"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-70",
+          "number": 70,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 717,
+          "sources": [
+            {
+              "id": "bar-40",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2365,
+              "after": 1645,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 717,
+              "quantity": 1,
+              "pieceId": "piece-26-4",
+              "sourceId": "bar-40"
+            }
+          ],
+          "dependencyIds": [
+            "operation-69"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-71",
+          "number": 71,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 717,
+          "sources": [
+            {
+              "id": "bar-40",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1645,
+              "after": 925,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 717,
+              "quantity": 1,
+              "pieceId": "piece-26-5",
+              "sourceId": "bar-40"
+            }
+          ],
+          "dependencyIds": [
+            "operation-70"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-72",
+          "number": 72,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 906,
+          "sources": [
+            {
+              "id": "bar-40",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 925,
+              "after": 16,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 906,
+              "quantity": 1,
+              "pieceId": "piece-55-3",
+              "sourceId": "bar-40"
+            }
+          ],
+          "dependencyIds": [
+            "operation-71"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-73",
+          "number": 73,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 1001,
+          "sources": [
+            {
+              "id": "bar-41",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4077,
+              "after": 3073,
+              "waste": 3
+            },
+            {
+              "id": "bar-42",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 5280,
+              "after": 4276,
+              "waste": 3
+            },
+            {
+              "id": "bar-43",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 5172.5,
+              "after": 4168.5,
+              "waste": 3
+            },
+            {
+              "id": "bar-44",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 5447.8,
+              "after": 4443.8,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1001,
+              "quantity": 1,
+              "pieceId": "piece-23-1",
+              "sourceId": "bar-41"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1001,
+              "quantity": 1,
+              "pieceId": "piece-23-2",
+              "sourceId": "bar-42"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1001,
+              "quantity": 1,
+              "pieceId": "piece-23-3",
+              "sourceId": "bar-43"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1001,
+              "quantity": 1,
+              "pieceId": "piece-23-6",
+              "sourceId": "bar-44"
+            }
+          ],
+          "dependencyIds": [
+            "operation-63",
+            "operation-51"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-74",
+          "number": 74,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 1011,
+          "sources": [
+            {
+              "id": "bar-41",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3073,
+              "after": 2059,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1011,
+              "quantity": 1,
+              "pieceId": "piece-29-4",
+              "sourceId": "bar-41"
+            }
+          ],
+          "dependencyIds": [
+            "operation-73"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-75",
+          "number": 75,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 1011,
+          "sources": [
+            {
+              "id": "bar-41",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2059,
+              "after": 1045,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1011,
+              "quantity": 1,
+              "pieceId": "piece-29-5",
+              "sourceId": "bar-41"
+            }
+          ],
+          "dependencyIds": [
+            "operation-74"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-76",
+          "number": 76,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 1011,
+          "sources": [
+            {
+              "id": "bar-41",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1045,
+              "after": 31,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1011,
+              "quantity": 1,
+              "pieceId": "piece-29-6",
+              "sourceId": "bar-41"
+            }
+          ],
+          "dependencyIds": [
+            "operation-75"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-77",
+          "number": 77,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 1046,
+          "sources": [
+            {
+              "id": "bar-42",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4276,
+              "after": 3227,
+              "waste": 3
+            },
+            {
+              "id": "bar-43",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4168.5,
+              "after": 3119.5,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1046,
+              "quantity": 1,
+              "pieceId": "piece-56-1",
+              "sourceId": "bar-42"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1046,
+              "quantity": 1,
+              "pieceId": "piece-56-5",
+              "sourceId": "bar-43"
+            }
+          ],
+          "dependencyIds": [
+            "operation-73"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-78",
+          "number": 78,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 1046,
+          "sources": [
+            {
+              "id": "bar-42",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3227,
+              "after": 2178,
+              "waste": 3
+            },
+            {
+              "id": "bar-43",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3119.5,
+              "after": 2070.5,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1046,
+              "quantity": 1,
+              "pieceId": "piece-56-2",
+              "sourceId": "bar-42"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1046,
+              "quantity": 1,
+              "pieceId": "piece-56-6",
+              "sourceId": "bar-43"
+            }
+          ],
+          "dependencyIds": [
+            "operation-77"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-79",
+          "number": 79,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 1046,
+          "sources": [
+            {
+              "id": "bar-42",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2178,
+              "after": 1129,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1046,
+              "quantity": 1,
+              "pieceId": "piece-56-3",
+              "sourceId": "bar-42"
+            }
+          ],
+          "dependencyIds": [
+            "operation-78"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-80",
+          "number": 80,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 1046,
+          "sources": [
+            {
+              "id": "bar-42",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1129,
+              "after": 80,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1046,
+              "quantity": 1,
+              "pieceId": "piece-56-4",
+              "sourceId": "bar-42"
+            }
+          ],
+          "dependencyIds": [
+            "operation-79"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-81",
+          "number": 81,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 1001,
+          "sources": [
+            {
+              "id": "bar-43",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2070.5,
+              "after": 1066.5,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1001,
+              "quantity": 1,
+              "pieceId": "piece-23-4",
+              "sourceId": "bar-43"
+            }
+          ],
+          "dependencyIds": [
+            "operation-78"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-82",
+          "number": 82,
+          "kind": "cut",
+          "compatibilityGroup": "horizontalProfile",
+          "length": 1001,
+          "sources": [
+            {
+              "id": "bar-43",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1066.5,
+              "after": 62.5,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "horizontalProfile",
+              "color": "gray",
+              "length": 1001,
+              "quantity": 1,
+              "pieceId": "piece-23-5",
+              "sourceId": "bar-43"
+            }
+          ],
+          "dependencyIds": [
+            "operation-81"
+          ],
+          "maxStackSize": 4
+        },
+        {
+          "id": "operation-83",
+          "number": 83,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 1725,
+          "sources": [
+            {
+              "id": "bar-45",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4272,
+              "waste": 3
+            },
+            {
+              "id": "bar-51",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4272,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 1725,
+              "quantity": 1,
+              "pieceId": "piece-10-1",
+              "sourceId": "bar-45"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "9",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 1725,
+              "quantity": 1,
+              "pieceId": "piece-11-1",
+              "sourceId": "bar-51"
+            }
+          ],
+          "dependencyIds": [],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-84",
+          "number": 84,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 1435,
+          "sources": [
+            {
+              "id": "bar-45",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4272,
+              "after": 2834,
+              "waste": 3
+            },
+            {
+              "id": "bar-51",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4272,
+              "after": 2834,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 1435,
+              "quantity": 1,
+              "pieceId": "piece-12-1",
+              "sourceId": "bar-45"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "10",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 1435,
+              "quantity": 1,
+              "pieceId": "piece-13-1",
+              "sourceId": "bar-51"
+            }
+          ],
+          "dependencyIds": [
+            "operation-83"
+          ],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-85",
+          "number": 85,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 1715,
+          "sources": [
+            {
+              "id": "bar-45",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2834,
+              "after": 1116,
+              "waste": 3
+            },
+            {
+              "id": "bar-51",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2834,
+              "after": 1116,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 1715,
+              "quantity": 1,
+              "pieceId": "piece-14-1",
+              "sourceId": "bar-45"
+            },
+            {
+              "orderId": "excel-3",
+              "openingId": "11",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 1715,
+              "quantity": 1,
+              "pieceId": "piece-15-1",
+              "sourceId": "bar-51"
+            }
+          ],
+          "dependencyIds": [
+            "operation-84"
+          ],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-86",
+          "number": 86,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 1115,
+          "sources": [
+            {
+              "id": "bar-45",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1116,
+              "after": 0,
+              "waste": 1
+            },
+            {
+              "id": "bar-51",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1116,
+              "after": 0,
+              "waste": 1
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 1115,
+              "quantity": 1,
+              "pieceId": "piece-66-1",
+              "sourceId": "bar-45"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "11",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 1115,
+              "quantity": 1,
+              "pieceId": "piece-67-1",
+              "sourceId": "bar-51"
+            }
+          ],
+          "dependencyIds": [
+            "operation-85"
+          ],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-87",
+          "number": 87,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 1885,
+          "sources": [
+            {
+              "id": "bar-46",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4112,
+              "waste": 3
+            },
+            {
+              "id": "bar-52",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 4112,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 1885,
+              "quantity": 1,
+              "pieceId": "piece-40-1",
+              "sourceId": "bar-46"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "10",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 1885,
+              "quantity": 1,
+              "pieceId": "piece-41-1",
+              "sourceId": "bar-52"
+            }
+          ],
+          "dependencyIds": [],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-88",
+          "number": 88,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 1890,
+          "sources": [
+            {
+              "id": "bar-46",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4112,
+              "after": 2219,
+              "waste": 3
+            },
+            {
+              "id": "bar-52",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 4112,
+              "after": 2219,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 1890,
+              "quantity": 1,
+              "pieceId": "piece-42-1",
+              "sourceId": "bar-46"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "11",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 1890,
+              "quantity": 1,
+              "pieceId": "piece-43-1",
+              "sourceId": "bar-52"
+            }
+          ],
+          "dependencyIds": [
+            "operation-87"
+          ],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-89",
+          "number": 89,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 2123,
+          "sources": [
+            {
+              "id": "bar-46",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2219,
+              "after": 93,
+              "waste": 3
+            },
+            {
+              "id": "bar-52",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2219,
+              "after": 93,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 2123,
+              "quantity": 1,
+              "pieceId": "piece-44-1",
+              "sourceId": "bar-46"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "12",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 2123,
+              "quantity": 1,
+              "pieceId": "piece-45-1",
+              "sourceId": "bar-52"
+            }
+          ],
+          "dependencyIds": [
+            "operation-88"
+          ],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-90",
+          "number": 90,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 1873,
+          "sources": [
+            {
+              "id": "bar-47",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 4907.5,
+              "after": 3031.5,
+              "waste": 3
+            },
+            {
+              "id": "bar-54",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 4120.3,
+              "after": 2244.3,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 1873,
+              "quantity": 1,
+              "pieceId": "piece-48-1",
+              "sourceId": "bar-47"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "14",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 1873,
+              "quantity": 1,
+              "pieceId": "piece-49-1",
+              "sourceId": "bar-54"
+            }
+          ],
+          "dependencyIds": [],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-91",
+          "number": 91,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 3005,
+          "sources": [
+            {
+              "id": "bar-47",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 3031.5,
+              "after": 23.5,
+              "waste": 3
+            },
+            {
+              "id": "bar-53",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "new",
+              "before": 6000,
+              "after": 2992,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 3005,
+              "quantity": 1,
+              "pieceId": "piece-50-1",
+              "sourceId": "bar-47"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "15",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 3005,
+              "quantity": 1,
+              "pieceId": "piece-51-1",
+              "sourceId": "bar-53"
+            }
+          ],
+          "dependencyIds": [
+            "operation-90"
+          ],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-92",
+          "number": 92,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 2975,
+          "sources": [
+            {
+              "id": "bar-53",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2992,
+              "after": 14,
+              "waste": 3
+            },
+            {
+              "id": "bar-49",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 4184.3,
+              "after": 1206.3,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 2975,
+              "quantity": 1,
+              "pieceId": "piece-39-1",
+              "sourceId": "bar-53"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "9",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 2975,
+              "quantity": 1,
+              "pieceId": "piece-38-1",
+              "sourceId": "bar-49"
+            }
+          ],
+          "dependencyIds": [
+            "operation-91"
+          ],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-93",
+          "number": 93,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 1900,
+          "sources": [
+            {
+              "id": "bar-54",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 2244.3,
+              "after": 341.3,
+              "waste": 3
+            },
+            {
+              "id": "bar-48",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 3858.8,
+              "after": 1955.8,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 1900,
+              "quantity": 1,
+              "pieceId": "piece-47-1",
+              "sourceId": "bar-54"
+            },
+            {
+              "orderId": "excel-9",
+              "openingId": "13",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 1900,
+              "quantity": 1,
+              "pieceId": "piece-46-1",
+              "sourceId": "bar-48"
+            }
+          ],
+          "dependencyIds": [
+            "operation-90"
+          ],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-94",
+          "number": 94,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 1800,
+          "sources": [
+            {
+              "id": "bar-48",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "same-run-remnant",
+              "before": 1955.8,
+              "after": 152.8,
+              "waste": 3
+            },
+            {
+              "id": "bar-56",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 2957.5,
+              "after": 1154.5,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 1800,
+              "quantity": 1,
+              "pieceId": "piece-62-1",
+              "sourceId": "bar-48"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "9",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 1800,
+              "quantity": 1,
+              "pieceId": "piece-63-1",
+              "sourceId": "bar-56"
+            }
+          ],
+          "dependencyIds": [
+            "operation-93"
+          ],
+          "maxStackSize": 2
+        },
+        {
+          "id": "operation-95",
+          "number": 95,
+          "kind": "cut",
+          "compatibilityGroup": "opening-rail-pair",
+          "length": 3110,
+          "sources": [
+            {
+              "id": "bar-50",
+              "profileType": "topRail",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 3799.6,
+              "after": 686.6,
+              "waste": 3
+            },
+            {
+              "id": "bar-55",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "origin": "old-remnant",
+              "before": 4184.3,
+              "after": 1071.3,
+              "waste": 3
+            }
+          ],
+          "pieces": [
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "topRail",
+              "color": "gray",
+              "length": 3110,
+              "quantity": 1,
+              "pieceId": "piece-64-1",
+              "sourceId": "bar-50"
+            },
+            {
+              "orderId": "excel-21",
+              "openingId": "10",
+              "profileType": "bottomRail",
+              "color": "gray",
+              "length": 3110,
+              "quantity": 1,
+              "pieceId": "piece-65-1",
+              "sourceId": "bar-55"
+            }
+          ],
+          "dependencyIds": [],
+          "maxStackSize": 2
+        }
+      ],
+      "metrics": {
+        "cutOperationCount": 90,
+        "stopPositionChanges": 61,
+        "stackChanges": 60,
+        "handledSourceCount": 56,
+        "bundleUtilization": 0.5945121951219512
+      }
+    },
+    "level": "full",
+    "elapsedMs": 32765.305399999997
+  }
+]

@@ -1,0 +1,252 @@
+{
+  "sourceHashes": {
+    "src/cutting-physics.js": "55b88ae8b7ad60e45a8a1bc1bcf2376d2d89291c3c64ff86ae9a1f2fbb1760aa",
+    "src/production-planning.js": "a5536192e4bc85dc4c2ad3236bfa9ad664095421db487618960c650f00ee4603",
+    "src/production-integration.js": "a311a73889d976e65b4171eed6f3e330166fadd1bfee9154a3125790e612f878",
+    "app.js": "572b5b64c0c58e190aae1123b6416e9f375904230bc79d54ae29629159e8b19f"
+  },
+  "sequences": [
+    {
+      "cache": false,
+      "totalMs": 15041.093,
+      "results": [
+        {
+          "status": "complete",
+          "materialMs": 3772,
+          "schedulerMs": 8,
+          "score": 211309.30221139768,
+          "scoreComponents": {
+            "sourceValueEquivalent": 240000,
+            "recoveredRemnantValueEquivalent": 37253.59778860232,
+            "kerfRecoveredValueEquivalent": 0,
+            "newStockRemnantCreationPenaltyEquivalent": 850,
+            "remnantHandlingPenaltyEquivalent": 340,
+            "largeScrapPenaltyEquivalent": 7372.899999999999,
+            "totalCostEquivalent": 211309.30221139768
+          },
+          "ids": [
+            "excel-1",
+            "excel-2",
+            "excel-3"
+          ],
+          "pieceCount": 136,
+          "requiredLengthMm": 181000,
+          "newBars": 40,
+          "newLengthMm": 240000,
+          "oldRemnantSources": 0,
+          "kerfMm": 406,
+          "scrapMm": 7273,
+          "reusableCount": 17,
+          "reusableMm": 51321,
+          "cutOperations": 79,
+          "cache": {
+            "hits": 0,
+            "misses": 11,
+            "evictions": 0,
+            "eligibleRepeats": 0
+          },
+          "level": "full",
+          "elapsedMs": 3785.1196
+        },
+        {
+          "status": "complete",
+          "materialMs": 7595,
+          "schedulerMs": 11,
+          "score": 351682.61108170793,
+          "scoreComponents": {
+            "sourceValueEquivalent": 372000,
+            "recoveredRemnantValueEquivalent": 38282.98891829206,
+            "kerfRecoveredValueEquivalent": 0,
+            "newStockRemnantCreationPenaltyEquivalent": 850,
+            "remnantHandlingPenaltyEquivalent": 340,
+            "largeScrapPenaltyEquivalent": 16775.600000000002,
+            "totalCostEquivalent": 351682.61108170793
+          },
+          "ids": [
+            "excel-1",
+            "excel-2",
+            "excel-3",
+            "excel-4"
+          ],
+          "pieceCount": 200,
+          "requiredLengthMm": 303640,
+          "newBars": 62,
+          "newLengthMm": 372000,
+          "oldRemnantSources": 0,
+          "kerfMm": 584,
+          "scrapMm": 16237,
+          "reusableCount": 17,
+          "reusableMm": 51539,
+          "cutOperations": 102,
+          "cache": {
+            "hits": 0,
+            "misses": 22,
+            "evictions": 0,
+            "eligibleRepeats": 5
+          },
+          "level": "full",
+          "elapsedMs": 7610.015600000001
+        },
+        {
+          "status": "complete",
+          "materialMs": 3637,
+          "schedulerMs": 6,
+          "score": 211309.30221139768,
+          "scoreComponents": {
+            "sourceValueEquivalent": 240000,
+            "recoveredRemnantValueEquivalent": 37253.59778860232,
+            "kerfRecoveredValueEquivalent": 0,
+            "newStockRemnantCreationPenaltyEquivalent": 850,
+            "remnantHandlingPenaltyEquivalent": 340,
+            "largeScrapPenaltyEquivalent": 7372.899999999999,
+            "totalCostEquivalent": 211309.30221139768
+          },
+          "ids": [
+            "excel-1",
+            "excel-2",
+            "excel-3"
+          ],
+          "pieceCount": 136,
+          "requiredLengthMm": 181000,
+          "newBars": 40,
+          "newLengthMm": 240000,
+          "oldRemnantSources": 0,
+          "kerfMm": 406,
+          "scrapMm": 7273,
+          "reusableCount": 17,
+          "reusableMm": 51321,
+          "cutOperations": 79,
+          "cache": {
+            "hits": 0,
+            "misses": 33,
+            "evictions": 0,
+            "eligibleRepeats": 16
+          },
+          "level": "full",
+          "elapsedMs": 3645.9578
+        }
+      ]
+    },
+    {
+      "cache": true,
+      "totalMs": 11076.921600000001,
+      "results": [
+        {
+          "status": "complete",
+          "materialMs": 4421,
+          "schedulerMs": 6,
+          "score": 211309.30221139768,
+          "scoreComponents": {
+            "sourceValueEquivalent": 240000,
+            "recoveredRemnantValueEquivalent": 37253.59778860232,
+            "kerfRecoveredValueEquivalent": 0,
+            "newStockRemnantCreationPenaltyEquivalent": 850,
+            "remnantHandlingPenaltyEquivalent": 340,
+            "largeScrapPenaltyEquivalent": 7372.899999999999,
+            "totalCostEquivalent": 211309.30221139768
+          },
+          "ids": [
+            "excel-1",
+            "excel-2",
+            "excel-3"
+          ],
+          "pieceCount": 136,
+          "requiredLengthMm": 181000,
+          "newBars": 40,
+          "newLengthMm": 240000,
+          "oldRemnantSources": 0,
+          "kerfMm": 406,
+          "scrapMm": 7273,
+          "reusableCount": 17,
+          "reusableMm": 51321,
+          "cutOperations": 79,
+          "cache": {
+            "hits": 0,
+            "misses": 11,
+            "evictions": 0,
+            "eligibleRepeats": 0
+          },
+          "level": "full",
+          "elapsedMs": 4430.523799999999
+        },
+        {
+          "status": "complete",
+          "materialMs": 6622,
+          "schedulerMs": 12,
+          "score": 351682.61108170793,
+          "scoreComponents": {
+            "sourceValueEquivalent": 372000,
+            "recoveredRemnantValueEquivalent": 38282.98891829206,
+            "kerfRecoveredValueEquivalent": 0,
+            "newStockRemnantCreationPenaltyEquivalent": 850,
+            "remnantHandlingPenaltyEquivalent": 340,
+            "largeScrapPenaltyEquivalent": 16775.600000000002,
+            "totalCostEquivalent": 351682.61108170793
+          },
+          "ids": [
+            "excel-1",
+            "excel-2",
+            "excel-3",
+            "excel-4"
+          ],
+          "pieceCount": 200,
+          "requiredLengthMm": 303640,
+          "newBars": 62,
+          "newLengthMm": 372000,
+          "oldRemnantSources": 0,
+          "kerfMm": 584,
+          "scrapMm": 16237,
+          "reusableCount": 17,
+          "reusableMm": 51539,
+          "cutOperations": 102,
+          "cache": {
+            "hits": 5,
+            "misses": 17,
+            "evictions": 0,
+            "eligibleRepeats": 5
+          },
+          "level": "full",
+          "elapsedMs": 6637.442600000002
+        },
+        {
+          "status": "complete",
+          "materialMs": 1,
+          "schedulerMs": 6,
+          "score": 211309.30221139768,
+          "scoreComponents": {
+            "sourceValueEquivalent": 240000,
+            "recoveredRemnantValueEquivalent": 37253.59778860232,
+            "kerfRecoveredValueEquivalent": 0,
+            "newStockRemnantCreationPenaltyEquivalent": 850,
+            "remnantHandlingPenaltyEquivalent": 340,
+            "largeScrapPenaltyEquivalent": 7372.899999999999,
+            "totalCostEquivalent": 211309.30221139768
+          },
+          "ids": [
+            "excel-1",
+            "excel-2",
+            "excel-3"
+          ],
+          "pieceCount": 136,
+          "requiredLengthMm": 181000,
+          "newBars": 40,
+          "newLengthMm": 240000,
+          "oldRemnantSources": 0,
+          "kerfMm": 406,
+          "scrapMm": 7273,
+          "reusableCount": 17,
+          "reusableMm": 51321,
+          "cutOperations": 79,
+          "cache": {
+            "hits": 16,
+            "misses": 17,
+            "evictions": 0,
+            "eligibleRepeats": 16
+          },
+          "level": "full",
+          "elapsedMs": 8.955200000000332
+        }
+      ]
+    }
+  ]
+}

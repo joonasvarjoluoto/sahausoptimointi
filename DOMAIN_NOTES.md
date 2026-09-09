@@ -177,9 +177,9 @@ Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei p
 - **Käyttäjän vahvistama tuotantofakta, 2026-09-07:** U-profiili asennetaan oviaukon molemmille pystysivuille, joten sitä sahataan aina parillisina määrinä. Oletusmäärä 2 tarkoittaa kahta U-profiilin kappaletta; määrää ei puoliteta adapterissa kuten yhteisessä kiskosyötössä.
 - **Avoin vaikutus validointiin:** oletusmäärä 2 on päätetty. Parittomien U-profiilimäärien mahdollinen estäminen rajataan erikseen ennen toteutusta; tuotantohavainto ei yksin muuta nykyistä core-validointia tai testitapausten kysyntää.
 - **Käyttäjän tarkennus 2026-09-07:** yhteisen ”Ala- ja yläkisko” -rivin ”Määrä (kpl)” tarkoittaa kiskojen yhteiskappalemäärää. Oletusarvo 2 tarkoittaa 1 alakiskoa ja 1 yläkiskoa; 4 tarkoittaa 2 alakiskoa ja 2 yläkiskoa. Kiskot sahataan aina pareittain. Tämä oikaisee aiemman virheellisen tulkinnan kahdesta kappaleesta kumpaakin profiilia.
-- **Nykyinen vaikutus koodiin:** U-profiilin oletus 2 on toteutettu, kiskosyötteen muutos odottaa toteutusta. Muiden profiilien oletuksia tai jo syötettyjä määriä ei muutettu. U-profiilin tyhjä mitta määrällä 2 ohitetaan; myös vanha tyhjä oletusrivi määrällä 1 hyväksytään. Muokattu määrä 4 ilman mittaa hylätään laskennassa. Tallennusskeema ja moottoriversio säilyvät.
+- **Nykyinen vaikutus koodiin (8.9.2026):** U-profiilin ja kiskojen oletus on 2. Kiskojen yhteismäärä puolitetaan profiileille ja vaaditaan positiiviseksi parilliseksi kokonaisluvuksi. Skeeman 4 kiskomäärät kaksinkertaistetaan palautuksessa skeemaan 5 fyysisen kysynnän säilyttämiseksi. Moottoriversio ei muutu.
 - **Varmistus:** U-profiilin oletus, adapterin tyhjät ja täytetyt rivit sekä tallennetun suunnitelman validointi katetaan regressioilla. Selaimen palautusta ja lisäyspainiketta ei voitu testata: käytettävissä oleva selain esti paikallisen tiedostosivun avaamisen.
-- **Määrän uusi merkitys:** adapteri jakaa kiskorivin kokonaismäärän kahdella kummallekin profiilille. Kelvollinen täytetty kiskorivi vaatii positiivisen parillisen kokonaismäärän. Nykyinen adapteri kopioi määrän sellaisenaan molemmille profiileille, joten myös adapteri, fixture-muunnos ja regressiot on päivitettävä. Tallennettujen vanhojen määrien merkitys on säilytettävä erikseen määriteltävällä yhteensopivuusratkaisulla; skeeman/version tarve arvioidaan ennen toteutusta.
+- **Määrän uusi merkitys toteutettu:** adapteri, otsikon yhteismäärä, fixture-muunnos ja regressiot käyttävät yhteismäärää. Vanhan tallenteen materiaaliratkaisu ja kuittaukset validoidaan migraation jälkeen.
 
 ### Tuotantokohdistus ja batchit (päivitetty 8.9.2026)
 
@@ -212,3 +212,22 @@ Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei p
 - **Batchin minimi:** estää pienen osajoukon valinnan suuresta jonosta. Jos koko avoimessa jonossa on alle minimin kappaleita, kaikki tilaukset valitaan samaan batchiin; yksittäisiä halvempia tilauksia ei poimita siitä erikseen.
 - **Vaikutus koodiin:** `schedule()` laskee ensiasetuksen mukaan `stopPositionChanges`-mittariin. `selectBatch()` arvioi lyhyen jonon kokonaan; vähintään minimikokoisesta jonosta se ei valitse alikokoista erää. Materiaalin puute ei oikeuta osittaista valmisratkaisua. Materiaalipisteytys ei muutu.
 - **Käyttäjän vahvistama testihavainto:** testin 2 materiaalitulos ja raakalistan rajattomat harmaa/musta-oletukset toimivat oikein. Vahvistus ei koske kaikkia aiemman selaintestilistan kohtia.
+
+### Aukkokohtainen kiskonippu (8.9.2026)
+
+- **Lähde ja varmuus:** käyttäjän tämän tehtävän nimenomainen tuotantosääntö: kaksi kiskoa kelmutetaan ja nimetään heti aukon pariksi.
+- **Toteutettu vaikutus:** saman tilauksen nimetyn aukon 1 ala + 1 ylä sahataan mahdollisuuksien mukaan samalla liikkeellä. Neljästä kokonaiskappaleesta alkaen profiilit niputetaan erikseen. Saman aukon samanmittaisia valmiita operaatioita suositaan peräkkäin.
+- **Rajaus:** puuttuva aukkotunnus ei oikeuta arvaamaan pareja. Lähteiden riippuvuudet, release-poiminnat ja profiilien kapasiteetit voivat estää yhteisen sahausliikkeen. Tuotantomittareita ei lisätä materiaalipisteytykseen.
+
+### Erilliset laskenta-ajan tavoitteet (8.9.2026)
+
+- **Lähde ja varmuus:** käyttäjän tämän tutkimustehtävän nimenomainen käyttövaatimus, ei väite jo saavutetusta vasteajasta kaikilla syötteillä.
+- **Käsin valittu batch:** 2–5 tilauksen normaalin materiaaliratkaisun, schedulerin ja sahaussuunnitelman pitää valmistua sekuntien suuruusluokassa. Automaattisen selectorin parantaminen ei saa hidastaa tätä polkua merkittävästi.
+- **Automaattinen batch-haku:** minuutit, kymmenet minuutit tai tarvittaessa tunnit ovat hyväksyttäviä, jos lisäaika tuottaa mitattavasti hyödyllisemmän materiaaliratkaisun. Oletusbudjettia ei päätetä ennen laatukäyrämittauksia.
+- **Vaikutus koodiin:** vain erillinen Node-tutkimus tässä vaiheessa. Materiaalipisteytys säilyy; työaikaa, nippuja tai mittavasteen siirtoja ei lisätä pisteisiin. Ensimmäiset mittaukset ja niiden rajaukset ovat `benchmarks/batch-search/RESULTS.md`:ssä.
+
+### Jäännösvaraston kokoluokka tutkimuksessa (8.9.2026)
+
+- **Lähde ja varmuus:** käyttäjän karkea arvio nykyisestä tuotannosta: yhteensä noin 100 käyttökelpoista jäännöstä. Profiilijakauma ei ole tasainen; tarkkoja saldoja, värejä tai pituuksia ei ole annettu.
+- **Vaikutus:** erillisen Node-benchmarkin synteettinen varasto johdetaan 23 tilauksen kysynnästä (tilaus 16 jätetään pois) ja nykyisellä sahausfysiikalla syntyvistä säästettävistä jäännöksistä. Simuloitu jakauma ei ole havaittu varastosaldo eikä automaattisesti sovelluksen oletus.
+- **Avoin kysymys:** todellinen jäännösten säilytys- ja uudelleenkäyttökierto voi muuttaa etenkin pituusjakaumaa; tuotantokelpoisuus pitää myöhemmin tarkistaa oikealla inventaariolla.

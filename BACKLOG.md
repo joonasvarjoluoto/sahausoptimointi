@@ -25,6 +25,17 @@ Prioriteetit:
 
 ## Avoimet havainnot
 
+### B-007 — Tyhjien DP-kapasiteettisolujen kustannus jäännösvarastolla
+
+- **Tila:** vahvistettu Node-benchmarkissa 2026-09-08; production-koodi ennallaan.
+- **Prioriteetti:** keskitaso ennen suuremman varaston koekäyttöä.
+- **Alue:** `findCandidatePatternsDP`, yksittäisen materiaaliratkaisun laskenta.
+- **Havainto:** 6 000 mm lähde ja 3 mm kerf muodostavat 0,1 mm tarkkuudella 60 031 kapasiteettisolua, joista jokainen alustetaan taulukoksi. Jokainen määrälohko käy myös tyhjät kapasiteetit läpi. Tätä toistetaan beam-tilojen eri jäännöspituuksille.
+- **Näyttö:** kanonisella 100 jäännöksen A-varastolla 4/5 tilauksen normaalit suunnitelmat kestivät noin 54/50 sekuntia; pitkien C-jäännösten vastaavat ajot katkaistiin 60 sekunnissa. Erillisessä profiloinnissa lähes kaikki aika kului kuviolaskentaan. Tarkat syötteet ja tulokset: `benchmarks/batch-search/inventory-study/`.
+- **Rajattu Node-koe:** saavutettujen kapasiteettien käsittely samassa järjestyksessä säilytti 1 354 kuviotestin tulokset sekä kaikki 14 valmistunutta normaalia vertailusuunnitelmaa pisteineen ja operaatioineen. 2–5 tilauksen manuaaliset testit valmistuivat noin 0,04–4,8 sekunnissa; myös kaksi aiemmin aikakatkaistua tapausta valmistui.
+- **Rajoite:** haun valitsema monimittainen samanvärinen kolmen tilauksen yhdistelmä 3/9/21 kesti erillisessä kylmässä A-varaston mittauksessa edelleen noin 32,8 s. Perusbatchien nopeutusta ei saa yleistää kaikkiin samankokoisiin valintoihin. Alkuperäisen ja Node-kokeen 35/35 regressioryhmää läpäistiin.
+- **Seuraava askel:** arvioi erillisessä toteutustehtävässä tämän täsmällisen muutoksen siirtäminen varsinaiseen funktioon, lisää rajatapaukset core-regressioihin ja varmista selaimessa. Node-kokeen lähdemuunnos ei ole production-toteutus eikä muuta 0,1 mm tarkkuutta, kerfiä tai pisteytystä.
+
 ### B-006 — Batch-yhdistelmien synkroninen haku suurissa tilausjonoissa
 
 - **Tila:** havaittu 2026-09-08
@@ -33,7 +44,10 @@ Prioriteetit:
 - **Havainto:** selector luettelee kokorajaan mahtuvat tilausyhdistelmät ja arvioi ne synkronisesti. Kymmenen pientä tilausta voi tuottaa 1023 yhdistelmää; lomake sallii enintään 100 tilausta, jolloin haku voi olla käytännössä mahdoton. Ongelma koskee hakumäärää ja pääsäikeen varaamista, ei materiaalipisteen oikeellisuutta.
 - **Rajaus:** käyttäjän pyynnön mukaisesti ensimmäiseen versioon ei lisätty heuristista esikarsintaa. Tyypillinen arvioitu jono on 5–10 tilausta.
 - **Mittaus 8.9.2026:** viisi 50 kappaleen Pysty-tilausta eri mitoilla vaati kuuden ehdokkaan arviointiin noin 27,4 sekuntia Nodessa.
-- **Seuraava askel:** mittaa todellinen 5–10 tilauksen aineisto ja suunnittele peruutettava taustalaskenta sekä selkeä hakubudjetti. Älä palauta karsitun haun tulosta kaikkien batchien parhaana.
+- **Lisämittaus 8.9.2026:** Excelin 23 tilausta / 1 231 kappaletta (tilaus 16 pois) tuottaa 85 030 ehdokasta rajoilla 200/250/300. Kuuden normaalin materiaalihakunäytteen 8,3–12,9 s perusteella koko ensimmäisen batchin exhaustive-haun karkea arvio oli noin 11 vuorokautta. Tämä oli ekstrapolaatio, ei toteutettu pitkä ajo.
+- **Node-koeversio 8.9.2026:** erillinen kaksivaiheinen monialoitus-/naapurihaku ja ajokohtainen materiaaliryhmävälimuisti, ei muutosta aktiiviseen selainpolkuun. 10 minuutin ajossa paras löytyi 18,9 s kohdalla eikä enää parantunut; kolmessa pienaineiston vertailussa saatiin sama paras batch ja piste kuin exhaustive-ehdokashaulla. Täysi raportti: `benchmarks/batch-search/RESULTS.md`. Yksi jono ei todista yleistä laatutasoa tai sopivaa oletusaikaa.
+- **Jatkotutkimus 8.9.2026:** kolmella 100 jäännöksen varastolla parhaat löytyivät noin 19–59 s kohdalla ja säilyivät 10 minuuttiin. Kahdella äärellisellä varastolla löytyi sama paras A-batch; not-found-tuloksia ei tulkittu suoraan mahdottomiksi. Viiden järjestyksen voittajapisteiden ero oli 0,306 %; myös materiaalihakijan sisäinen mittojen järjestys vaikutti tulokseen. Raportti: `benchmarks/batch-search/inventory-study/RESULTS.md`. Yksittäisen materiaalilaskennan nopeus on eritelty B-007:ssä.
+- **Seuraava askel:** laajenna laatukäyrävertailu eri jonoihin, aloitussiemeniin, äärelliseen varastoon ja vanhoihin jäännöksiin. Päätä production-hakutapa ja oletusbudjetti vasta mittauksista. Pidä käsin valitun batchin normaalihaku erillisenä. Älä palauta karsitun haun tulosta kaikkien batchien parhaana.
 
 
 

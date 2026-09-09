@@ -1,0 +1,44 @@
+{
+  "status": "complete",
+  "materialMs": 16740,
+  "schedulerMs": 10,
+  "score": 143924.79495029146,
+  "scoreComponents": {
+    "sourceValueEquivalent": 157518.66981093565,
+    "recoveredRemnantValueEquivalent": 23763.10486064421,
+    "kerfRecoveredValueEquivalent": 0,
+    "newStockRemnantCreationPenaltyEquivalent": 400,
+    "remnantHandlingPenaltyEquivalent": 280,
+    "largeScrapPenaltyEquivalent": 9489.229999999998,
+    "totalCostEquivalent": 143924.79495029146
+  },
+  "ids": [
+    "excel-1",
+    "excel-2"
+  ],
+  "pieceCount": 88,
+  "requiredLengthMm": 126012,
+  "newBars": 19,
+  "newLengthMm": 114000,
+  "oldRemnantSources": 16,
+  "kerfMm": 264,
+  "scrapMm": 8800.800000000001,
+  "reusableCount": 14,
+  "reusableMm": 35609.1,
+  "cutOperations": 51,
+  "cache": {
+    "hits": 0,
+    "misses": 11,
+    "evictions": 0,
+    "eligibleRepeats": 0
+  },
+  "level": "full",
+  "elapsedMs": 16758.76920000004,
+  "patternStats": {
+    "calls": 3014,
+    "hits": 0,
+    "misses": 3014,
+    "evictions": 0,
+    "computeMs": 16588
+  }
+}

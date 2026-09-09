@@ -1,0 +1,74 @@
+{
+  "verticalProfile|gray": {
+    "pieces": 235,
+    "lengthMm": 499130
+  },
+  "horizontalProfile|gray": {
+    "pieces": 244,
+    "lengthMm": 215120
+  },
+  "uProfile|gray": {
+    "pieces": 88,
+    "lengthMm": 198310
+  },
+  "closingProfile|gray": {
+    "pieces": 9,
+    "lengthMm": 21374
+  },
+  "topRail|gray": {
+    "pieces": 44,
+    "lengthMm": 106460
+  },
+  "bottomRail|gray": {
+    "pieces": 44,
+    "lengthMm": 106460
+  },
+  "verticalProfile|white": {
+    "pieces": 29,
+    "lengthMm": 49442
+  },
+  "horizontalProfile|white": {
+    "pieces": 32,
+    "lengthMm": 24468
+  },
+  "uProfile|white": {
+    "pieces": 12,
+    "lengthMm": 21876
+  },
+  "topRail|white": {
+    "pieces": 6,
+    "lengthMm": 12096
+  },
+  "bottomRail|white": {
+    "pieces": 6,
+    "lengthMm": 12096
+  },
+  "verticalProfile|black": {
+    "pieces": 158,
+    "lengthMm": 342687
+  },
+  "horizontalProfile|black": {
+    "pieces": 175,
+    "lengthMm": 167005
+  },
+  "uProfile|black": {
+    "pieces": 68,
+    "lengthMm": 152566
+  },
+  "closingProfile|black": {
+    "pieces": 14,
+    "lengthMm": 29401
+  },
+  "topRail|black": {
+    "pieces": 32,
+    "lengthMm": 82600
+  },
+  "bottomRail|black": {
+    "pieces": 32,
+    "lengthMm": 82600
+  },
+  "closingProfile|white": {
+    "pieces": 3,
+    "lengthMm": 6094
+  }
+}

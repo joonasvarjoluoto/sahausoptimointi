@@ -1,0 +1,122 @@
+[
+  {
+    "scenario": "F1",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9",
+      "excel-20",
+      "excel-21"
+    ],
+    "lightStatus": "not-found",
+    "status": "not-found",
+    "materialMs": 35978,
+    "cache": {
+      "hits": 0,
+      "misses": 17,
+      "evictions": 0,
+      "eligibleRepeats": 0
+    },
+    "level": "full",
+    "elapsedMs": 35999.694800000005
+  },
+  {
+    "scenario": "F1",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9"
+    ],
+    "lightStatus": "not-found",
+    "status": "not-found",
+    "materialMs": 10109,
+    "cache": {
+      "hits": 0,
+      "misses": 28,
+      "evictions": 0,
+      "eligibleRepeats": 5
+    },
+    "level": "full",
+    "elapsedMs": 10122.794500000004
+  },
+  {
+    "scenario": "F1",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9",
+      "excel-11"
+    ],
+    "lightStatus": "not-found",
+    "status": "not-found",
+    "materialMs": 25828,
+    "cache": {
+      "hits": 0,
+      "misses": 39,
+      "evictions": 0,
+      "eligibleRepeats": 10
+    },
+    "level": "full",
+    "elapsedMs": 25841.82759999999
+  },
+  {
+    "scenario": "F2",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9",
+      "excel-20",
+      "excel-21"
+    ],
+    "lightStatus": "not-found",
+    "status": "not-found",
+    "materialMs": 33006,
+    "cache": {
+      "hits": 0,
+      "misses": 17,
+      "evictions": 0,
+      "eligibleRepeats": 0
+    },
+    "level": "full",
+    "elapsedMs": 33029.5413
+  },
+  {
+    "scenario": "F2",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9"
+    ],
+    "lightStatus": "not-found",
+    "status": "not-found",
+    "materialMs": 9545,
+    "cache": {
+      "hits": 0,
+      "misses": 28,
+      "evictions": 0,
+      "eligibleRepeats": 5
+    },
+    "level": "full",
+    "elapsedMs": 9557.282199999987
+  },
+  {
+    "scenario": "F2",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9",
+      "excel-11"
+    ],
+    "lightStatus": "not-found",
+    "status": "not-found",
+    "materialMs": 25483,
+    "cache": {
+      "hits": 0,
+      "misses": 39,
+      "evictions": 0,
+      "eligibleRepeats": 10
+    },
+    "level": "full",
+    "elapsedMs": 25502.160800000012
+  }
+]

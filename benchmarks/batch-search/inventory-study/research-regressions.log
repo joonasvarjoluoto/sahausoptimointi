@@ -1,0 +1,21 @@
+PASS Short queue is whole, never a sub-batch
+PASS Oversized order stays whole
+PASS No below-min fallback from larger queue
+PASS Invalid limits rejected
+PASS Enumeration matches existing selector
+PASS Checkpoint cannot contain unfinished result
+PASS Worse refinement never replaces incumbent
+PASS Work-budget rerun is deterministic
+PASS Deadline excludes late complete result
+PASS Material score precedes target proximity
+PASS Cached and uncached plans, scores and provenance match
+PASS Cache separates budgets and finite inventory; incomplete is not impossible
+PASS Cached material gets fresh order/opening provenance
+PASS Changed kerf cannot reuse the wrong material result
+PASS Changed finite quantity causes a new group evaluation
+PASS Anytime incumbent retains the whole validated executable plan
+PASS Pattern cache preserves exact plan and execution
+PASS Pattern cache keeps kerf in its geometric key
+PASS Pattern cache never bypasses finite source consumption
+PASS Synthetic inventory merges duplicate remnants through the production adapter
+Research checks: 20 passed

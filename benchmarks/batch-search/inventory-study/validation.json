@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "coreGroups": 35,
+  "sparseCoreGroups": 35,
+  "productionUiChecks": 18,
+  "researchChecks": 20,
+  "orderedPatternComparisons": 1354,
+  "planAudit": {
+    "historicalOrders": 92,
+    "historicalBars": 1922,
+    "scenarioRemnants": 500,
+    "benchmarkedPlans": 63,
+    "status": "PASS"
+  },
+  "syntaxFiles": 27,
+  "productionSourceHashesUnchanged": true,
+  "diffCheck": true,
+  "browserTestPerformed": false
+}

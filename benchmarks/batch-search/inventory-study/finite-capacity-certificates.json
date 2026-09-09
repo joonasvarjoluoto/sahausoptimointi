@@ -1,0 +1,86 @@
+[
+  {
+    "scenario": "F1",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9",
+      "excel-20",
+      "excel-21"
+    ],
+    "deficits": []
+  },
+  {
+    "scenario": "F1",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9"
+    ],
+    "deficits": []
+  },
+  {
+    "scenario": "F1",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9",
+      "excel-11"
+    ],
+    "deficits": []
+  },
+  {
+    "scenario": "F2",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9",
+      "excel-20",
+      "excel-21"
+    ],
+    "deficits": [
+      {
+        "profileType": "verticalProfile",
+        "color": "white",
+        "requiredMm": 27084,
+        "availableMm": 21894.9,
+        "deficitMm": 5189.1
+      }
+    ]
+  },
+  {
+    "scenario": "F2",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9"
+    ],
+    "deficits": [
+      {
+        "profileType": "verticalProfile",
+        "color": "white",
+        "requiredMm": 27084,
+        "availableMm": 21894.9,
+        "deficitMm": 5189.1
+      }
+    ]
+  },
+  {
+    "scenario": "F2",
+    "ids": [
+      "excel-2",
+      "excel-3",
+      "excel-9",
+      "excel-11"
+    ],
+    "deficits": [
+      {
+        "profileType": "verticalProfile",
+        "color": "white",
+        "requiredMm": 27084,
+        "availableMm": 21894.9,
+        "deficitMm": 5189.1
+      }
+    ]
+  }
+]

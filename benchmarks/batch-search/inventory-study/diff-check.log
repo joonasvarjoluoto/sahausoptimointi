@@ -1,0 +1,4 @@
+warning: in the working copy of 'BACKLOG.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'DOMAIN_NOTES.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'ROADMAP.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'production-regressions.js', LF will be replaced by CRLF the next time Git touches it

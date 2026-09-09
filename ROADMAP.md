@@ -15,6 +15,8 @@ Ei-kiireelliset yksittäiset virheet ja parannukset kuuluvat `BACKLOG.md`:hen. T
 
 ## Nykyinen checkpoint
 
+Kiskojen yhteismäärä ja aukkokohtainen 1+1-sekanippu toteutettu 8.9.2026. Suuremmat määrät niputetaan profiileittain; saman aukon samaa mittaa suositaan peräkkäin. Skeema 5 säilyttää vanhojen töiden kysynnän skeeman 4 määrämuunnoksella.
+
 Sovellus muodostaa nyt avoimista tilauksista diskreetin tuotantobatchin (8.9.2026). Kokonaiset tilaukset valitaan materiaalipisteen perusteella, nykyinen inventory-aware optimizer tekee materiaaliratkaisun ja erillinen scheduler muodostaa nippusahausoperaatiot. Tilaus-/aukkokohdistus säilyy kappaleissa. Toteutuksen auktoritatiiviset säännöt ja rajat: `BATCH_AND_BUNDLE_SAWING_PLANNING.md`.
 
 Uusi checkpoint: puhdas tuotantokerros, batchin debug-näkymä, valinnainen aukon tunnus, dependency-aware nippusahaus sekä batchin finalisoinnissa säilyvä avoin tilausjono. Materiaalipisteytys ei sisällä tuotantoaikaa. Vanhojen kohtien rolling-/sekventiaalinen putkitus on myöhempää mahdollista työtä.
@@ -55,9 +57,13 @@ Tuotantofaktat ja alustavat luvut ovat `DOMAIN_NOTES.md`:ssä. Tämä päivitys 
 
 ## Seuraava työvaihe
 
-Vahvista uusi batch-/nippusahauspolku käyttäjän selaimessa muistion testivaiheilla. Automaattinen selainavaus estyi URL-turvakäytäntöön. Node-regressiot sekä ohjaus-/persistenssitestit ovat käytössä; jälkimmäiset käyttävät DOM-testikaksoista eivätkä todista asettelua.
+Batch-/nippusahauspolun ja kiskosyötteen selaintarkistukset on tehty käyttäjän antamassa HTTP-osoitteessa. Seuraava tutkimuskohde on automaattisen batch-valinnan hakulaatu ajan funktiona. Erillinen Node-koeversio ja ensimmäinen 23 tilauksen / 10 minuutin mittaus ovat `benchmarks/batch-search/RESULTS.md`:ssä. Selain käyttää edelleen aiempaa exhaustive-selectoria.
 
-Seuraavat erilliset kehityskohteet: edustavan 5–10 tilauksen jonon suorituskykymittaus, Vasteprofiilin nippukapasiteetin vahvistaminen, operaatiokohtainen kuittaus ja batch-historia. Tuotantoajan kustannuksia lisätään vasta erillisen päätöksen ja kalibroinnin jälkeen. Kiskon yhteiskappalemäärän muutos on edelleen erillinen, tekemätön työ; U-profiilin oletus 2 on toteutettu.
+Jatkotutkimus 8.9.2026 kattoi kolme tuotantosimulaatiosta muodostettua 100 jäännöksen varastoa, kaksi äärellistä uutta varastoa ja viisi tilausjärjestystä. Raportti: `benchmarks/batch-search/inventory-study/RESULTS.md`. Pääajojen parhaat löytyivät noin 19–59 sekunnissa eivätkä parantuneet 10 minuuttiin mennessä. Node-kokeen saavutettuihin DP-tiloihin rajattu käsittely säilytti vertailutulokset ja nopeutti perusbatcheja merkittävästi; vaikea samanvärinen kolmen tilauksen batch kesti silti noin 32,8 s. Alkuperäisen ja kokeellisen coren 35/35 regressioryhmää läpäistiin. Seuraava rajattu tutkimus on tämän monimittaisen tapauksen nopeus sekä materiaalihakijan sisäisen rivijärjestyksen hallinta; production-UI:ta tai pisteytystä ei ole muutettu.
+
+Käyttäjän uusi vaatimus erottaa kaksi tavoitetta: käsin valitun 2–5 tilauksen normaalin materiaaliratkaisun pitää valmistua sekuntien suuruusluokassa; automaattinen suuren jonon haku saa käyttää minuutteja tai pidempään, jos mitattu materiaalihyöty perustelee sen. Ensimmäinen koe tukee kaksivaiheista hakua, mutta eri jonot, varastot ja aloitukset pitää mitata ennen production-hakubudjetin päättämistä. Työaikaa tai schedulerin mittareita ei lisätä pisteytykseen.
+
+Myöhemmät erilliset kehityskohteet ovat Vasteprofiilin nippukapasiteetin vahvistaminen, operaatiokohtainen kuittaus ja batch-historia. Tuotantoajan kustannukset vaativat erillisen päätöksen ja kalibroinnin.
 
 ## Aikaisempi vaiheistus (historia ja myöhemmät mahdollisuudet)
 

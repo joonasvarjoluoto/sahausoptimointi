@@ -1,0 +1,19 @@
+Pystyprofiili {
+  sourceValueEquivalent: 1212.5,
+  recoveredRemnantValueEquivalent: 264.1408883613673,
+  kerfRecoveredValueEquivalent: 0,
+  newStockRemnantCreationPenaltyEquivalent: 0,
+  remnantHandlingPenaltyEquivalent: 20,
+  largeScrapPenaltyEquivalent: 0,
+  totalCostEquivalent: 968.3591116386327
+}
+Pystyprofiili {
+  sourceValueEquivalent: 6000,
+  recoveredRemnantValueEquivalent: 3176.2463212643183,
+  kerfRecoveredValueEquivalent: 0,
+  newStockRemnantCreationPenaltyEquivalent: 50,
+  remnantHandlingPenaltyEquivalent: 20,
+  largeScrapPenaltyEquivalent: 0,
+  totalCostEquivalent: 2893.7536787356817
+}
+Tuotannon ohjaus-/persistenssitestit: 18 läpäisty
