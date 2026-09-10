@@ -4,7 +4,7 @@ Tämä kuvaa kehityssuunnan, ei anna lupaa toteuttaa koko suunnitelmaa. Aktiivin
 
 ## Nykyinen checkpoint
 
-Sovellus valitsee kokonaisista tilauksista materiaalipisteellä batchin, optimoi materiaalin ja muodostaa erillisellä schedulerilla nippusahauksen profiiliblokeittain. Worker-numerointi, järjestetyt kuittaukset, undo/reload, UI:n toistoryhmät, 3+3-esitys ja aktiivisen blokin materiaalivalmistelu toimivat. Operaattori päättää materiaalin kantotavan.
+Sovellus valitsee kokonaisista tilauksista materiaalipisteellä batchin, optimoi materiaalin ja muodostaa erillisellä schedulerilla nippusahauksen profiiliblokeittain. Worker-numerointi, järjestetyt kuittaukset, undo/reload, UI:n toistoryhmät, 3+3-esitys ja aktiivisen blokin materiaalivalmistelu toimivat. Operaattori päättää materiaalin kantotavan. B-009:n ensiversio kirjaa yhden korvatun salon nykyisessä operaatiossa, säilyttää alkuperäisen suunnitelman ja johtaa fyysisen toteuman. Mahdoton jatko pysäyttää työn; kelvollinen valmis toteuma määrää finalisoinnin varastosiirtymän.
 
 Mahdollisessa esimiesdemossa kokonaisuus esitellään prototyyppinä; demo tai regressioiden läpäisy ei yksin todista tuotantovalmiutta. Näkyvä käyttöpolku ja materiaalitalouden selitettävyys säilyvät tärkeinä.
 
@@ -12,13 +12,13 @@ Sahausfysiikka ja ensimmäinen material/inventory-core ovat omissa moduuleissaan
 
 ## Seuraava konkreettinen vaihe
 
-**Suunnitellun ja toteutuneen materiaalilähteen poikkeama (B-009).** Rajaa ensin pienin turvallinen tapa kirjata väärän salon käyttö säilyttäen alkuperäinen suunnitelma vertailtavana. Päätä lähteen valintatapa, jäljellä olevien operaatioiden fyysinen validointi ja finalisoinnin estot virhetilanteessa. Pelkkä lähde-ID:n vaihtaminen ei riitä. Osittainen uudelleenoptimointi tulee vasta luotettavan toteumamallin jälkeen.
+**Pysähtyneen työn jatkosuunnitelma (B-013).** B-009:n toteumamalli ja fyysiset estot ovat käytössä. Seuraavaksi rajataan osittainen uudelleenoptimointi, joka säilyttää toteutuneet kappaleet ja alkuperäisen planin vertailuna, käyttää salojen todellisia jäljellä olevia kapasiteetteja ja muodostaa erikseen jäljitettävän jatkosuunnitelman. Tämä vaatii oman tehtävän ja digest-/reload-/undo-sopimuksen; nykyinen turvallinen pysähdys ei vielä tarjoa jatkoreittiä.
 
 ## Seuraavat työalueet ja riippuvuudet
 
 | Työalue | Pienin järkevä eteneminen | Edellytys |
 | --- | --- | --- |
-| Tuotannon luotettavuus | Toteutuneen lähteen käsittely; myöhemmin batch-historia. Vasteen nippukapasiteetti vahvistetaan erikseen | Fysiikka, jäljitettävyys ja persistoi-ensin-turva säilyvät |
+| Tuotannon luotettavuus | Toteutuneen lähteen käsittelyn jälkeen pysähtyneen työn jatkosuunnitelma; myöhemmin batch-historia. Vasteen nippukapasiteetti vahvistetaan erikseen | Fysiikka, jäljitettävyys ja persistoi-ensin-turva säilyvät |
 | Vaihe 1b: pienet moduulirajat | Material-core on irrotettu. Seuraava raja valitaan todellisista riippuvuuksista; optimizer vasta materiaalirajan selkiydyttyä, UI/persistenssin I/O myöhemmin | Täydet ennen/jälkeen-regressiot; ei käyttäytymismuutosta samassa refaktorissa |
 | Vaihe 1c: varaston käytettävyys | Todellisten saldojen käyttöönotto → hälytysluokittelu → profiiliaccordionit ja poikkeusyhteenveto → erillinen vastaanotto | Tuntemattoman/rajattoman saldon tulkinta ja alkusaldojen kirjaaminen päätetään; hälytys ei muuta optimizerin saatavuutta |
 | Kapasiteetin tuotantovarmistus | Mittaa lähteet, päät ja kappalepoikkeamat; kalibroi yhteiset varat erikseen | Nykyinen malli on toteutettu, mutta konservatiiviset oletukset eivät vielä ole laajasti tuotannossa kalibroituja |

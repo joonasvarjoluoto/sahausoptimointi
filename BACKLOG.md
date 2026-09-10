@@ -1,15 +1,15 @@
 # Avoin backlog
 
-Tässä ovat todelliset avoimet ongelmat ja rajoitteet. Merkintä ei anna toteutuslupaa. Kehitysjärjestys on [roadmapissa](ROADMAP.md); [valmistuneet B-001/B-003/B-004/B-005/B-007](docs/history/COMPLETED_BACKLOG.md) ovat historiassa. ID:tä ei käytetä uudelleen.
+Tässä ovat todelliset avoimet ongelmat ja rajoitteet. Merkintä ei anna toteutuslupaa. Kehitysjärjestys on [roadmapissa](ROADMAP.md); [valmistuneet B-001/B-003/B-004/B-005/B-007/B-009](docs/history/COMPLETED_BACKLOG.md) ovat historiassa. ID:tä ei käytetä uudelleen.
 
 Tila: havaittu, suunniteltu tai tutkittavana. Prioriteetti kertoo vaikutuksesta, ei automaattisesta toteutusjärjestyksestä. Sulje valmistunut kohta siirtämällä sen olennainen näyttö historiaan tai tutkimusraporttiin.
 
-## B-009 — Toteutunut materiaalilähde voi poiketa suunnitellusta
+## B-013 — Lähdepoikkeaman vuoksi pysähtyneelle työlle ei ole jatkosuunnitelmaa
 
-- **Tila / prioriteetti:** suunniteltu, korkea ennen varsinaista tuotantokäyttöä. Havaittu 9.9.2026.
-- **Ongelma:** kolmannen liikkeen suunnitellut salot 1/2/7/4 korvautuivat käytännössä saloilla 1/2/3/4. Nykyinen actualSourceIds hyväksyy vain suunnitellut lähteet.
-- **Vaikutus:** toteumaa ei voi korjata turvallisesti; jäljellä olevat pituudet, operaatiot ja finalisoinnin varasto voivat poiketa todellisesta työstä.
-- **Hyväksymisraja:** säilytä alkuperäinen suunnitelma ja eroteltu toteuma, validoi muuttuneet lähdepituudet ja jäljellä olevat operaatiot, estä virheellinen finalisointi. Lähteen valinta, korjaus ja mahdollinen osittainen uudelleenoptimointi rajataan erikseen. Ei pelkkää ID:n vaihtoa. [Tuotantomalli](docs/domain/PRODUCTION.md).
+- **Tila / prioriteetti:** havaittu, korkea tuotantotyön palautumiselle; B-009:n hyväksytty jatkorajaus 10.9.2026.
+- **Ongelma:** B-009 kirjaa fyysisesti mahdollisen väärän salon käytön ja pysäyttää työn, jos jokin jäljellä oleva operaatio ei enää mahdu alkuperäiseen lähteeseensä. Esimerkiksi 1000 mm:n ylimääräinen leikkaus salon 3 alusta estää siihen suunnitellun 5000 mm:n leikkauksen.
+- **Vaikutus:** todellista sahausta ei voi perua undo-painikkeella. Pysähtynyt työ säilyy reloadissa mutta sitä ei voi jatkaa, laskea alusta tai finalisoida. Turvallinen jatkosuunnitelma puuttuu tarkoituksellisesti.
+- **Hyväksymisraja:** säilytä toteutuneet kappaleet, alkuperäinen suunnitelma ja lähteiden fyysinen tase. Optimoi vain jäljellä oleva kysyntä ja rajaa erikseen jatkosuunnitelman identiteetti, digest, reload, undo ja varastotransaktio. Älä kierrä pysähdystä vaihtamalla vain ID:tä tai tyhjentämällä lokia. [Tuotantomalli](docs/domain/PRODUCTION.md).
 
 ## B-006 — Synkroninen batch-haku suurissa tilausjonoissa
 

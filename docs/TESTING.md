@@ -8,9 +8,9 @@ Komennot ajetaan repon juuresta Node.js:llä. Ajurit käyttävät sisäänrakenn
 
 | Komento | Mitä se tarkistaa | Rajoite |
 | --- | --- | --- |
-| `node run-regressions.cjs` | [Eksplisiittinen core-ajuri](../run-regressions.cjs), 38 ryhmää: core/fysiikka, materiaalitase ja kapasiteetti, variantit, inventory-beam, adapterit, tallennevalidointi, finalisointi sekä puhdas tuotanto ja suoritusnäkymän johdettu data | Tuoreet VM:t ilman DOM:ia tai localStoragea; ei oikea selain |
+| `node run-regressions.cjs` | [Eksplisiittinen core-ajuri](../run-regressions.cjs), 39 ryhmää: core/fysiikka, materiaalitase ja kapasiteetti, variantit, inventory-beam, adapterit, tallennevalidointi, finalisointi sekä puhdas tuotanto, lähdepoikkeaman replay ja suoritusnäkymän johdettu data | Tuoreet VM:t ilman DOM:ia tai localStoragea; ei oikea selain |
 | `node run-material-regressions.cjs` | [Materiaalirajan ajuri](../run-material-regressions.cjs): suora CommonJS-lataus, eristetty classic-script-ympäristö ja globaalialiaset; neljän fixturen täydet varastot, optimoinnit, UI-planit, scoret, kulutus, jälkivarastot, operaatiot ja virhetulos | VM:n selainmoduulilataus ei ole oikea selain |
-| `node run-production-ui-regressions.cjs` | [Ohjausajuri](../run-production-ui-regressions.cjs), 45 tarkistusta: oikea calculate/restore/finalize, kuittaus/undo, lokin palautus, toistoryhmien ohjaus ja tallennusvirheet | DOM-/storage-testikaksoisia; ei layout-, mobiili- tai selaimen DOM-testi |
+| `node run-production-ui-regressions.cjs` | [Ohjausajuri](../run-production-ui-regressions.cjs), 71 tarkistusta: oikea calculate/restore/finalize, kuittaus/undo, lokin palautus, toistoryhmien ohjaus, tallennusvirheet sekä lähdepoikkeaman kirjaus, reload, jatko-/finalisointiesto ja toteutunut varastosiirtymä | DOM-/storage-testikaksoisia; ei layout-, mobiili- tai selaimen DOM-testi |
 | `node benchmarks/batch-search/run-pattern-regressions.cjs` | [Pysyvä kuvioregressio](../benchmarks/batch-search/run-pattern-regressions.cjs): 1 354 järjestettyä DP-tapausta sekä 15 täydellistä materiaaliplan/score/scheduler-checkpointia | Voi kestää selvästi perusajoa pidempään; ei benchmark eikä browser |
 | `node benchmarks/batch-search/tests.cjs` | [Node-hakukokeen testit](../benchmarks/batch-search/tests.cjs): ehdokkaat, rajat, anytime/checkpoint ja välimuistin eristys | Tutkimushaku, ei aktiivinen selainselector |
 | `node benchmarks/batch-search/flow-replay/tests.cjs` | [Replay-testit](../benchmarks/batch-search/flow-replay/tests.cjs): fyysinen tutkimuspolitiikka, lähteiden seuranta ja mahdolliset paikalliset ajot | Tutkimuksen varastopolitiikka eroaa production-dispositionista |
@@ -67,6 +67,7 @@ Muut tärkeät nimet core-ajurissa:
 - `runOrderInputRegressionTests()` ja `runStoredOrderValidationRegressionTests()`: tilausadapteri, kiskojen yhteismäärä, ID:t, perustulokset sekä tallenteen rakenne, kysyntä ja vanhan skeeman hylkäys.
 - `runProductionRegressionTests()`: kokonaiset batchit ja kokorajat, materiaalivalinta, profiilit/värit, niput ja kiskojen 2/4/6-tapaukset, riippuvuudet, provenance, worker-numerot, profiiliblokit, digest, kuittaus/undo ja migraatio.
 - `runProductionPresentationRegressionTests()`: toistoryhmien konservatiivinen identiteetti, lokista johdettu laskuri, 3+3-indeksit, reload/undo ja valmisteluryhmät.
+- `runProductionSourceDeviationRegressionTests()`: nipun salon 7 korvaaminen salolla 3, kelvollinen/mahdoton jatko, fyysinen tase, reload/undo, V1/V2 ja digest, väärä väri/profiili, päällekkäinen tai ulkopuolinen lähde, kapasiteettiraja, cut/release-raja, 0/3,4 mm kerf sekä äärellisen uuden ja vanhan jäännöksen toteutunut kulutus. Fixture on käsin muodostettu materiaalijako; scheduler tuottaa operaatiot normaalisti.
 - `runCoreProfileTypeValidationRegressionTests()` palauttaa eksplisiittisesti kahdeksan PASS/FAIL-riviä. Muut profiili-, väri-, lähde- ja tallennevalidoinnit löytyvät ajurin nimetyistä ryhmistä.
 
 Pysyvä pattern-ajuri ei nykyisin aja jokaista tapausta rinnakkain vanhalla dense-toteutuksella. Se lukitsee 1 354 järjestetyn kuviotuloksen digestin: seedatut tapaukset, kerfit 0/3/3,4 mm, kiintiöt 1/2/10 ja täsmäsovitukset, suoran DP-kutsun nollavaroilla. Lisäksi se laskee samat 14 aiemmin valmistunutta batch-fixturea sekä yhden aiemmin aikakatkaistun, myöhemmin referenssiksi valmistuneen tapauksen. Nykyiset kapasiteettimallin täydet score/plan-tulokset ja scheduler-tulokset lukitaan erillisiin digesteihin. Pelkkiä historiallisia scoreja ei verrata uuden kapasiteettimallin scoreihin identtisinä. Dense/sparse-alkuperäisvertailun historia on [inventory-study-raportissa](../benchmarks/batch-search/inventory-study/RESULTS.md).
@@ -86,6 +87,30 @@ Valitse oikeaan selaimeen muutoksen kannalta relevantit syötteet, esimerkiksi:
 5. Toistoryhmä: musta Pysty 1300 × 16, musta Vaaka 1000 × 20, harmaa Pysty 1300 × 10, harmaat Pysty-jäännökset 1740 ja 1510 mm × 1; oletusmateriaalit, 6000/3. Tarkista yhden kuittauksen eteneminen, reload, undo, ryhmäraja, 3+3 sekä koko aktiivisen blokin valmistelu.
 
 Tarkista painikkeet ja todellinen palautus, ei vain konsolin funktiotulos. UI-muutoksessa tarkista tarvittava tumma/vaalea näkymä ja puhelin-/työpöytäleveys. Puhelinemulaatio ei ole fyysisen laitteen testi. Raportoi selain, syöte, tehty polku ja rajoitteet; älä väitä vanhaa checkpoint-ajoa tässä tehtävässä uudelleen tehdyksi.
+
+### B-009:n toistettava selainfixture
+
+Käytä erillistä testi-alkuperää, esimerkiksi tämän repon paikallista HTTP-palvelinta eri portissa kuin avoin oikea työ. `production-regressions.js` ei kuulu sovelluksen normaaliin lataukseen. Lataa se testi-ikkunan kehittäjäkonsolissa kerran ja avaa kelvollisen poikkeaman fixture:
+
+```js
+await new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "production-regressions.js";
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.append(script);
+});
+loadProductionSourceDeviationTest(false);
+```
+
+Loader **korvaa testialkuperän tallennetun ja avoimen työn**. Se käyttää seitsemää äärellistä mustaa Pysty-salkoa, 6000 mm / kerf 3 mm ja oletusvaroja 20/1. Ensimmäinen nippu on 1000 mm saloilta 1/2/4/7; salon 3 myöhempi mitta on 2000 mm.
+
+1. Avaa **Käytin eri salkoa**, valitse suunniteltu Pysty 7 ja toteutunut Pysty 3, kirjaa. Tarkista 7 → 3 -historia, salon 3 nimellinen 4997 / turvallinen 4976 mm sekä käyttämätön salko 7. Syötteet, LASKE ja UUSI TYÖ ovat lukittuja.
+2. Reload säilyttää havainnon. Peru viimeisin kuittaus: tapahtuma poistuu, pituudet palautuvat johdetussa taseessa ja lukko vapautuu. Kirjaa sama poikkeama uudelleen.
+3. Kuittaa muut operaatiot ja merkitse kaikki manifestin salot valmiiksi. Finalisointi jättää yhden seitsemästä uudesta Pysty-salosta käyttämättä ja tallentaa salon 3 jäännökseksi 2972 mm (nimellinen 2994 mm). Reload palauttaa finalisoidun varaston, tyhjän jonon ja vapaat syötteet.
+4. Lataa testiskripti uudelleen reloadin jälkeen ja kutsu `loadProductionSourceDeviationTest(true)`. Salon 3 tuleva mitta on nyt 5000 mm. Sama 7 → 3 -kirjaus tallentuu, mutta työ pysähtyy. Reload säilyttää eston, kaikki salon valmistumismerkinnät eivät avaa finalisointia, ja undo poistaa viimeisimmän virheellisen kirjauksen sekä eston. Älä tulkitse undo-toimintoa todellisen leikkauksen peruuttamiseksi.
+
+Tarkista myös puhelinleveys, näkyvä pysähdysteksti ja disabled-painikkeet. Ohjausajuri kattaa erikseen kuittauksen, undon ja finalisoinnin tallennusvirheet sekä suoran funktiokutsun jatkoeston.
 
 ## Tutkimuksen toistettavuus
 

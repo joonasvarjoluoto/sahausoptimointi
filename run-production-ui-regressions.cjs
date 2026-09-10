@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const context = vm.createContext({ console, setTimeout });
-for (const file of ["src/cutting-physics.js", "src/material.js", "src/production-planning.js", "src/production-integration.js", "app.js"]) {
+for (const file of ["src/cutting-physics.js", "src/material.js", "src/production-planning.js", "src/production-integration.js", "app.js", "production-regressions.js"]) {
     new vm.Script(fs.readFileSync(path.join(__dirname, file), "utf8"), { filename: file }).runInContext(context);
 }
 
@@ -22,7 +22,8 @@ const test = new vm.Script(`(async () => {
     let failWrite = false;
     const elements = Object.fromEntries([
         "result", "calculateButton", "cutList", "stockProfileList", "remnantList", "finalizationStatus",
-        "stockLength", "kerf", "minBatchPieces", "targetBatchPieces", "maxBatchPieces", "operationStatus"
+        "stockLength", "kerf", "minBatchPieces", "targetBatchPieces", "maxBatchPieces", "operationStatus",
+        "deviationPlannedSlot", "deviationActualSource"
     ].map(id => [id, { value: "", textContent: "", innerHTML: "", className: "", disabled: false }]));
     elements.stockLength.value = "6000";
     elements.kerf.value = "3";
@@ -231,6 +232,77 @@ const test = new vm.Script(`(async () => {
         preparationHtml().includes("Harmaa") && preparationHtml().includes("Musta") &&
         !preparationHtml().includes("Vaakaprofiili") && !preparationHtml().includes("HAE NYT"),
         "Valmistelu näyttää koko blokin materiaalitarpeen tunnisteineen ilman kantomääräohjetta");
+    for (const blocked of [false, true]) {
+        const fixture = createProductionSourceDeviationFixture(blocked);
+        liveOrders = fixture.orders;
+        currentGeneratedPlan = fixture.plan;
+        currentProductionExecutionState = createInitialProductionExecutionState(fixture.plan, fixture.execution);
+        stockRows = Object.keys(PROFILE_TYPES).map(profileType => ({ profileType, color: "black", quantity: "7", unlimited: false, additional: false }));
+        remnantRows = [];
+        completedBarIds.clear();
+        currentGeneratedPlan.bars.forEach(bar => completedBarIds.add(bar.id));
+        saveCurrentWorkState();
+        assert(!isCurrentPlanReadyForFinalization(), "Pelkkä salon valmistumismerkintä ei ohita toteumalokia");
+        const original = JSON.stringify(currentGeneratedPlan);
+        elements.deviationPlannedSlot.value = String(fixture.execution.operations[0].sources.findIndex(s => s.id === "bar-7"));
+        updateProductionSourceChoices();
+        assert(elements.deviationActualSource.innerHTML.includes('value="bar-3"'), "Vaihtoehdot tulevat fyysisestä taseesta");
+        elements.deviationActualSource.value = "bar-3";
+        const beforeDeviation = storage;
+        failWrite = true;
+        completeCurrentProductionDeviation();
+        assert(currentProductionExecutionState.events.length === 0 && storage === beforeDeviation && completedBarIds.size === 7,
+            "Poikkeaman tallennusvirhe säilyttää lokin ja salon valmistumiset");
+        failWrite = false;
+        completeCurrentProductionDeviation();
+        assert(currentProductionExecutionState.version === 2 && currentProductionExecutionState.events.length === 1 &&
+            !completedBarIds.has("bar-3"), "Poikkeama kirjautuu ja oikean salon valmistumismerkintä poistuu");
+        assert(JSON.stringify(currentGeneratedPlan) === original && elements.result.innerHTML.includes("Suunniteltu Pystyprofiili 7 → toteutunut Pystyprofiili 3"),
+            "Alkuperäinen plan säilyy ja molemmat salot näkyvät");
+        assert(isValidStoredWorkState(JSON.parse(storage)), "Poikkeamasnapshot validoituu myös estotilassa");
+        const savedDeviation = storage;
+        currentProductionExecutionState = null;
+        currentGeneratedPlan = null;
+        assert(restoreSavedWorkState() && currentProductionExecutionState.version === 2 && JSON.stringify(currentGeneratedPlan) === original,
+            "Reload palauttaa poikkeaman ja alkuperäisen planin");
+        assert(elements.result.innerHTML.includes("Työ pysäytetty") === blocked, "Reload johtaa oikean jatkoeston");
+        await calculate();
+        startNewWork();
+        handleOrderInputChange();
+        assert(storage === savedDeviation && JSON.stringify(currentGeneratedPlan) === original, "Laskenta, uusi työ tai syötemuutos eivät hävitä toteutunutta poikkeamaa");
+        failWrite = true;
+        undoLatestProductionOperation();
+        assert(storage === savedDeviation && currentProductionExecutionState.events.length === 1, "Undon tallennusvirhe säilyttää poikkeaman");
+        failWrite = false;
+        undoLatestProductionOperation();
+        assert(currentProductionExecutionState.events.length === 0 && !hasCurrentProductionDeviation() && !elements.result.innerHTML.includes("Työ pysäytetty"),
+            "Undo palauttaa fyysiset pituudet, poistaa eston ja vapauttaa syötteet");
+        completeCurrentProductionDeviation();
+        if (blocked) {
+            const stopped = storage;
+            completeCurrentProductionOperation();
+            currentGeneratedPlan.bars.forEach(bar => completedBarIds.add(bar.id));
+            finalizeCurrentWork();
+            assert(currentProductionExecutionState.events.length === 1 && storage === stopped && currentGeneratedPlan !== null,
+                "Mahdotonta työtä ei voi jatkaa tai finalisoida edes kaikilla salon kuittauksilla");
+        } else {
+            while (currentProductionExecutionState.events.length < fixture.execution.operations.length) completeCurrentProductionOperation();
+            currentGeneratedPlan.bars.forEach(bar => completedBarIds.add(bar.id));
+            const actualPlan = createExecutedMaterialPlan(currentProductionExecutionState, currentGeneratedPlan, fixture.execution, 3);
+            const expected = calculatePostOrderMaterialInventory(actualPlan, createMaterialInventory(getMaterialAvailabilityFromForm()), PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings);
+            failWrite = true;
+            const beforeFinal = storage;
+            finalizeCurrentWork();
+            assert(storage === beforeFinal && currentGeneratedPlan !== null, "Poikkeaman finalisointivirhe säilyttää työn");
+            failWrite = false;
+            finalizeCurrentWork();
+            assert(currentGeneratedPlan === null && liveOrders.length === 0 &&
+                JSON.stringify(createMaterialInventory(getMaterialAvailabilityFromForm())) === JSON.stringify(createMaterialInventory(expected)),
+                "Finalisointi käyttää toteutunutta varastosiirtymää");
+            assert(stockRows.find(row => row.profileType === "verticalProfile").quantity === "1" && remnantRows.some(row => row.length === "2972"),
+                "Kuusi uutta salkoa kuluu seitsemästä ja salon 3 toteutunut jäännös tallentuu");
+        }
+    }
     console.log("Tuotannon ohjaus-/persistenssitestit: " + checks + " läpäisty");
 })()`);
 

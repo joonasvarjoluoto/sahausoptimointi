@@ -131,8 +131,8 @@ function createInitialProductionExecutionState(plan, execution) {
     return { version: 1, planDigest: createProductionPlanDigest(plan, execution), events: [] };
 }
 
-function isValidProductionExecutionState(state, plan, execution) {
-    if (!isPlainObject(state) || state.version !== 1 ||
+function isProductionExecutionEventPrefix(state, plan, execution) {
+    if (!isPlainObject(state) || ![1, 2].includes(state.version) ||
         state.planDigest !== createProductionPlanDigest(plan, execution) ||
         !Array.isArray(state.events) || state.events.length > execution.operations.length) return false;
     return state.events.every((event, index) => {
@@ -144,14 +144,123 @@ function isValidProductionExecutionState(state, plan, execution) {
             event.actualSourceIds.length === plannedSourceIds.length &&
             new Set(event.actualSourceIds).size === event.actualSourceIds.length &&
             event.actualSourceIds.every((sourceId, sourceIndex) =>
-                typeof sourceId === "string" && sourceId === plannedSourceIds[sourceIndex]);
+                typeof sourceId === "string" && (state.version === 2 || sourceId === plannedSourceIds[sourceIndex]));
     });
 }
 
-function completeNextProductionOperation(state, plan, execution, completedAt = new Date().toISOString()) {
-    if (!isValidProductionExecutionState(state, plan, execution) || state.events.length >= execution.operations.length ||
+function isValidProductionExecutionState(state, plan, execution, kerf) {
+    if (!isProductionExecutionEventPrefix(state, plan, execution)) return false;
+    if (state.version === 1) return true; // V1 säilyttää vain suunniteltujen lähteiden sopimuksen.
+    try { replayProductionExecution(state, plan, execution, kerf); return true; } catch { return false; }
+}
+
+// Ledger on aina johdettu ja paikallinen. Alkuperäistä plania tai operaatiota ei kirjoiteta.
+function applyProductionOperation(ledger, operation, sourceIds, kerf) {
+    if (!Array.isArray(sourceIds) || sourceIds.length !== operation.sources.length ||
+        new Set(sourceIds).size !== sourceIds.length) throw new Error("Valitse nipun jokaiseen paikkaan eri fyysinen salko.");
+    const updates = sourceIds.map((id, index) => {
+        const bar = ledger.get(id), planned = operation.sources[index];
+        const fail = reason => {
+            const error = new Error(reason);
+            error.productionConflict = { operationId: operation.id, sourceId: id, reason };
+            throw error;
+        };
+        if (!bar || bar.profileType !== planned.profileType || (bar.color ?? null) !== (planned.color ?? null)) {
+            fail("Salon profiili tai väri ei vastaa sahattavaa kappaletta.");
+        }
+        if ((bar.nominalRemaining === operation.length ? "release" : "cut") !== operation.kind) {
+            fail("Salon pituus muuttaisi sahauksen ja loppukappaleen poiminnan välistä työvaihetta.");
+        }
+        const groupedCuts = [...bar.groupedCuts, { length: operation.length, quantity: 1 }];
+        // Sama authoritative kapasiteetti- ja cutPiece-polku kuin materiaalissa ja schedulerissa.
+        const capacity = MATERIAL.calculateMaterialBarCapacity(bar.sourceLength, groupedCuts, kerf, {
+            sourceCapacityAllowance: bar.sourceCapacityAllowance ?? 0,
+            pieceCapacityAllowance: bar.pieceCapacityAllowance ?? 0
+        });
+        if (!capacity.possible) fail("Salon jäljellä oleva turvallinen pituus ei riitä työvaiheeseen.");
+        return { ...bar, ...capacity, groupedCuts };
+    });
+    updates.forEach(bar => ledger.set(bar.id, bar)); // Nippu muuttuu vasta kaikkien slotien validoinnin jälkeen.
+}
+
+function findRemainingProductionConflict(ledger, execution, start, kerf) {
+    const future = new Map(ledger);
+    for (const operation of execution.operations.slice(start)) {
+        try { applyProductionOperation(future, operation, operation.sources.map(source => source.id), kerf); }
+        catch (error) { return error.productionConflict ?? { operationId: operation.id, reason: error.message }; }
+    }
+    return null;
+}
+
+function replayProductionExecution(state, plan, execution, kerf) {
+    if (!isProductionExecutionEventPrefix(state, plan, execution) || !Number.isFinite(kerf) || kerf < 0 ||
+        !CUTTING_PHYSICS.hasSupportedMillimeterPrecision(kerf)) throw new Error("Virheellinen sahausten toteumatila tai sahausvara.");
+    const ledger = new Map(plan.bars.map(bar => {
+        // Ensiversio käsittelee manifestin fyysisiä salkoja. Erillistä parent/child-ID:tä
+        // ei saa tulkita toiseksi riippumattomaksi fyysiseksi materiaaliksi.
+        if (bar.parentSourceId || !["new", "remnant"].includes(bar.source)) throw new Error("Toteuma vaatii itsenäiset fyysiset salot.");
+        return [bar.id, { ...bar, groupedCuts: [], nominalRemaining: bar.sourceLength,
+            remaining: MATERIAL.getUsableMaterialCapacity(bar.sourceLength, {
+                sourceCapacityAllowance: bar.sourceCapacityAllowance ?? 0, pieceCapacityAllowance: bar.pieceCapacityAllowance ?? 0
+            }), waste: 0, totalPieceCapacityAllowance: 0,
+            totalCapacityAllowance: bar.sourceCapacityAllowance ?? 0 }];
+    }));
+    if (ledger.size !== plan.bars.length) throw new Error("Fyysisen salon tunniste esiintyy kahdesti.");
+    let hasDeviation = false;
+    state.events.forEach((event, index) => {
+        const operation = execution.operations[index];
+        applyProductionOperation(ledger, operation, event.actualSourceIds, kerf);
+        const differs = event.actualSourceIds.some((id, slot) => id !== operation.sources[slot].id);
+        hasDeviation ||= differs;
+        if (differs && index + 1 < state.events.length && findRemainingProductionConflict(ledger, execution, index + 1, kerf)) {
+            throw new Error("Pysäytetyn suunnitelman jälkeen on kirjattu lisää työvaiheita.");
+        }
+    });
+    const conflict = findRemainingProductionConflict(ledger, execution, state.events.length, kerf);
+    return { bars: [...ledger.values()], hasDeviation, remainingFeasible: conflict === null, conflict,
+        complete: state.events.length === execution.operations.length };
+}
+
+function recordProductionSourceDeviation(state, plan, execution, kerf, actualSourceIds, completedAt = new Date().toISOString()) {
+    const replay = replayProductionExecution(state, plan, execution, kerf);
+    if (!replay.remainingFeasible || replay.complete) throw new Error("Pysäytettyä tai valmista työtä ei voi jatkaa.");
+    const operation = execution.operations[state.events.length];
+    const next = { ...state, version: 2, events: [...state.events, {
+        type: "operation-completed", operationId: operation.id, completedAt, actualSourceIds: [...actualSourceIds]
+    }] };
+    // Havainto tallennetaan myös, jos vasta TULEVA työ muuttui mahdottomaksi.
+    replayProductionExecution(next, plan, execution, kerf);
+    return next;
+}
+
+function getProductionSourceAlternatives(state, plan, execution, kerf, slot) {
+    const replay = replayProductionExecution(state, plan, execution, kerf);
+    const operation = execution.operations[state.events.length];
+    if (!operation || !replay.remainingFeasible || !Number.isInteger(slot) || !operation.sources[slot]) return [];
+    return replay.bars.filter(bar => {
+        const ids = operation.sources.map(source => source.id);
+        if (ids.includes(bar.id)) return false;
+        ids[slot] = bar.id;
+        try { applyProductionOperation(new Map(replay.bars.map(b => [b.id, b])), operation, ids, kerf); return true; }
+        catch { return false; }
+    });
+}
+
+function createExecutedMaterialPlan(state, plan, execution, kerf) {
+    const replay = replayProductionExecution(state, plan, execution, kerf);
+    if (!replay.complete || !replay.remainingFeasible) throw new Error("Kaikkien työvaiheiden pitää olla fyysisesti kelvollisina kuitattuja ennen työn päättämistä.");
+    return { ...plan, bars: replay.bars.filter(bar => bar.groupedCuts.length).map(bar => ({ ...bar,
+        remnantStatus: getRemnantStatus(bar.remaining, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings)
+    })) };
+}
+
+function completeNextProductionOperation(state, plan, execution, completedAt = new Date().toISOString(), kerf) {
+    if (!isValidProductionExecutionState(state, plan, execution, kerf) || state.events.length >= execution.operations.length ||
         typeof completedAt !== "string" || !Number.isFinite(Date.parse(completedAt))) {
         throw new Error("Seuraavaa työvaihetta ei voida kuitata.");
+    }
+    if (state.version === 2 && !replayProductionExecution(state, plan, execution, kerf).remainingFeasible) {
+        throw new Error("Työ on pysäytetty. Jäljellä oleva suunnitelma vaatii uudelleenoptimoinnin.");
     }
     const operation = execution.operations[state.events.length];
     return { ...state, events: [...state.events, {
@@ -160,8 +269,8 @@ function completeNextProductionOperation(state, plan, execution, completedAt = n
     }] };
 }
 
-function undoLatestProductionOperationState(state, plan, execution) {
-    if (!isValidProductionExecutionState(state, plan, execution) || state.events.length === 0) {
+function undoLatestProductionOperationState(state, plan, execution, kerf) {
+    if (!isValidProductionExecutionState(state, plan, execution, kerf) || state.events.length === 0) {
         throw new Error("Peruttavaa työvaihetta ei ole.");
     }
     return { ...state, events: state.events.slice(0, -1) };
@@ -222,11 +331,13 @@ function renderProductionDetails(plan, productionState) {
     if (!plan.batch) return "";
     const orders = getOrdersFromForm();
     const selected = getPlanOrders(plan, orders);
-    const execution = createProductionExecution(plan, orders, Number(document.getElementById("kerf").value));
-    if (!isValidProductionExecutionState(productionState, plan, execution)) {
+    const kerf = Number(document.getElementById("kerf").value);
+    const execution = createProductionExecution(plan, orders, kerf);
+    if (!isValidProductionExecutionState(productionState, plan, execution, kerf)) {
         throw new Error("Sahausten toteumatila ei vastaa nykyistä suunnitelmaa.");
     }
     const manifest = createWorkerSourceManifest(plan, execution);
+    const physical = replayProductionExecution(productionState, plan, execution, kerf);
     const workerSourceById = new Map(manifest.map(source => [source.sourceId, source]));
     const score = scoreCompleteMaterialTransitionPlan(adaptStoredPlanForVerification(plan), PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings);
     const count = normalizeOrderCuts(selected).reduce((n, cut) => n + cut.quantity, 0);
@@ -256,6 +367,37 @@ function renderProductionDetails(plan, productionState) {
     const activeBlockCompleted = activeBlock === null ? 0 : execution.operations.slice(0, completedCount).filter(operation =>
         operationBlock(operation).id === activeBlock.id).length;
     const workerNumber = sourceId => workerSourceById.get(sourceId).workerNumber;
+    const sourceLabel = id => `${escapeHtml(PROFILE_TYPES[workerSourceById.get(id).profileType].label)} ${workerNumber(id)}`;
+    const differenceText = operation => {
+        const event = productionState.events[execution.operations.indexOf(operation)];
+        if (!event) return "";
+        return operation.sources.flatMap((source, slot) => event.actualSourceIds[slot] === source.id ? [] :
+            [`<strong class="production-source-difference">Suunniteltu ${sourceLabel(source.id)} → toteutunut ${sourceLabel(event.actualSourceIds[slot])}</strong>`]).join("; ");
+    };
+    const actualBalances = physical.hasDeviation ? `<details class="plan-summary production-actual-balances" open>
+        <summary>Toteutuneiden sahausten materiaalitase</summary>
+        <p>Alla oleva sahaussuunnitelma on alkuperäinen. Nämä pituudet perustuvat kirjattuihin sahauksiin.</p>
+        <ul>${physical.bars.map(bar => `<li>${sourceLabel(bar.id)} · ${escapeHtml(getMaterialColorLabel(bar.color))}:
+            ${bar.groupedCuts.length ? `${bar.groupedCuts.length} kpl tehty · nimellinen jäljellä ${formatMillimeters(bar.nominalRemaining)} · turvallinen jäljellä ${formatMillimeters(bar.remaining)} · sahahukka ${formatMillimeters(bar.waste)}`
+                : `käyttämätön · ${formatMillimeters(bar.sourceLength)}`}</li>`).join("")}</ul></details>` : "";
+    const conflictNotice = physical.remainingFeasible ? "" : `<div class="validation-message" role="alert">
+        <strong>Työ pysäytetty</strong><p>Poikkeama on tallennettu. ${sourceLabel(physical.conflict.sourceId)} ei pysty toteuttamaan jäljellä olevaa työvaihetta ${execution.operations.find(operation => operation.id === physical.conflict.operationId).number}.
+        ${escapeHtml(physical.conflict.reason)} Sahausta ja työn päättämistä ei sallita. Suunnitelma täytyy uudelleenoptimoida; toiminto ei ole vielä käytettävissä.</p>
+        <p>Peru viimeisin kuittaus vain, jos kirjaus oli virheellinen. Peruminen ei palauta fyysisesti sahattua materiaalia.</p></div>`;
+    const changeableSlots = current && physical.remainingFeasible ? current.sources.flatMap((source, slot) => {
+        const alternatives = getProductionSourceAlternatives(productionState, plan, execution, kerf, slot);
+        return alternatives.length ? [{ source, slot, alternatives }] : [];
+    }) : [];
+    const deviationForm = changeableSlots.length ? `<details class="production-source-deviation">
+        <summary>Käytin eri salkoa</summary>
+        <p>Kirjaa yksi korvattu salko. Kirjaus kuittaa tämän työvaiheen; alkuperäinen suunnitelma säilyy.</p>
+        <label>Suunniteltu salko<select id="deviationPlannedSlot" onchange="updateProductionSourceChoices()">${changeableSlots.map(({ source, slot }) =>
+            `<option value="${slot}">${sourceLabel(source.id)}</option>`).join("")}</select></label>
+        <label>Toteutunut salko<select id="deviationActualSource">${changeableSlots[0].alternatives.map(bar =>
+            `<option value="${escapeHtml(bar.id)}">${sourceLabel(bar.id)} · jäljellä ${formatMillimeters(bar.nominalRemaining)}</option>`).join("")}</select></label>
+        <p>Valinta mahtuu tähän työvaiheeseen. Jos myöhempi työ muuttuu mahdottomaksi, kirjaus tallentuu ja työ pysähtyy.</p>
+        <button type="button" onclick="completeCurrentProductionDeviation()">KIRJAA TOTEUTUNUT TYÖVAIHE</button>
+        </details>` : "";
     const sourceChips = operation => {
         const mixedProfiles = new Set(operation.sources.map(source => source.profileType)).size > 1;
         return operation.sources.map(source => {
@@ -295,7 +437,7 @@ function renderProductionDetails(plan, productionState) {
         : `<section class="production-current" data-operation-id="${escapeHtml(current.id)}">
             <h2 class="production-block-title">${blockText[activeBlock.id]?.title ?? escapeHtml(activeBlock.id)}</h2>
             <p class="production-operation-progress">${operationTitle(current)}</p>
-            <p class="production-action-label">${current.kind === "cut" ? "SAHAA" : "POIMI"}</p>
+            <p class="production-action-label">${!physical.remainingFeasible ? "ÄLÄ JATKA TYÖTÄ" : current.kind === "cut" ? "SAHAA" : "POIMI"}</p>
             <div class="production-cut-length">${formatMillimeters(current.length)}</div>
             <p class="production-source-label">SALOT · ${current.sources.length} kpl</p>
             <div class="worker-source-chips" aria-label="Käytettävät salot">${sourceChips(current)}</div>
@@ -305,14 +447,15 @@ function renderProductionDetails(plan, productionState) {
                 <p class="production-repeat-remaining">${currentGroup.total - currentGroup.completed === 1
                     ? "1 samanlainen työvaihe jäljellä"
                     : `${currentGroup.total - currentGroup.completed} samanlaista työvaihetta jäljellä`}</p>` : ""}
-            <button class="operation-completion-button" type="button" onclick="completeCurrentProductionOperation()">
-                ${current.kind === "cut" ? "SAHAUS TEHTY" : "POIMINTA TEHTY"}
+            <button class="operation-completion-button" type="button" onclick="completeCurrentProductionOperation()" ${physical.remainingFeasible ? "" : "disabled"}>
+                ${!physical.remainingFeasible ? "JATKAMINEN ESTETTY" : current.kind === "cut" ? "SAHAUS TEHTY" : "POIMINTA TEHTY"}
             </button>
+            ${deviationForm}
         </section>`;
     const completedOperations = execution.operations.slice(0, completedCount);
     const completedDetails = completedOperations.length
         ? `<details class="production-completed"><summary>Tehdyt työvaiheet · ${completedOperations.length}</summary><ol>
-            ${completedOperations.map(operation => `<li>${operationTitle(operation)} · ${formatMillimeters(operation.length)} · ${operation.sources.map(source => `${escapeHtml(PROFILE_TYPES[source.profileType].label)} ${workerNumber(source.id)}`).join(", ")}</li>`).join("")}
+            ${completedOperations.map(operation => `<li>${operationTitle(operation)} · ${formatMillimeters(operation.length)} · ${operation.sources.map(source => `${escapeHtml(PROFILE_TYPES[source.profileType].label)} ${workerNumber(source.id)}`).join(", ")} ${differenceText(operation)}</li>`).join("")}
             </ol></details>` : "";
     const previewSources = operation => {
         const rows = [];
@@ -331,13 +474,14 @@ function renderProductionDetails(plan, productionState) {
         <ol>${operations.map(operation => `<li data-preview-operation-id="${escapeHtml(operation.id)}">
             <strong>${done ? "✓ " : ""}${operationTitle(operation)} · ${formatMillimeters(operation.length)}</strong>
             <span>${previewSources(operation)}</span>
+            ${done ? differenceText(operation) : ""}
             <span>${operationOrders(operation)}</span></li>`).join("")}</ol></aside>` : "";
     return `<section class="plan-summary"><h2>Tuotantobatch · ${count} kpl${count > plan.batch.settings.maxBatchPieces ? " · oversized" : ""}</h2>
         <p>Kokonaiset tilaukset; yhtäkään tilausta ei jaeta. Jonoon jää ${orders.length - selected.length} tilausta.</p>
         <ul>${selected.map(o => `<li>${escapeHtml(o.name || o.id)} · ${normalizeOrderCuts([o]).reduce((n, c) => n + c.quantity, 0)} kpl</li>`).join("")}</ul>
         <p>Min / tavoite / max: ${plan.batch.settings.minBatchPieces} / ${plan.batch.settings.targetBatchPieces} / ${plan.batch.settings.maxBatchPieces}.
         Valinta: nykyinen materiaalipiste; tavoitekoon etäisyys vain tasatilanteessa. Materiaaliratkaisu on heuristinen.</p>
-        <p>Materiaalipiste ${score.totalCostEquivalent.toFixed(1)}: lähdearvo ${score.sourceValueEquivalent.toFixed(1)}
+        <p>${physical.hasDeviation ? "Alkuperäisen suunnitelman materiaalipiste" : "Materiaalipiste"} ${score.totalCostEquivalent.toFixed(1)}: lähdearvo ${score.sourceValueEquivalent.toFixed(1)}
         − jäännöskrediitti ${score.recoveredRemnantValueEquivalent.toFixed(1)} − kerf-krediitti ${score.kerfRecoveredValueEquivalent.toFixed(1)}
         + jäännöskäsittely ${score.remnantHandlingPenaltyEquivalent.toFixed(1)} + uuden jäännöksen luonti ${score.newStockRemnantCreationPenaltyEquivalent.toFixed(1)}
         + suuri romu ${score.largeScrapPenaltyEquivalent.toFixed(1)}. Yksikkö: materiaalin ekvivalenttipituus, ei euro.</p></section>
@@ -346,7 +490,7 @@ function renderProductionDetails(plan, productionState) {
             <p class="production-total-progress" aria-live="polite">${activeBlock === null
                 ? `Tehty ${completedCount} / ${execution.operations.length} työvaihetta`
                 : `${blockText[activeBlock.id]?.title ?? escapeHtml(activeBlock.id)} ${activeBlockCompleted} / ${activeBlockOperations.length} · koko batch ${completedCount} / ${execution.operations.length}`}</p>
-            ${preview(view.previous, true)}${currentCard}${preview(view.next, false)}${completedDetails}
+            ${conflictNotice}${preview(view.previous, true)}${currentCard}${preview(view.next, false)}${completedDetails}${actualBalances}
             <button class="operation-undo-button" type="button" onclick="undoLatestProductionOperation()" ${completedCount ? "" : "disabled"}>Peru viimeisin kuittaus</button>
             <p id="operationStatus" class="finalization-status" aria-live="polite"></p>
         </section>

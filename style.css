@@ -665,6 +665,41 @@ input[type="number"]:disabled {
 }
 
 
+.production-source-deviation {
+    margin-top: 1rem;
+    text-align: left;
+}
+
+.production-source-deviation summary {
+    cursor: pointer;
+    padding: 0.75rem 0;
+    font-weight: 700;
+}
+
+.production-source-deviation label {
+    display: block;
+    margin: 0.75rem 0;
+}
+
+.production-source-deviation select {
+    display: block;
+    width: 100%;
+    margin-top: 0.35rem;
+}
+
+.production-current:has(.production-source-deviation[open]) > .operation-completion-button {
+    display: none;
+}
+
+.production-source-difference {
+    display: block;
+}
+
+.operation-completion-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
 .production-current {
     padding: 18px;
     border-radius: 12px;

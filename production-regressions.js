@@ -1,3 +1,151 @@
+// Käsin määritelty materiaalijako: optimizer ei saa peittää väärän salon vaikutusta.
+function createProductionSourceDeviationFixture(blocked = false, kerf = 3, allowances = MATERIAL.MATERIAL_CAPACITY_DEFAULTS) {
+    const lengths = [[1000], [1000], [blocked ? 5000 : 2000], [1000], [800], [700], [1000]];
+    const orders = [createOrderInput("deviation", "Väärä salko", "black", {
+        verticalProfile: lengths.flatMap(items => items.map(length => ({ length: String(length), quantity: "1", openingId: "A" })))
+    })];
+    const plan = { complete: true, remainingItems: [], batch: { version: 1, orderIds: ["deviation"],
+        settings: { minBatchPieces: 1, targetBatchPieces: 7, maxBatchPieces: 10 } },
+        bars: lengths.map((items, index) => {
+            const groupedCuts = items.map(length => ({ length, quantity: 1 }));
+            const capacity = MATERIAL.calculateMaterialBarCapacity(6000, groupedCuts, kerf, allowances);
+            return { id: "bar-" + (index + 1), number: index + 1, profileType: "verticalProfile", color: "black",
+                source: "new", sourceLength: 6000, ...capacity, groupedCuts,
+                remnantStatus: getRemnantStatus(capacity.remaining, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings) };
+        }) };
+    const execution = createProductionExecution(plan, orders, kerf);
+    // Schedulerin nipussa ovat fyysiset salot 1/2/4/7. Slot-järjestystä ei muokata testissä.
+    return { plan, orders, execution, kerf };
+}
+
+// Vain erillisellä testi-alkuperällä käsin kutsuttava loader; tiedostoa ei ladata sovelluksessa.
+function loadProductionSourceDeviationTest(blocked = false) {
+    const fixture = createProductionSourceDeviationFixture(blocked);
+    const state = createStoredPlanSemanticRegressionState();
+    Object.assign(state, { orders: fixture.orders, generatedPlan: fixture.plan,
+        executionState: createInitialProductionExecutionState(fixture.plan, fixture.execution),
+        completedBarIds: [], remnantRows: [],
+        stockProfileRows: Object.keys(PROFILE_TYPES).map(profileType => ({ profileType, color: "black", quantity: "7", unlimited: false, additional: false }))
+    });
+    if (!isValidStoredWorkState(state) || !writeWorkStateSnapshot(state)) throw new Error("Testityötä ei voitu tallentaa.");
+    return restoreSavedWorkState();
+}
+
+function runProductionSourceDeviationRegressionTests() {
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+    const reject = (fn, message) => { let threw = false; try { fn(); } catch { threw = true; } assert(threw, message); };
+    for (const blocked of [false, true]) {
+        const { plan, execution, kerf } = createProductionSourceDeviationFixture(blocked);
+        const initial = createInitialProductionExecutionState(plan, execution);
+        const before = JSON.stringify({ plan, execution, initial });
+        // Siirrytään nipulle ilman sitä ennen mahdollisesti tehtyä bar-3:n leikkausta.
+        const bundleIndex = execution.operations.findIndex(op => op.sources.some(s => s.id === "bar-7"));
+        assert(bundleIndex === 0, "Fixture alkaa neljän salon nipulla");
+        const actual = execution.operations[0].sources.map(s => s.id === "bar-7" ? "bar-3" : s.id);
+        const state = recordProductionSourceDeviation(initial, plan, execution, kerf, actual, "2026-09-10T10:00:00Z");
+        const replay = replayProductionExecution(state, plan, execution, kerf);
+        assert(state.version === 2 && state.planDigest === initial.planDigest, "V2 toteuma säilyttää alkuperäisen digestin");
+        assert(replay.hasDeviation && replay.remainingFeasible === !blocked, "Jäljellä olevan planin fyysinen kelvollisuus");
+        assert(replay.bars.find(b => b.id === "bar-3").remaining === 4976 &&
+            replay.bars.find(b => b.id === "bar-7").nominalRemaining === 6000, "Kulutus kohdistuu fyysiseen salon 3, salon 7 jää koskematta");
+        const restored = JSON.parse(JSON.stringify(state));
+        assert(isValidProductionExecutionState(restored, plan, execution, kerf), "Myös pysähtynyt toteuma kelpaa reloadiin");
+        assert(JSON.stringify(replayProductionExecution(restored, plan, execution, kerf)) === JSON.stringify(replay), "Reload johtaa saman taseen ja eston");
+        const undone = undoLatestProductionOperationState(restored, plan, execution, kerf);
+        assert(!replayProductionExecution(undone, plan, execution, kerf).hasDeviation, "Undo palauttaa alkuperäisen fyysisen taseen");
+        if (blocked) {
+            reject(() => completeNextProductionOperation(state, plan, execution, undefined, kerf), "Estettyä työtä ei jatketa");
+            reject(() => createExecutedMaterialPlan(state, plan, execution, kerf), "Estettyä työtä ei finalisoida");
+            const forged = JSON.parse(JSON.stringify(state));
+            forged.events.push({ type: "operation-completed", operationId: execution.operations[1].id,
+                completedAt: "2026-09-10T10:01:00Z", actualSourceIds: ["bar-7"] });
+            assert(!isValidProductionExecutionState(forged, plan, execution, kerf), "Pysähdystä ei voi kiertää myöhemmällä korjaavalla poikkeamalla tallenteessa");
+        } else {
+            let done = state;
+            while (done.events.length < execution.operations.length) done = completeNextProductionOperation(done, plan, execution, undefined, kerf);
+            const actualPlan = createExecutedMaterialPlan(done, plan, execution, kerf);
+            const laterUndo = undoLatestProductionOperationState(done, plan, execution, kerf);
+            assert(replayProductionExecution(laterUndo, plan, execution, kerf).hasDeviation && laterUndo.events.length === done.events.length - 1,
+                "Myöhemmän normaalikuittauksen undo säilyttää aiemman lähdepoikkeaman");
+            assert(actualPlan.bars.length === 6 && !actualPlan.bars.some(b => b.id === "bar-7"), "Käyttämätöntä salkoa ei kuluteta varastosta");
+            assert(actualPlan.bars.find(b => b.id === "bar-3").remaining === 2972, "Koko toteuman turvallinen loppujäännös");
+        }
+        assert(JSON.stringify({ plan, execution, initial }) === before, "Plan, scheduler ja lähtöloki eivät mutatoidu");
+        reject(() => recordProductionSourceDeviation(initial, plan, execution, kerf, actual.map(() => "bar-3")), "Samaa salkoa ei voi käyttää kahdesti nipussa");
+        reject(() => recordProductionSourceDeviation(initial, plan, execution, kerf, actual.map(() => "unknown")), "Ulkopuolinen lähde hylätään");
+    }
+    for (const blocked of [false, true]) {
+        const { plan, execution, kerf } = createProductionSourceDeviationFixture(blocked);
+        const initial = createInitialProductionExecutionState(plan, execution);
+        const first = completeNextProductionOperation(initial, plan, execution);
+        const options = getProductionSourceAlternatives(first, plan, execution, kerf, 0);
+        assert(options.some(bar => bar.id === "bar-1") === !blocked,
+            "Jo sahatun salon tämänhetkinen pituus määrää valintakelpoisuuden");
+        if (blocked) {
+            reject(() => recordProductionSourceDeviation(first, plan, execution, kerf, ["bar-1"]),
+                "Alkupituudeltaan sopiva mutta jo lyhentynyt salko hylätään");
+        } else {
+            const changed = recordProductionSourceDeviation(first, plan, execution, kerf, ["bar-1"]);
+            const replay = replayProductionExecution(changed, plan, execution, kerf);
+            assert(replay.bars.find(bar => bar.id === "bar-1").remaining === 2972 &&
+                replay.bars.find(bar => bar.id === "bar-3").nominalRemaining === 6000,
+                "Lähdevara vähenee kerran samasta fyysisestä salosta ja aiemman sahauksen kulutus säilyy");
+            const restored = undoLatestProductionOperationState(changed, plan, execution, kerf);
+            assert(restored.events.length === 1 && replayProductionExecution(restored, plan, execution, kerf).bars.find(bar => bar.id === "bar-1").remaining === 4976,
+                "Poikkeaman undo säilyttää sitä edeltäneen tavallisen sahauksen");
+        }
+    }
+    const setup = (sourceLength, lengths, color = "black", profileType = "verticalProfile", kerf = 3, allowances = MATERIAL.MATERIAL_CAPACITY_DEFAULTS) => {
+        const fixture = createProductionSourceDeviationFixture(false, kerf, allowances);
+        const bar = fixture.plan.bars[2];
+        Object.assign(bar, { sourceLength, color, profileType, source: "remnant",
+            groupedCuts: lengths.map(length => ({ length, quantity: 1 })) });
+        Object.assign(bar, MATERIAL.calculateMaterialBarCapacity(sourceLength, bar.groupedCuts, kerf, allowances));
+        bar.remnantStatus = getRemnantStatus(bar.remaining, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings);
+        // Suorat core-kysyntärivit säilyttävät jokaisen kappaleen profiilin/värin.
+        const cuts = fixture.plan.bars.flatMap(b => b.groupedCuts.map(c => ({ ...c, color: b.color, profileType: b.profileType, orderId: "deviation", openingId: "A" })));
+        fixture.execution = PRODUCTION_PLANNING.schedule(PRODUCTION_PLANNING.attachPieces(fixture.plan, cuts), kerf);
+        return fixture;
+    };
+    for (const fixture of [setup(6000, [2000], "gray"), setup(6000, [2000], "black", "horizontalProfile"),
+        setup(1023, [500]), setup(1000, [500], "black", "verticalProfile", 3, { sourceCapacityAllowance: 0, pieceCapacityAllowance: 0 })]) {
+        const { plan, execution, kerf } = fixture;
+        const initial = createInitialProductionExecutionState(plan, execution);
+        const slot = execution.operations[0].sources.findIndex(s => s.id === "bar-7");
+        assert(slot >= 0 && !getProductionSourceAlternatives(initial, plan, execution, kerf, slot).some(b => b.id === "bar-3"),
+            "Väärä väri/profiili, riittämätön turvakapasiteetti ja cut→release eivät näy valintoina");
+        const ids = execution.operations[0].sources.map(s => s.id === "bar-7" ? "bar-3" : s.id);
+        reject(() => recordProductionSourceDeviation(initial, plan, execution, kerf, ids), "Myös suora virheellinen kirjaus hylätään");
+    }
+    for (const kerf of [0, 3.4]) {
+        const { plan, execution } = setup(6000, [2000], "black", "verticalProfile", kerf);
+        const initial = createInitialProductionExecutionState(plan, execution);
+        const ids = execution.operations[0].sources.map(s => s.id === "bar-7" ? "bar-3" : s.id);
+        let done = recordProductionSourceDeviation(initial, plan, execution, kerf, ids);
+        while (done.events.length < execution.operations.length) done = completeNextProductionOperation(done, plan, execution, undefined, kerf);
+        const actual = createExecutedMaterialPlan(done, plan, execution, kerf);
+        const bar = actual.bars.find(b => b.id === "bar-3");
+        assert(Math.abs(bar.nominalRemaining - (3000 - 2 * kerf)) < 1e-9 && Math.abs(bar.remaining - (2978 - 2 * kerf)) < 1e-9,
+            "Nollakerf ja desimaalikerf säilyvät toteumassa");
+        const inventory = createMaterialInventory({ stockLength: 6000,
+            newStock: Object.keys(PROFILE_TYPES).map(profileType => ({ profileType, color: "black", unlimited: false, quantity: 7 })),
+            remnants: [{ profileType: "verticalProfile", color: "black", length: 6000, quantity: 1 }] });
+        const post = calculatePostOrderMaterialInventory(actual, inventory, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings);
+        assert(post.newStock.find(s => s.profileType === "verticalProfile").quantity === 2 && !post.remnants.some(r => r.length === 6000) && post.remnants.some(r => r.length === bar.remaining),
+            "Todella käytetty vanha jäännös kuluu kerran; käyttämätön uusi säilyy; uusi jäännös vastaa toteumaa");
+        const invalid = JSON.parse(JSON.stringify(done));
+        invalid.planDigest += "bad";
+        assert(!isValidProductionExecutionState(invalid, plan, execution, kerf), "V2 hylkää vieraan digestin");
+        invalid.planDigest = done.planDigest;
+        invalid.events[0].completedAt = "invalid";
+        assert(!isValidProductionExecutionState(invalid, plan, execution, kerf), "V2 hylkää virheellisen tapahtuman");
+        invalid.events[0].completedAt = done.events[0].completedAt;
+        invalid.version = 1;
+        assert(!isValidProductionExecutionState(invalid, plan, execution, kerf), "V1:tä ei tulkita jälkikäteen poikkeamaskeemaksi");
+    }
+    return true;
+}
+
 function runProductionRegressionTests() {
     let count = 0;
     const assert = (condition, message) => { if (!condition) throw new Error(message); count++; };

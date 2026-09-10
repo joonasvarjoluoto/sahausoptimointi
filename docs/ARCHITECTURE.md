@@ -55,14 +55,15 @@ Legacy-/vertailupolkuja ovat `optimizeOrderMaterialBeamDP()`, `optimizeOrderBeam
 | Tieto | Auktoritatiivinen lähde ja johdettu käyttö |
 | --- | --- |
 | Muokattava avoin työ | Lomakkeen tilaukset, materiaalirivit, `stockLength`, kerf ja batch-asetukset; tallennukseen snapshot |
-| Laskettu materiaali | Validoitu `currentGeneratedPlan` ja sen `bars`; lähdekulutus ja jälkivarasto johdetaan tästä |
+| Laskettu materiaali | Validoitu alkuperäinen `currentGeneratedPlan` ja sen `bars`; ei kirjoiteta uusiksi toteuman perusteella |
 | Yksilölliset kappaleet ja operaatiot | Johdetaan materiaaliplanista ja valittujen tilausten alkuperäisestä kysynnästä; operaatiolistaa ei tallenneta rinnakkaiseksi totuudeksi |
 | Toteutuneet kuittaukset | `currentProductionExecutionState` / tallennettu `executionState`, sidottuna plan-digestiin |
+| Toteuman fyysinen tase | `src/production-integration.js`: `replayProductionExecution()` johtaa taseen alkuperäisistä lähteistä ja tapahtumista materiaalicoren fysiikalla; `createExecutedMaterialPlan()` muodostaa finalisoinnin syötteen |
 | Salon käsittelyn valmistuminen | Erillinen `completedBarIds`; ei sama kuin operaatiokuittaus |
 | Worker-numerot, toistoryhmät, 3+3-jono, valmisteluyhteenveto | Uudelleen johdettava esitys; eivät pysyviä identiteettejä tai uutta execution-statea |
 | Finalisoitu varasto | `calculatePostOrderMaterialInventory()`; onnistunut lopullinen snapshot ennen live-tilan vaihtamista |
 
-`workInputRevision` auttaa suunnitelman sitomisessa nykyiseen syötteeseen. Tilausten ja laskentaan vaikuttavien syötteiden muokkaus mitätöi suunnitelman, salon valmistumistilat ja toteumalokin. Accordionin avaus/sulkeminen tallentuu muuttamatta laskentaa tai kuittauksia. Tuotannon tarkat kuittaus- ja finalisointiehdot ovat tuotantomallissa.
+`workInputRevision` auttaa suunnitelman sitomisessa nykyiseen syötteeseen. Tilausten ja laskentaan vaikuttavien syötteiden muokkaus mitätöi suunnitelman, salon valmistumistilat ja toteumalokin, ellei toteutunut lähdepoikkeama lukitse muokkausta. Poikkeaman aikana myös uusi laskenta ja uuden työn aloitus estetään. Accordionin avaus/sulkeminen tallentuu muuttamatta laskentaa tai kuittauksia. Tuotannon tarkat kuittaus-, poikkeama- ja finalisointiehdot ovat [tuotantomallissa](domain/PRODUCTION.md).
 
 ## Tallennus, versiot ja palautus
 
@@ -70,6 +71,7 @@ Paikallinen työtila käyttää localStorage-avainta `sahausoptimointi.currentWo
 
 - `WORK_STATE_SCHEMA_VERSION = 6`: tallenteen rakenne, tilaukset, batch-tiedot ja toteumaloki.
 - `WORK_STATE_ENGINE_VERSION = "material-v0.4"`: kapasiteettivaramallin kanssa yhteensopiva laskentatulos.
+- `executionState.version`: 1 hyväksyy vain suunnitellut lähteet, 2 tukee fyysisesti validoitua lähdepoikkeamaa. Ensimmäinen poikkeama siirtää lokin versioon 2 säilyttäen aiemmat tapahtumat ja alkuperäisen digestin. Vanhoja V1-tapahtumia ei tulkita uudella väljemmällä lähdesäännöllä; muu työtilaskeema ja materiaalimoottori eivät muutu.
 
 Skeema ja materiaalimoottori tarkoittavat eri asioita. Arvioi molempien yhteensopivuus niiden merkitystä muuttavassa työssä. Yhteiset kapasiteettivarat eivät ole työkohtaisia lomakesyötteitä. Versiotarkistus koskee **koko työtilaa, myös luonnosta**: `isValidStoredWorkState()` hylkää väärän moottoriversion ennen `generatedPlan === null` -haaraa. Pelkkä skeemamigraatio ei hyväksy vanhaa moottoria.
 

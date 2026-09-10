@@ -11240,7 +11240,7 @@ function isValidStoredWorkState(state) {
             ? null
             : createProductionExecution(state.generatedPlan, state.orders, Number(state.kerf));
         if (execution === null ? state.executionState !== null :
-            !isValidProductionExecutionState(state.executionState, state.generatedPlan, execution)) return false;
+            !isValidProductionExecutionState(state.executionState, state.generatedPlan, execution, Number(state.kerf))) return false;
     } catch {
         return false;
     }
@@ -11798,6 +11798,10 @@ function resetWorkToDefaults() {
 
 
 function startNewWork() {
+    if (hasCurrentProductionDeviation()) {
+        showFinalizationError("Toteutuneen lähdepoikkeaman sisältävää työtä ei voi tyhjentää. Päätä kelvollinen työ tai peru vain virheellinen kirjaus.");
+        return;
+    }
 
     const confirmed = window.confirm(
         "Aloitetaanko uusi työ? Tallennettu sahaussuunnitelma poistetaan."
@@ -12014,6 +12018,10 @@ function runStoredPlanRestoreBoundaryRegressionTest() {
 
 
 function handleOrderInputChange() {
+    if (hasCurrentProductionDeviation()) {
+        showFinalizationError("Syötteet on lukittu toteutuneen lähdepoikkeaman vuoksi. Alkuperäinen suunnitelma ja toteuma säilytetään.");
+        return;
+    }
 
     for (const section of document.querySelectorAll(".order-profile-section")) {
         updateOrderSectionSummary(section);
@@ -12074,7 +12082,12 @@ function canFinalizePlan(
 
 
 function isCurrentPlanReadyForFinalization() {
-
+    if (currentGeneratedPlan?.batch !== undefined) {
+        try {
+            const execution = createProductionExecution(currentGeneratedPlan, getOrdersFromForm(), Number(document.getElementById("kerf").value));
+            createExecutedMaterialPlan(currentProductionExecutionState, currentGeneratedPlan, execution, Number(document.getElementById("kerf").value));
+        } catch { return false; }
+    }
     return canFinalizePlan(
         currentGeneratedPlan,
         completedBarIds
@@ -12200,7 +12213,7 @@ function finalizeCurrentWork() {
 
     if (!isCurrentPlanReadyForFinalization()) {
         showFinalizationError(
-            "Merkitse kaikki salot valmiiksi ennen työn päättämistä."
+            "Kuittaa kaikki työvaiheet ja merkitse salot valmiiksi. Pysäytettyä tai fyysisesti ristiriitaista työtä ei voi päättää."
         );
 
         return;
@@ -12215,9 +12228,14 @@ function finalizeCurrentWork() {
         const materialInventory =
             createMaterialInventory(materialAvailability);
 
+        const inventoryPlan = currentGeneratedPlan.batch === undefined ? currentGeneratedPlan : createExecutedMaterialPlan(
+            currentProductionExecutionState, currentGeneratedPlan,
+            createProductionExecution(currentGeneratedPlan, getOrdersFromForm(), Number(document.getElementById("kerf").value)),
+            Number(document.getElementById("kerf").value)
+        );
         const postOrderInventory =
             calculatePostOrderMaterialInventory(
-                currentGeneratedPlan,
+                inventoryPlan,
                 materialInventory,
                 PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
                     .scoreSettings
@@ -12280,6 +12298,7 @@ function finalizeCurrentWork() {
                     currentProductionExecutionState = null;
                     resetCompletedBarState();
                     workInputRevision++;
+                    updateProductionInputLock();
 
                     const resultElement =
                         document.getElementById("result");
@@ -12368,11 +12387,20 @@ function toggleBarCompletion(button) {
 
 
 function persistProductionExecutionState(nextState) {
+    const nextCompleted = new Set(completedBarIds);
+    if (nextState.version === 2) {
+        const index = Math.min(nextState.events.length, currentProductionExecutionState.events.length);
+        const changedEvent = nextState.events[index] ?? currentProductionExecutionState.events[index];
+        changedEvent?.actualSourceIds.forEach(id => nextCompleted.delete(id));
+    }
     const snapshot = createWorkStateSnapshot({
-        executionStateForStorage: nextState
+        executionStateForStorage: nextState,
+        completedBarIdsForStorage: [...nextCompleted]
     });
     if (!writeWorkStateSnapshot(snapshot)) return false;
     currentProductionExecutionState = nextState;
+    completedBarIds.clear();
+    nextCompleted.forEach(id => completedBarIds.add(id));
     renderCuttingPlan(currentGeneratedPlan);
     return true;
 }
@@ -12389,7 +12417,9 @@ function completeCurrentProductionOperation() {
         const nextState = completeNextProductionOperation(
             currentProductionExecutionState,
             currentGeneratedPlan,
-            execution
+            execution,
+            undefined,
+            Number(document.getElementById("kerf").value)
         );
         if (!persistProductionExecutionState(nextState)) {
             document.getElementById("operationStatus").textContent =
@@ -12413,7 +12443,8 @@ function undoLatestProductionOperation() {
         const nextState = undoLatestProductionOperationState(
             currentProductionExecutionState,
             currentGeneratedPlan,
-            execution
+            execution,
+            Number(document.getElementById("kerf").value)
         );
         if (!persistProductionExecutionState(nextState)) {
             document.getElementById("operationStatus").textContent =
@@ -12425,6 +12456,60 @@ function undoLatestProductionOperation() {
     }
 }
 
+
+function updateProductionSourceChoices() {
+    const kerf = Number(document.getElementById("kerf").value);
+    const execution = createProductionExecution(currentGeneratedPlan, getOrdersFromForm(), kerf);
+    const slot = Number(document.getElementById("deviationPlannedSlot").value);
+    const manifest = createWorkerSourceManifest(currentGeneratedPlan, execution);
+    document.getElementById("deviationActualSource").innerHTML = getProductionSourceAlternatives(
+        currentProductionExecutionState, currentGeneratedPlan, execution, kerf, slot
+    ).map(bar => `<option value="${escapeHtml(bar.id)}">${escapeHtml(PROFILE_TYPES[bar.profileType].label)} ${manifest.find(s => s.sourceId === bar.id).workerNumber} · jäljellä ${formatMillimeters(bar.nominalRemaining)}</option>`).join("");
+}
+
+function completeCurrentProductionDeviation() {
+    try {
+        const kerf = Number(document.getElementById("kerf").value);
+        const execution = createProductionExecution(currentGeneratedPlan, getOrdersFromForm(), kerf);
+        const slot = Number(document.getElementById("deviationPlannedSlot").value);
+        const actualId = document.getElementById("deviationActualSource").value;
+        if (!getProductionSourceAlternatives(currentProductionExecutionState, currentGeneratedPlan, execution, kerf, slot).some(bar => bar.id === actualId)) {
+            throw new Error("Valittu salko ei ole mahdollinen tässä työvaiheessa.");
+        }
+        const ids = execution.operations[currentProductionExecutionState.events.length].sources.map(source => source.id);
+        ids[slot] = actualId;
+        const nextState = recordProductionSourceDeviation(currentProductionExecutionState, currentGeneratedPlan, execution, kerf, ids);
+        if (!persistProductionExecutionState(nextState)) {
+            throw new Error("Poikkeamaa ei voitu tallentaa. Älä jatka sahausta; yritä samaa kirjausta uudelleen.");
+        }
+    } catch (error) {
+        const status = document.getElementById("operationStatus");
+        if (status) status.textContent = error instanceof Error ? error.message : "Poikkeamaa ei voitu kirjata.";
+    }
+}
+
+function hasCurrentProductionDeviation() {
+    if (currentProductionExecutionState?.version !== 2) return false;
+    // V2 voi jäädä tyhjäksi undon jälkeen. Digestin tai fysiikan virhe lukitsee turvallisesti.
+    try {
+        const kerf = Number(document.getElementById("kerf").value);
+        const execution = createProductionExecution(currentGeneratedPlan, getOrdersFromForm(), kerf);
+        return replayProductionExecution(currentProductionExecutionState, currentGeneratedPlan, execution, kerf).hasDeviation;
+    } catch { return true; }
+}
+
+function updateProductionInputLock() {
+    const locked = hasCurrentProductionDeviation();
+    document.querySelectorAll("#cutList input, #cutList select, #cutList button, #stockProfileList input, #stockProfileList select, #stockProfileList button, #remnantList input, #remnantList select, #remnantList button, #stockLength, #kerf, #minBatchPieces, #targetBatchPieces, #maxBatchPieces, #calculateButton, [onclick='startNewWork()'], [onclick='addOrder()'], [onclick='addRemnant()']").forEach(element => {
+        if (locked && !element.disabled) {
+            element.dataset.productionLocked = "true";
+            element.disabled = true;
+        } else if (!locked && element.dataset.productionLocked) {
+            element.disabled = false;
+            delete element.dataset.productionLocked;
+        }
+    });
+}
 
 function escapeHtml(value) {
 
@@ -12583,6 +12668,7 @@ function renderCuttingPlan(plan) {
 
     resultElement.className = "plan-result";
     resultElement.innerHTML = result;
+    updateProductionInputLock();
 }
 
 
@@ -12640,6 +12726,10 @@ function renderOptimizationFailure(
 
 
 async function calculate() {
+    if (hasCurrentProductionDeviation()) {
+        showFinalizationError("Toteutuneen poikkeaman jälkeen alkuperäistä suunnitelmaa ei lasketa uudelleen. Kelvoton jatko vaatii erillisen uudelleenoptimoinnin.");
+        return;
+    }
 
     const stockLength =
         Number(

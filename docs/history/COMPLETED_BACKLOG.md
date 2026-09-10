@@ -2,6 +2,13 @@
 
 > Historiallinen arkisto 10.9.2026. Alkuperäiset havainto- ja testitiedot säilyvät alla; ne eivät määritä nykyistä toimintaa. B-004:n vanha otsikko oli ristiriidassa sen valmistumismerkinnän kanssa: korjaus on valmis. B-007:n jäljellä oleva suorituskykyrajoite jatkuu [avoimen backlogin](../../BACKLOG.md) kohdassa B-011.
 
+### B-009 — Toteutuneen fyysisen salon poikkeama, ensimmäinen turvallinen versio
+
+- **Tila:** valmis 10.9.2026. Lähtöhavainto 9.9.2026: suunnitellun nipun 1/2/7/4 sijasta käytettiin 1/2/3/4.
+- **Toteutus:** yhden salon valinta nykyiselle operaatiolle, V2-toteuma alkuperäisen digestin alla, koko fyysisen taseen replay sekä jäljellä olevan planin simulointi. Kelvoton jatko pysähtyy; finalisointi käyttää vain toteutunutta lähdekulutusta ja todellisia turvallisia jäännöspituuksia. Alkuperäinen plan säilyy avoimessa työssä muuttumattomana.
+- **Näyttö:** 39/39 core-ryhmää, 71 tuotannon ohjaus-/persistenssitarkistusta, neljä täydellistä material-fixturea ja 1 354 patternin sekä 15 kokonaisen suunnitelman muuttumattomat checkpointit. Oikea Chrome 152 -selain, 1280 px vaalea ja 390 px tumma: kirjaus, reload, undo, finalisointi ja jatkoesto. Käyttäjän avointa työtä ei käytetty testidatana.
+- **Jatkoraja:** usean salon UI-korvaus, manifestin ulkopuoliset lähteet ja pysyvä batch-historia eivät sisälly työhön. Mahdottoman jatkon uudelleenoptimointi jatkuu kohdassa [B-013](../../BACKLOG.md).
+
 ### B-001 — Persistoidun stock-ryhmän default/additional-invariantti
 
 - **Tila:** valmis; automaattiset testit ja käyttäjän selaintarkistus läpäisty 2026-09-06
