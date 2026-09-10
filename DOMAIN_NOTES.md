@@ -1,5 +1,11 @@
 # DOMAIN_NOTES.md
 
+## Operaattorin fyysinen toteutustapa (10.9.2026)
+
+- **Lähde ja varmuus:** käyttäjän suora tuotannon suoritusnäkymää koskeva päätös. Ohjelma laskee materiaalitarpeen ja suunnittelee tuotannon; operaattori päättää kantomäärät ja varastoreissut oman hetkellisen tilanteensa perusteella.
+- **Vaikutus käyttöliittymään:** aktiivisen profiiliblokin valmisteluyhteenveto näyttää koko materiaalitarpeen väreittäin ja lähdetyypeittäin, mukaan lukien worker-tunnukset ja jäännösten pituudet. Se ei anna kantomääräsuositusta.
+- **Rajaus:** tästä ei johdeta schedulerin, batch-koon tai materiaalipisteytyksen sääntöä. Kanto- tai varastoreissuoptimointia ei toteuteta tässä checkpointissa.
+
 ## Tarkoitus
 
 Tähän kirjataan tuotannosta ja liiketoiminnasta saadut faktat, karkeat arviot ja avoimet kysymykset. Merkintä auttaa myöhempää suunnittelua, mutta ei yksin oikeuta muuttamaan optimizerin sääntöjä tai parametreja.

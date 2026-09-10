@@ -7,6 +7,7 @@ const vm = require("node:vm");
 const suites = [
     { name: "runCoreProfileTypeValidationRegressionTests", expectedRows: 8 },
     { name: "runProductionRegressionTests" },
+    { name: "runProductionPresentationRegressionTests" },
     { name: "runCoreRegressionTests", expectedRows: 4 },
     { name: "runCutPieceBoundaryTests", expectedRows: 5 },
     { name: "runCuttingPhysicsRegressionTests", expectedRows: 23 },

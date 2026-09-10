@@ -324,3 +324,72 @@ function runProductionRegressionTests() {
     console.log("Tuotantoregressiot: " + count + " tarkistusta läpäisty");
     return true;
 }
+function runProductionPresentationRegressionTests() {
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+    const operation = (number, length = 950, sourceId = "bar-1") => ({
+        id: `operation-${number}`, number, kind: "cut", length, compatibilityGroup: "verticalProfile", maxStackSize: 4,
+        sources: [{ id: sourceId, profileType: "verticalProfile", color: "black",
+            origin: number === 1 ? "new" : "same-run-remnant", before: 6000 - number * 953, after: 5047 - number * 953 }],
+        pieces: [{ pieceId: `piece-${number}`, sourceId, profileType: "verticalProfile", color: "black",
+            orderId: "order-1", openingId: "A", length, quantity: 1 }], dependencyIds: number > 1 ? [`operation-${number - 1}`] : []
+    });
+    const operations = [1, 2, 3, 4].map(number => operation(number));
+    operations.push(operation(5, 1000), operation(6, 1100), operation(7, 1200));
+    const execution = { operations };
+    const original = JSON.stringify(execution);
+    const initial = createProductionOperationView(execution, 0);
+    assert(initial.groups.length === 4 && initial.currentGroup.total === 4 && initial.currentGroup.completed === 0,
+        "Neljä identtistä operaatiota on yksi UI-ryhmä");
+    assert(initial.previous.length === 0 && initial.next.map(o => o.number).join() === "5,6,7", "Esikatselu alkaa nykyisen ryhmän jälkeen");
+    const plan = createStoredPlanSemanticRegressionState().generatedPlan;
+    let state = createInitialProductionExecutionState(plan, execution);
+    state = completeNextProductionOperation(state, plan, execution);
+    assert(state.events.length === 1 && createProductionOperationView(execution, state.events.length).currentGroup.completed === 1,
+        "Yksi painallus kirjaa yhden alkuperäisen operaation");
+    state = JSON.parse(JSON.stringify(state));
+    assert(isValidProductionExecutionState(state, plan, execution) &&
+        createProductionOperationView(execution, state.events.length).currentGroup.completed === 1, "Reload johtaa 1/4 eventistä");
+    state = completeNextProductionOperation(state, plan, execution);
+    assert(createProductionOperationView(execution, state.events.length).currentGroup.completed === 2, "Toinen kuittaus näyttää 2/4");
+    state = undoLatestProductionOperationState(state, plan, execution);
+    assert(createProductionOperationView(execution, state.events.length).currentGroup.completed === 1, "Undo näyttää 1/4");
+    while (state.events.length < 4) state = completeNextProductionOperation(state, plan, execution);
+    assert(createProductionOperationView(execution, state.events.length).current.id === "operation-5", "Neljännen jälkeen seuraava työ");
+    state = undoLatestProductionOperationState(state, plan, execution);
+    assert(createProductionOperationView(execution, state.events.length).currentGroup.completed === 3, "Undo ryhmärajan yli");
+    for (const changed of [operation(2, 950, "bar-2"), operation(2, 951),
+        { ...operation(2), kind: "release" }, { ...operation(2), maxStackSize: 2 },
+        { ...operation(2), pieces: [{ ...operation(2).pieces[0], openingId: "B" }] },
+        { ...operation(2), pieces: [{ ...operation(2).pieces[0], orderId: "other" }] },
+        { ...operation(2), sources: [{ ...operation(2).sources[0], profileType: "horizontalProfile" }] },
+        { ...operation(2), sources: [{ ...operation(2).sources[0], color: "gray" }] }]) {
+        assert(!areProductionOperationsRepeatable(operation(1), changed), "Työn ero katkaisee ryhmän");
+    }
+    const pair = { ...operation(1), sources: [operation(1).sources[0], operation(1, 950, "bar-2").sources[0]] };
+    assert(!areProductionOperationsRepeatable(pair, { ...pair, sources: [...pair.sources].reverse() }), "Lähteiden järjestys säilyy");
+    const distinct = { operations: Array.from({ length: 7 }, (_, i) => operation(i + 1, 950 + i)) };
+    assert(createProductionOperationView({ operations: [operation(1), operation(2, 1000), operation(3)] }, 0).groups.length === 3,
+        "Erillään olevia samanlaisia operaatioita ei yhdistetä");
+    assert(createProductionOperationView({ operations: [] }, 0).groups.length === 0, "Tyhjä jono toimii");
+    const middle = createProductionOperationView(distinct, 3);
+    assert(middle.previous.map(o => o.number).join() === "1,2,3" && middle.current.number === 4 &&
+        middle.next.map(o => o.number).join() === "5,6,7", "Keskellä näkyy 3+1+3");
+    const end = createProductionOperationView(distinct, 7);
+    assert(end.current === null && end.currentGroup === null && end.next.length === 0 &&
+        end.previous.map(o => o.number).join() === "5,6,7", "Lopussa näkyy vain kolme viimeistä");
+    assert(createProductionOperationView(distinct, 6).previous.map(o => o.number).join() === "4,5,6", "Undo lopussa palauttaa indeksit");
+    const manifest = [
+        { sourceId: "v1", profileType: "verticalProfile", color: "gray", origin: "new", workerNumber: 1, sourceLength: 6000 },
+        { sourceId: "v2", profileType: "verticalProfile", color: "gray", origin: "new", workerNumber: 2, sourceLength: 6000 },
+        { sourceId: "v3", profileType: "verticalProfile", color: "gray", origin: "old-remnant", workerNumber: 3, sourceLength: 1740 },
+        { sourceId: "v4", profileType: "verticalProfile", color: "gray", origin: "old-remnant", workerNumber: 4, sourceLength: 1510 },
+        { sourceId: "v5", profileType: "verticalProfile", color: "black", origin: "new", workerNumber: 5, sourceLength: 6000 },
+        { sourceId: "h1", profileType: "horizontalProfile", color: "gray", origin: "new", workerNumber: 1, sourceLength: 6000 }
+    ];
+    const inventoryBefore = JSON.stringify(manifest);
+    const groups = groupWorkerPreparationSources(manifest, ["verticalProfile"]);
+    assert(groups.length === 3 && groups.map(group => group.sources.length).join() === "2,2,1", "Valmistelu erottelee värin ja lähdetyypin");
+    assert(groups[1].sources.map(s => `${s.workerNumber}:${s.sourceLength}`).join() === "3:1740,4:1510", "Jäännösten tunnukset ja pituudet säilyvät");
+    assert(JSON.stringify(manifest) === inventoryBefore && JSON.stringify(execution) === original, "Esitysmalli ei mutatoi authoritative-dataa");
+    return true;
+}

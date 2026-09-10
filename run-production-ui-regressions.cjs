@@ -168,6 +168,69 @@ const test = new vm.Script(`(async () => {
     assert(preparationHtml().includes("Valmistele Vaaka-profiilin salot") &&
         JSON.stringify(currentGeneratedPlan) === profilePlan,
         "Profiilirajan uudelleenkuittaus ei muuta materiaaliplania");
+    liveOrders = [createOrderInput("repeat", "Toistot", "black", {
+        verticalProfile: [{ length: "1300", quantity: "16", openingId: "A" }],
+        horizontalProfile: [{ length: "1000", quantity: "20", openingId: "B" }]
+    })];
+    elements.maxBatchPieces.value = "100";
+    await calculate();
+    const repeatExecution = createProductionExecution(currentGeneratedPlan, liveOrders, 3);
+    const repeatSnapshot = JSON.stringify({ plan: currentGeneratedPlan, execution: repeatExecution });
+    const repeatDigest = currentProductionExecutionState.planDigest;
+    const repeatView = () => createProductionOperationView(repeatExecution, currentProductionExecutionState.events.length);
+    assert(repeatView().currentGroup.total === 4 && repeatExecution.operations.length >= 7 &&
+        elements.result.innerHTML.includes("0 / 4 tehty"), "Neljä oikean schedulerin toistoa yhdellä kortilla");
+    assert(elements.result.innerHTML.includes('aria-label="Seuraavat työvaiheet"') &&
+        repeatView().next.length === 3 && repeatView().previous.length === 0, "Ryhmän alussa 0 edellistä ja 3 seuraavaa");
+    completeCurrentProductionOperation();
+    assert(currentProductionExecutionState.events.length === 1 && JSON.parse(storage).executionState.events.length === 1 &&
+        elements.result.innerHTML.includes("1 / 4 tehty") && repeatView().previous[0].id === repeatExecution.operations[0].id,
+        "Ensimmäinen painallus näyttää laskurin ja juuri tehdyn operaation");
+    currentGeneratedPlan = null;
+    currentProductionExecutionState = null;
+    assert(restoreSavedWorkState() && elements.result.innerHTML.includes("1 / 4 tehty") &&
+        currentProductionExecutionState.planDigest === repeatDigest, "Todellinen reload palauttaa ryhmän 1/4 ilman ryhmästatea");
+    completeCurrentProductionOperation();
+    assert(elements.result.innerHTML.includes("2 / 4 tehty"), "Toinen painallus näyttää 2/4");
+    undoLatestProductionOperation();
+    assert(elements.result.innerHTML.includes("1 / 4 tehty") && repeatView().previous.length === 1,
+        "Undo ryhmän sisällä palauttaa laskurin ja historian");
+    completeCurrentProductionOperation();
+    completeCurrentProductionOperation();
+    assert(elements.result.innerHTML.includes("3 / 4 tehty") && repeatView().previous.length === 3 && repeatView().next.length === 3,
+        "Ryhmän lopulla näkyy kolme tehtyä ja kolme seuraavaa");
+    completeCurrentProductionOperation();
+    assert(repeatView().current.id === repeatExecution.operations[4].id && !elements.result.innerHTML.includes("4 / 4 tehty"),
+        "Neljäs kuittaus avaa seuraavan työvaiheen");
+    undoLatestProductionOperation();
+    assert(elements.result.innerHTML.includes("3 / 4 tehty"), "Undo ryhmärajan yli palauttaa saman ryhmän");
+    assert(JSON.stringify({ plan: currentGeneratedPlan, execution: createProductionExecution(currentGeneratedPlan, liveOrders, 3) }) === repeatSnapshot &&
+        currentProductionExecutionState.planDigest === repeatDigest && isValidStoredWorkState(JSON.parse(storage)),
+        "Ryhmittely ei muuta materiaalia, scheduleria, digestiä tai tallenteen kelvollisuutta");
+    assert(Object.keys(JSON.parse(storage).executionState).sort().join() === "events,planDigest,version",
+        "Persistenssi ei sisällä rinnakkaista ryhmälaskuria");
+    // Renderöi valmisteluryhmät oikean materiaaliplanin mukaan; testissä lisätään
+    // seuraavaksi harmaat jäännökset aidon calculate-polun kautta.
+    stockRows.push(...Object.keys(PROFILE_TYPES).map(profileType => ({
+        profileType, color: "gray", quantity: "1", unlimited: true, additional: true
+    })));
+    remnantRows = [1740, 1510].map(length => ({profileType: "verticalProfile", color: "gray", length: String(length), quantity: "1"}));
+    liveOrders.push(createOrderInput("gray", "Harmaat", "gray", {
+        verticalProfile: [{ length: "1300", quantity: "10", openingId: "C" }]
+    }));
+    elements.minBatchPieces.value = "200";
+    elements.targetBatchPieces.value = "250";
+    elements.maxBatchPieces.value = "300";
+    await calculate();
+    const prepExecution = createProductionExecution(currentGeneratedPlan, liveOrders, 3);
+    const prepGroups = groupWorkerPreparationSources(createWorkerSourceManifest(currentGeneratedPlan, prepExecution), ["verticalProfile"]);
+    assert(prepGroups.some(group => group.color === "gray" && group.origin === "old-remnant" && group.sources.length === 2) &&
+        prepGroups.some(group => group.color === "gray" && group.origin === "new") &&
+        prepGroups.some(group => group.color === "black" && group.origin === "new"), "Aktiivinen blokki sisältää kaksi väriä sekä uudet ja jäännökset");
+    assert(preparationHtml().includes("1740 mm") && preparationHtml().includes("1510 mm") &&
+        preparationHtml().includes("Harmaa") && preparationHtml().includes("Musta") &&
+        !preparationHtml().includes("Vaakaprofiili") && !preparationHtml().includes("HAE NYT"),
+        "Valmistelu näyttää koko blokin materiaalitarpeen tunnisteineen ilman kantomääräohjetta");
     console.log("Tuotannon ohjaus-/persistenssitestit: " + checks + " läpäisty");
 })()`);
 

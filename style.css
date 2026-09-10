@@ -565,10 +565,49 @@ input[type="number"]:disabled {
 
 .worker-source-manifest {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
     gap: 10px;
     margin-top: 14px;
 }
+
+.worker-material-group {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #ccd7e0;
+    border-radius: 9px;
+    background: #f5f8fa;
+    overflow-wrap: anywhere;
+}
+
+.worker-material-group h3 { margin: 0 0 8px; font-size: 1rem; }
+.worker-material-group p { margin: 6px 0; }
+.worker-material-group ul { margin: 8px 0 0; padding-left: 20px; }
+
+.production-action-label { margin: 14px 0 0; font-weight: 850; letter-spacing: 0.08em; }
+.production-repeat-progress {
+    margin: 16px 0 0;
+    padding: 10px;
+    border: 2px solid #247549;
+    border-radius: 9px;
+    font-size: 1.65rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+.production-repeat-remaining { margin: 6px 0 0; }
+.production-nearby {
+    margin: 12px 0;
+    padding: 12px;
+    border: 1px solid #ccd7e0;
+    border-radius: 9px;
+    background: #f5f8fa;
+    overflow-wrap: anywhere;
+    font-size: 0.9rem;
+}
+.production-nearby h3 { margin: 0 0 8px; font-size: 1rem; }
+.production-nearby ol { list-style: none; margin: 0; padding: 0; }
+.production-nearby li + li { border-top: 1px solid #ccd7e0; margin-top: 8px; padding-top: 8px; }
+.production-nearby span { display: block; }
+.production-previous { color: #536572; background: #f0f3f4; }
 
 
 .worker-source-row {
@@ -1190,6 +1229,8 @@ input[type="number"]:disabled {
 
 
     .worker-source-row,
+    .worker-material-group,
+    .production-nearby,
     .production-next,
     .production-completed {
         border-color: #3b4650;
@@ -1216,6 +1257,9 @@ input[type="number"]:disabled {
     .production-operation-secondary {
         color: #a7b9c7;
     }
+
+    .production-previous { color: #a7b9c7; background: #1b242b; }
+    .production-nearby li + li { border-color: #3b4650; }
 
 
     .operation-undo-button {

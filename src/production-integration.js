@@ -167,6 +167,57 @@ function undoLatestProductionOperationState(state, plan, execution) {
     return { ...state, events: state.events.slice(0, -1) };
 }
 
+// Fyysisen työn identiteetti: kappale-ID ja salon lyheneminen vaihtuvat jokaisella
+// toistolla. Tilaus/aukko sen sijaan voi muuttaa nimeämistä, joten se katkaisee ryhmän.
+function areProductionOperationsRepeatable(previous, next) {
+    const identity = operation => JSON.stringify([
+        operation.kind, operation.length, operation.compatibilityGroup, operation.maxStackSize,
+        operation.sources.map(source => [source.id, source.profileType, source.color ?? null]),
+        operation.pieces.map(piece => [piece.sourceId, piece.profileType, piece.color ?? null,
+            piece.length, piece.quantity, piece.orderId, piece.openingId ?? null])
+    ]);
+    return identity(previous) === identity(next);
+}
+
+function createProductionOperationView(execution, completedCount) {
+    const operations = execution.operations;
+    if (!Number.isSafeInteger(completedCount) || completedCount < 0 || completedCount > operations.length) {
+        throw new Error("Virheellinen työvaiheiden etenemiskohta.");
+    }
+    const groups = [];
+    operations.forEach((operation, index) => {
+        const group = groups.at(-1);
+        if (group && areProductionOperationsRepeatable(operations[index - 1], operation)) {
+            group.end = index + 1;
+            group.total++;
+        } else {
+            groups.push({ start: index, end: index + 1, total: 1 });
+        }
+    });
+    const group = groups.find(group => group.start <= completedCount && completedCount < group.end);
+    return {
+        groups,
+        current: operations[completedCount] ?? null,
+        currentGroup: group ? { ...group, completed: completedCount - group.start } : null,
+        previous: operations.slice(Math.max(0, completedCount - 3), completedCount),
+        // Toistot näkyvät pääkortin laskurissa; esikatselu jatkaa koko ryhmän jälkeen.
+        next: group ? operations.slice(group.end, group.end + 3) : []
+    };
+}
+
+function groupWorkerPreparationSources(manifest, profileTypes) {
+    const groups = new Map();
+    for (const source of manifest) {
+        if (!profileTypes.includes(source.profileType)) continue;
+        const key = JSON.stringify([source.profileType, source.color, source.origin]);
+        if (!groups.has(key)) groups.set(key, {
+            profileType: source.profileType, color: source.color, origin: source.origin, sources: []
+        });
+        groups.get(key).sources.push(source);
+    }
+    return [...groups.values()];
+}
+
 function renderProductionDetails(plan, productionState) {
     if (!plan.batch) return "";
     const orders = getOrdersFromForm();
@@ -181,8 +232,8 @@ function renderProductionDetails(plan, productionState) {
     const count = normalizeOrderCuts(selected).reduce((n, cut) => n + cut.quantity, 0);
     const names = new Map(orders.map(o => [o.id, o.name || o.id]));
     const completedCount = productionState.events.length;
-    const current = execution.operations[completedCount] ?? null;
-    const next = execution.operations[completedCount + 1] ?? null;
+    const view = createProductionOperationView(execution, completedCount);
+    const { current, currentGroup } = view;
     const cutOperations = execution.operations.filter(operation => operation.kind === "cut");
     const blockText = {
         verticalProfile: { title: "PYSTY", preparation: "Valmistele Pysty-profiilin salot" },
@@ -223,15 +274,20 @@ function renderProductionDetails(plan, productionState) {
     const preparation = activeBlock === null
         ? `<section class="worker-preparation worker-preparation--complete"><h2>Kaikki profiiliblokit valmisteltu ✓</h2></section>`
         : (() => {
-            const sources = manifest.filter(source => activeBlock.profileTypes.includes(source.profileType));
+            const groups = groupWorkerPreparationSources(manifest, activeBlock.profileTypes);
+            const sourceCount = groups.reduce((count, group) => count + group.sources.length, 0);
             const text = blockText[activeBlock.id] ?? {
                 title: activeBlock.id.toUpperCase(), preparation: "Valmistele profiilin salot"
             };
-            return `<details class="worker-preparation" open><summary>${text.preparation} · ${sources.length} kpl</summary>
-                <p>Hae ja merkitse vain tämän profiiliblokin fyysiset salot.</p>
-                <div class="worker-source-manifest">${sources.map(source => `<div class="worker-source-row">
-                    <strong>${source.workerNumber}</strong><span>${escapeHtml(PROFILE_TYPES[source.profileType].label)} · ${escapeHtml(getMaterialColorLabel(source.color))}<br>${formatMillimeters(source.sourceLength)} · ${source.origin === "new" ? "uusi salko" : "olemassa oleva jäännös"}</span>
-                </div>`).join("")}</div></details>`;
+            return `<details class="worker-preparation" open><summary>${text.preparation} · ${sourceCount} kpl</summary>
+                <p>Koko aktiivisen profiiliblokin materiaalitarve. Merkitse fyysisiin salkoihin alla olevat numerot.</p>
+                <div class="worker-source-manifest">${groups.map(group => `<section class="worker-material-group">
+                    <h3>${escapeHtml(PROFILE_TYPES[group.profileType].label)} · ${escapeHtml(getMaterialColorLabel(group.color))}</h3>
+                    <p><strong>${group.origin === "new" ? "Uudet salot" : "Olemassa olevat jäännökset"} · ${group.sources.length} kpl</strong></p>
+                    ${group.origin === "new"
+                        ? `<p>Salot ${group.sources.map(source => source.workerNumber).join(", ")}</p><p>${[...new Set(group.sources.map(source => formatMillimeters(source.sourceLength)))].join(" / ")}</p>`
+                        : `<ul>${group.sources.map(source => `<li>Salko ${source.workerNumber} · ${formatMillimeters(source.sourceLength)}</li>`).join("")}</ul>`}
+                </section>`).join("")}</div></details>`;
         })();
     const currentCard = current === null
         ? `<section class="production-current production-current--complete"><h2>Kaikki työvaiheet tehty ✓</h2>
@@ -239,11 +295,16 @@ function renderProductionDetails(plan, productionState) {
         : `<section class="production-current" data-operation-id="${escapeHtml(current.id)}">
             <h2 class="production-block-title">${blockText[activeBlock.id]?.title ?? escapeHtml(activeBlock.id)}</h2>
             <p class="production-operation-progress">${operationTitle(current)}</p>
+            <p class="production-action-label">${current.kind === "cut" ? "SAHAA" : "POIMI"}</p>
             <div class="production-cut-length">${formatMillimeters(current.length)}</div>
             <p class="production-source-label">SALOT · ${current.sources.length} kpl</p>
             <div class="worker-source-chips" aria-label="Käytettävät salot">${sourceChips(current)}</div>
             <p class="production-piece-count">Tuota ${current.pieces.length} kappaletta</p>
             <p class="production-operation-secondary">${current.sources.map(source => escapeHtml(PROFILE_TYPES[source.profileType].label)).filter((value, index, values) => values.indexOf(value) === index).join(" / ")} · ${current.sources.map(source => escapeHtml(getMaterialColorLabel(source.color))).filter((value, index, values) => values.indexOf(value) === index).join(" / ")}<br>${operationOrders(current)}</p>
+            ${currentGroup.total > 1 ? `<p class="production-repeat-progress" role="status">${currentGroup.completed} / ${currentGroup.total} tehty</p>
+                <p class="production-repeat-remaining">${currentGroup.total - currentGroup.completed === 1
+                    ? "1 samanlainen työvaihe jäljellä"
+                    : `${currentGroup.total - currentGroup.completed} samanlaista työvaihetta jäljellä`}</p>` : ""}
             <button class="operation-completion-button" type="button" onclick="completeCurrentProductionOperation()">
                 ${current.kind === "cut" ? "SAHAUS TEHTY" : "POIMINTA TEHTY"}
             </button>
@@ -253,7 +314,24 @@ function renderProductionDetails(plan, productionState) {
         ? `<details class="production-completed"><summary>Tehdyt työvaiheet · ${completedOperations.length}</summary><ol>
             ${completedOperations.map(operation => `<li>${operationTitle(operation)} · ${formatMillimeters(operation.length)} · ${operation.sources.map(source => `${escapeHtml(PROFILE_TYPES[source.profileType].label)} ${workerNumber(source.id)}`).join(", ")}</li>`).join("")}
             </ol></details>` : "";
-    const nextPreview = next === null ? "" : `<aside class="production-next"><strong>Seuraavaksi:</strong> ${blockText[operationBlock(next).id]?.title ?? escapeHtml(operationBlock(next).id)} · ${operationTitle(next)} · ${formatMillimeters(next.length)} · ${next.sources.map(source => `${escapeHtml(PROFILE_TYPES[source.profileType].label)} ${workerNumber(source.id)}`).join(", ")}</aside>`;
+    const previewSources = operation => {
+        const rows = [];
+        for (const source of operation.sources) {
+            const last = rows.at(-1);
+            if (last && last.profileType === source.profileType && last.color === source.color) {
+                last.numbers.push(workerNumber(source.id));
+            } else {
+                rows.push({ profileType: source.profileType, color: source.color, numbers: [workerNumber(source.id)] });
+            }
+        }
+        return rows.map(row => `${escapeHtml(PROFILE_TYPES[row.profileType].label)} · ${escapeHtml(getMaterialColorLabel(row.color))} · salot ${row.numbers.join(", ")}`).join("; ");
+    };
+    const preview = (operations, done) => operations.length ? `<aside class="production-nearby ${done ? "production-previous" : "production-next"}" aria-label="${done ? "Viimeksi tehdyt työvaiheet" : "Seuraavat työvaiheet"}">
+        <h3>${done ? "Viimeksi tehty" : currentGroup?.total > 1 ? "Toistoryhmän jälkeen" : "Seuraavaksi"}</h3>
+        <ol>${operations.map(operation => `<li data-preview-operation-id="${escapeHtml(operation.id)}">
+            <strong>${done ? "✓ " : ""}${operationTitle(operation)} · ${formatMillimeters(operation.length)}</strong>
+            <span>${previewSources(operation)}</span>
+            <span>${operationOrders(operation)}</span></li>`).join("")}</ol></aside>` : "";
     return `<section class="plan-summary"><h2>Tuotantobatch · ${count} kpl${count > plan.batch.settings.maxBatchPieces ? " · oversized" : ""}</h2>
         <p>Kokonaiset tilaukset; yhtäkään tilausta ei jaeta. Jonoon jää ${orders.length - selected.length} tilausta.</p>
         <ul>${selected.map(o => `<li>${escapeHtml(o.name || o.id)} · ${normalizeOrderCuts([o]).reduce((n, c) => n + c.quantity, 0)} kpl</li>`).join("")}</ul>
@@ -268,7 +346,7 @@ function renderProductionDetails(plan, productionState) {
             <p class="production-total-progress" aria-live="polite">${activeBlock === null
                 ? `Tehty ${completedCount} / ${execution.operations.length} työvaihetta`
                 : `${blockText[activeBlock.id]?.title ?? escapeHtml(activeBlock.id)} ${activeBlockCompleted} / ${activeBlockOperations.length} · koko batch ${completedCount} / ${execution.operations.length}`}</p>
-            ${currentCard}${nextPreview}${completedDetails}
+            ${preview(view.previous, true)}${currentCard}${preview(view.next, false)}${completedDetails}
             <button class="operation-undo-button" type="button" onclick="undoLatestProductionOperation()" ${completedCount ? "" : "disabled"}>Peru viimeisin kuittaus</button>
             <p id="operationStatus" class="finalization-status" aria-live="polite"></p>
         </section>
