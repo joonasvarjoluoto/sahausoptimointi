@@ -50,7 +50,7 @@ function main() {
 
     // Toimii myös, kun komento käynnistetään muusta työhakemistosta.
     // Sama riippuvuusjärjestys kuin index.html:ssä, ei erillistä Node-toteutusta.
-    const sourceFiles = ["src/cutting-physics.js", "src/production-planning.js", "src/production-integration.js", "app.js", "production-regressions.js"];
+    const sourceFiles = ["src/cutting-physics.js", "src/material.js", "src/production-planning.js", "src/production-integration.js", "app.js", "production-regressions.js"];
     const scripts = [];
 
     for (const filename of sourceFiles) {

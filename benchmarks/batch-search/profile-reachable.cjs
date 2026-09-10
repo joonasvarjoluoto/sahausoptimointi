@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const { performance } = require('node:perf_hooks');
 const root = path.resolve(__dirname, '../..');
 const output = path.join(__dirname, 'reachable-profile');
-const files = ['src/cutting-physics.js', 'src/production-planning.js', 'src/production-integration.js', 'app.js'];
+const files = ['src/cutting-physics.js', 'src/material.js', 'src/production-planning.js', 'src/production-integration.js', 'app.js'];
 const sources = files.map(file => ({ file, code: fs.readFileSync(path.join(root, file), 'utf8') }));
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 const read = name => JSON.parse(fs.readFileSync(path.join(__dirname, name), 'utf8'));

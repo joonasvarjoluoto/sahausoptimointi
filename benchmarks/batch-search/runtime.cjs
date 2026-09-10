@@ -3,7 +3,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '../..');
-const files = ['src/cutting-physics.js', 'src/production-planning.js', 'src/production-integration.js', 'app.js'];
+const files = ['src/cutting-physics.js', 'src/material.js', 'src/production-planning.js', 'src/production-integration.js', 'app.js'];
 const sources = files.map(file => ({ file, code: fs.readFileSync(path.join(root, file), 'utf8') }));
 const sourceHashes = Object.fromEntries(sources.map(s => [s.file, crypto.createHash('sha256').update(s.code).digest('hex')]));
 

@@ -25,7 +25,8 @@ Oppiminen on yhtä tärkeää kuin toimiva tulos. Perustele olennaiset oletukset
 Projekti toimii suoraan selaimessa ilman rakennusvaihetta tai paketinhallintaa:
 
 - `index.html`: mobiiliystävälliset syötteet, työtoiminnot ja tulosalue.
-- `app.js`: käyttöliittymä, materiaalivarasto, optimizerit, pisteytys, renderöinti, dev-testit ja localStorage-työtila.
+- `app.js`: käyttöliittymä, optimizerit, pisteytys ja dispositioniin perustuva jälkivarasto, renderöinti, dev-testit ja localStorage-työtila.
+- `src/material.js`: profiilimäärittely, materiaalivaraston validointi ja muodostus, variantin lähteet, lähteen kulutus sekä materiaalikulutuksen laskenta.
 - `src/cutting-physics.js`: puhdas `cutPiece()`-sahausfysiikka sekä 0,1 mm:n mittamuunnokset ja tarkkuustarkistus.
 - `src/production-planning.js`: puhdas kokonaisia tilauksia valitseva batch-selector, kappalekohdistus ja dependency-aware nippusahausscheduler.
 - `src/production-integration.js`: tuotantokerroksen lomake-, materiaali-, renderöinti- ja persistenssisovittimet.
@@ -34,7 +35,9 @@ Projekti toimii suoraan selaimessa ilman rakennusvaihetta tai paketinhallintaa:
 - `style.css`: mobiili ensin -asettelu ja tuloskorttien tilat.
 - `run-regressions.cjs`: kehityksenaikainen Node-testiajuri; ei ladattaessa selaimessa tarvittava tiedosto.
 
-Selain lataa tavallisina skripteinä `src/cutting-physics.js`, `src/production-planning.js`, `src/production-integration.js` ja `app.js` tässä järjestyksessä. Node-ajuri käyttää samoja lähteitä samassa järjestyksessä. Sahausmoduulin suljettu `CUTTING_PHYSICS`-rajapinta ei riipu sovelluksesta, DOM:sta, tallennuksesta tai testidatasta; se on myös suoraan `require()`-ladattava. `app.js`:n ohuet aliasnimet säilyttävät nykyiset konsoli- ja `window`-funktiot ilman toteutuksen kopiointia. Koko sovellusta ei ole muutettu ES-moduuleiksi.
+Selain lataa tavallisina skripteinä `src/cutting-physics.js`, `src/material.js`, `src/production-planning.js`, `src/production-integration.js` ja `app.js` tässä järjestyksessä. Node-ajuri käyttää samoja lähteitä samassa järjestyksessä. Sahausmoduulin suljettu `CUTTING_PHYSICS`-rajapinta ei riipu sovelluksesta, DOM:sta, tallennuksesta tai testidatasta; se on myös suoraan `require()`-ladattava. Materiaalimoduulin suljettu `MATERIAL`-rajapinta riippuu vain sahausmoduulin mitta-apureista ja tukee myös suoraa `require()`-latausta. `PROFILE_TYPES` määritellään materiaalimoduulissa; `app.js`:n alias viittaa samaan jäädytettyyn olioon. Ohuet `var`-aliasnimet säilyttävät siirrettyjen funktioiden konsoli- ja `window`-kutsut ilman toteutuksen kopiointia. Koko sovellusta ei ole muutettu ES-moduuleiksi.
+
+Ensimmäinen materiaaliraja (10.9.2026): `isSupportedProfileType()`, `validateMaterialAvailability()`, `createMaterialInventory()`, `getMaterialSourcesForProfile()`, `consumeMaterialSource()` ja `calculateMaterialUsage()` ovat materiaalimoduulissa. `findMaterialSourceCandidates()` pysyy optimizerin puolella, koska se kutsuu DP-hakua. `calculatePostOrderMaterialInventory()` pysyy `app.js`:ssä, koska se käyttää `evaluateRemnantDisposition()`-arvotusta; pisteytystä ei siirretty coren riippuvuudeksi.
 
 Tallennetun työtilan nykyinen versiointi:
 
@@ -204,6 +207,8 @@ Skeema 6 tallentaa `orders`-rakenteen, ei rinnakkaista `inputRows`-kopiota. Tall
 U-profiilin uusien mittarivien oletusmäärä on 2 (2026-09-07). Tyhjä U-mitta määrällä 2 ohitetaan adapterissa samoin kuin vanha tyhjä oletusrivi määrällä 1. Täytetyn rivin määrää ei muuteta eikä parittomia määriä estetä tässä UI-muutoksessa. Kiskojen oletus on myös 2 yhteiskappaletta; muiden osioiden oletus on 1.
 
 ## Testaus
+
+`node run-material-regressions.cjs` tarkistaa materiaalimoduulin suoran CommonJS-latauksen, eristetyn tavallisen selainmoduulin ilman `app.js`:ää, globaalialiaset sekä neljän ennen irrotusta tallennetun fixturen täydet tulokset. Vertailu kattaa varaston, optimoinnin, UI-suunnitelman, piste-erittelyn, materiaalikulutuksen, jälkivaraston, operaatiot ja mahdottoman tapauksen virheilmoituksen. Lähtödigest on commitista `54445d7`; odotusta ei saa päivittää pelkän refaktoroinnin vuoksi.
 
 Projektissa ei vielä ole varsinaista testikehystä. Turvallinen perustestiajo on `runCoreRegressionTests()`: se ajaa A:n, A:n jäännöksillä, D1:n ja profiilieristyksen ilman DOM- tai localStorage-käsittelyä. Se tarkistaa checkpoint-odotukset, riippumattoman tulosvalidoinnin, sahausfysiikan, syötteiden mutatoimattomuuden ja deterministisen toiston. `createDevelopmentTestCases()` tuottaa sekä tämän ajon että selainloaderien tuoreet lähtötiedot.
 

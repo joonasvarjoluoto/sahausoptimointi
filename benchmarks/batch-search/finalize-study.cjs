@@ -18,7 +18,7 @@ for(const file of fs.readdirSync(directory)){
         inventorySHA256:hash(JSON.stringify(scenarios.scenarios[match[1]].inventory))});
     fs.writeFileSync(path.join(directory,file),JSON.stringify(report,null,2));
 }
-const syntaxFiles=['app.js','src/cutting-physics.js','src/production-planning.js','src/production-integration.js','production-regressions.js','run-regressions.cjs','run-production-ui-regressions.cjs',
+const syntaxFiles=['app.js','src/cutting-physics.js', 'src/material.js','src/production-planning.js','src/production-integration.js','production-regressions.js','run-regressions.cjs','run-production-ui-regressions.cjs',
     ...fs.readdirSync(__dirname).filter(f=>f.endsWith('.cjs')).map(f=>'benchmarks/batch-search/'+f)];
 for(const file of syntaxFiles){const r=spawnSync(process.execPath,['--check',file],{cwd:root,encoding:'utf8'});assert.equal(r.status,0,file+'\n'+r.stderr);}
 const diff=spawnSync('git',['-c','safe.directory='+root.replaceAll('\\','/'),'diff','--check'],{cwd:root,encoding:'utf8'});

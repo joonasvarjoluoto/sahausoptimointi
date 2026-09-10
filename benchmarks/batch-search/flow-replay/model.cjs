@@ -8,14 +8,14 @@ const { cutPiece, millimetersToDpUnits: units } = require('../../../src/cutting-
 const { createRuntime } = require('../runtime.cjs');
 const { enumerateCandidates, runSearch } = require('../search.cjs');
 const { auditBars, auditAvailability, auditProvenance } = require('../inventory-audit.cjs');
-const sourceFiles = ['app.js','src/cutting-physics.js','src/production-planning.js','src/production-integration.js','index.html','style.css'];
+const sourceFiles = ['app.js','src/cutting-physics.js', 'src/material.js','src/production-planning.js','src/production-integration.js','index.html','style.css'];
 const hashes = () => Object.fromEntries(sourceFiles.map(f => [f, crypto.createHash('sha256').update(fs.readFileSync(path.join(root,f))).digest('hex')]));
 const sourceHashes = hashes();
 const data = JSON.parse(fs.readFileSync(path.join(__dirname, '../orders-23.json'), 'utf8'));
 // Reverse only the order arrival list; preserve all measurement rows inside orders.
 const orders = [...data.orders].sort((a,b) => Number(b.id.slice(6))-Number(a.id.slice(6)));
 const ctx = vm.createContext({ console: {log(){},table(){},warn(){},error(){}} });
-for (const f of ['src/cutting-physics.js','src/production-planning.js','src/production-integration.js','app.js']) {
+for (const f of ['src/cutting-physics.js', 'src/material.js','src/production-planning.js','src/production-integration.js','app.js']) {
     new vm.Script(fs.readFileSync(path.join(root,f),'utf8'),{filename:f}).runInContext(ctx);
 }
 function core(expression, payload) {
