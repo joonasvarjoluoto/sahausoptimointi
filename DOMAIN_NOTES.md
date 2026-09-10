@@ -1,260 +1,97 @@
-# DOMAIN_NOTES.md
+# Tuotantohavainnot ja avoimet kysymykset
 
-## Operaattorin fyysinen toteutustapa (10.9.2026)
+Tämä on todellisesta tuotannosta saatujen tietojen kanoninen muistio. **Vahvistettu fakta** kuvaa käyttäjän kertomaa käytäntöä tai nimenomaista päätöstä; **karkea arvio** vaatii mittausta/kalibrointia; **avoin kysymys** vaatii lisätietoa. Havainto ei yksin anna lupaa muuttaa koodia eikä nykyinen käytäntö ole automaattisesti optimaalinen.
 
-- **Lähde ja varmuus:** käyttäjän suora tuotannon suoritusnäkymää koskeva päätös. Ohjelma laskee materiaalitarpeen ja suunnittelee tuotannon; operaattori päättää kantomäärät ja varastoreissut oman hetkellisen tilanteensa perusteella.
-- **Vaikutus käyttöliittymään:** aktiivisen profiiliblokin valmisteluyhteenveto näyttää koko materiaalitarpeen väreittäin ja lähdetyypeittäin, mukaan lukien worker-tunnukset ja jäännösten pituudet. Se ei anna kantomääräsuositusta.
-- **Rajaus:** tästä ei johdeta schedulerin, batch-koon tai materiaalipisteytyksen sääntöä. Kanto- tai varastoreissuoptimointia ei toteuteta tässä checkpointissa.
+Aktiivisen koodin säännöt ovat [materiaalimallissa](docs/domain/MATERIAL.md) ja [tuotantomallissa](docs/domain/PRODUCTION.md). Ohjelman sisäiset rakenteet ja versiot ovat [arkkitehtuurissa](docs/ARCHITECTURE.md). Alla kuvataan perusteet ja epävarmuudet, ei rinnakkaista toteutusspesifikaatiota.
 
-## Tarkoitus
+## Työkalun rooli ja fyysinen työprosessi
 
-Tähän kirjataan tuotannosta ja liiketoiminnasta saadut faktat, karkeat arviot ja avoimet kysymykset. Merkintä auttaa myöhempää suunnittelua, mutta ei yksin oikeuta muuttamaan optimizerin sääntöjä tai parametreja.
+- **Vahvistettu projektirajaus, käyttäjä 9.9.2026:** profiilituotanto on nuorta. Muun tuotannon tarpeet, koneviat, materiaalisaatavuus ja vaihteleva tilaustilanne muuttavat rytmiä. Sovellus on joustava sahaus- ja päätöksentekotyökalu kokeneelle työnjohtajalle/työntekijälle, ei koko tehtaan pitkän aikavälin automaattinen tuotannonohjaus.
+- **Tuotantohavainto, kirjattu viimeistään 7.9.2026:** Pysty ja Vaaka kannattaa sahata aikaisin ja lähekkäin kokoonpanon aloittamiseksi. U-listoja tarvitaan vasta asennuksessa ja ne voidaan tehdä myöhemmin. Ala- ja yläkisko pakataan saman aukon mukaan. Tilauksessa voi olla useita aukkoja; neljää ovea per aukko ei saa olettaa.
+- **Prioriteettipäätös, käyttäjä 7.9.2026:** nippusahaus ja tilausten yhteinen käsittely nostettiin kehitysjärjestyksessä ylemmäs, materiaali edellä. Putkitus ei tarkoita automaattisesti rolling-horizon-yhteisoptimointia.
+- **Työprosessi, käyttäjän oikea sahaustyö 9.9.2026:** koko noin 250 kappaleen batchin materiaalit eivät välttämättä mahdu sahan ympärille. Yhden profiiliblokin salot tuodaan, numeroidaan, sahataan ja kappaleet kelmutetaan/käsitellään aukoittain ja siirretään pois ennen seuraavaa profiilia. Päätetty järjestys on Pysty, Vaste, Vaaka, U ja yhteinen kiskoblokki; aktiivinen sääntö on tuotantomallissa.
+- **Nimenomainen päätös, käyttäjä 10.9.2026:** ohjelma näyttää koko aktiivisen profiiliblokin materiaalitarpeen; operaattori päättää itse kantomäärät ja varastoreissut. Tästä ei johdeta kanto-, scheduler- tai score-optimointia.
+- **Avoin arviointitarve, 9.9.2026:** 250 pitkää Pystyä ja 250 lyhyttä Vaakaa kuormittavat tilaa ja käsittelyä eri tavalla. Mahdollinen workload-aware batch sizing voisi huomioida metrit, profiilin, tilantarpeen ja jälkikäsittelyn. Kaavaa tai uusia rajoja ei ole päätetty; [B-010](BACKLOG.md).
 
-Luokittele tieto:
+## Sahausliike, mittavaste ja niput
 
-- **vahvistettu fakta:** käytännössä varmistettu toimintatapa tai ominaisuus;
-- **karkea arvio:** suuntaa antava luku, joka pitää kalibroida ennen talousmalliin lukitsemista;
-- **avoin kysymys:** asia, josta tarvitaan lisätietoa tai päätös.
+**Käyttäjän tarkennus selaintestipalautteessa 8.9.2026:** sahausliikkeessä saha käynnistetään ja terä lasketaan käsin leikkuuseen. Mittavaste siirretään ensin ensimmäisen kappaleen mittaan ja uudelleen mitan vaihtuessa. Nippu tuottaa yhdellä liikkeellä monta kappaletta. Käytä termiä **mittavaste** aiemman stopparin/stopperin sijaan.
 
-Kun arviota käytetään koodissa, dokumentoi samalla yksikkö, lähde, päivämäärä, soveltamisala ja regressiot.
+**Tuotantohavainto:** nippu voi muuttua leikkausten välillä; uudet salot, jäännökset ja värit voivat sekoittua vain turvallisesti yhteensopivina. Vanha yleinen ”4 tai 6” oli karkea havainto, ei kaikkien profiilien yhteinen kapasiteetti. Käyttäjän 8.9.2026 profiilikohtaiset alustavat nippupäätökset on kirjattu aktiiviseen tuotantomalliin. **Avoin tieto:** Vasteprofiilin todellista nippukapasiteettia ei ole vahvistettu; toteutuksen varovainen oletus ei ole konekapasiteetin mittaus.
 
-## Materiaalin arvo ja romualumiini
+**Käyttäjän aukkoparisääntö 8.9.2026:** kun aukossa on yksi ala- ja yksi yläkisko, ne kelmutetaan ja nimetään heti pariksi ja kannattaa sahata yhdessä. Neljästä yhteiskappaleesta alkaen profiilit niputetaan erikseen; saman aukon samaa mittaa kannattaa tehdä peräkkäin. Tarkat valmius- ja yhteensopivuusehdot ovat tuotantomallissa.
 
-### Hukkapalojen jälleenmyyntiarvo
+## Tilauksen ja fyysisen salon jäljitettävyys
 
-- **Luokitus:** karkea arvio
-- **Lähde ja kirjauspäivä:** käyttäjän tuotantotieto, 2026-09-03
-- Käyttökelvottomat alumiiniset hukkapalat myydään romualumiinina eteenpäin.
-- Niistä saatava arvo on karkeasti noin 10 % vastaavan uuden materiaalin arvosta.
-- Nykyisessä score-checkpointissa `scrapValueFactor: 0.1` antaa romulle samansuuntaisen materiaalikrediitin.
-- Nykyistä arvoa ei ole vielä sidottu toteutuneisiin euroihin, kilogrammoihin, profiilityyppien massaan tai ajantasaiseen romualumiinin hintaan. Siksi 0,1 on edelleen kalibroitava oletus, ei todistettu talouskerroin.
-- `kerfRecoveryFactor: 0` käsittelee sahausvaran tällä hetkellä kokonaan menetettynä. Älä muuta sitä vain hukkapalojen 10 % arvion perusteella.
+**Vahvistettu tuotantokuvaus, käyttäjän muistio 6.9.2026:** tilaus on käytännössä yhtä väriä ja tavallisesti tarvitsee kaikkia profiileja. Tämä ei tarkoita, että vain joitakin profiileja sisältävä tilaus pitäisi hylätä. Ylä- ja alakiskoilla on samat mitat ja määrät.
 
-Ennen mahdollista muutosta selvitä:
+**Käyttäjän tarkennus 7.9.2026:** yhteisen kiskorivin kappalemäärä tarkoittaa fyysistä yhteismäärää, esimerkiksi 2 = yksi ala + yksi ylä. Tämä korjaa vanhan kaksinkertaisen tulkinnan. U-profiili tulee aukon molemmille pystysivuille ja sitä tehdään käytännössä parillisina määrinä. U:n oletusmäärä 2 on päätetty, mutta **parittomien U-määrien estämisestä ei ole päätöstä**. Nykyisen syötteen ja migraation toteutus kuvataan aktiivisissa dokumenteissa.
 
-1. koskeeko noin 10 % kaikkia profiilityyppejä vai vaihteleeko suhde hankintahinnan, seoksen tai massan mukaan;
-2. lasketaanko romuhyvitys käytännössä kilogrammoina, pituutena vai profiilikohtaisena euromääränä;
-3. saadaanko myös sahauslastuista tai terän viemästä materiaalista hyvitystä;
-4. aiheutuuko romun lajittelusta, säilytyksestä tai kuljetuksesta kustannuksia;
-5. mikä on toteutuneiden osto- ja romumyyntihintojen vaihteluväli.
+**Fyysisen salon poikkeama, käyttäjä 9.9.2026:** työssä oli 25 sahausliikettä ja 64 kappaletta. Kolmanteen liikkeeseen suunniteltiin salot 1, 2, 7 ja 4, mutta sahalle otettiin 1, 2, 3 ja 4. Tarvitaan helposti merkittävät, yksiselitteiset numerot; saman salon jatkoleikkauksen on säilytettävä numero. Worker-numerointi on toteutettu, mutta toteutuneen väärän lähteen käsittely on [B-009](BACKLOG.md). Alkuperäinen suunnitelma tulee säilyttää vertailtavana; pelkkä ID:n vaihto ei selvitä fyysisiä seurauksia.
 
-### Materiaalin ja työajan karkea vertailu
+**Sanasto, käyttäjän demopäätös:** fyysisestä alumiiniprofiilin materiaalilähteestä käytetään käyttäjän näkyvässä tekstissä sanaa salko. Tekniset bar/source-nimet eivät vaadi uudelleennimeämistä. Aktiivinen sanastosopimus on materiaalimallissa.
 
-- **Luokitus:** karkea arvio
-- Noin yksi metri hukkaprofiilia vastaa suuruusluokaltaan noin puolen tunnin palkkaa.
-- Käytä tätä vain materiaalin ja työajan painotusten suuntaa antavana kalibrointina. Älä kovakoodaa suhdetta ennen euro- ja profiilityyppikohtaista tarkennusta.
+## Raakasalon ominaisuudet ja mittatoleranssi
 
-### Mittavasteen siirto ja kustannusten tarkennus (2026-09-07)
+**Vahvistettu tuotantohavainto, aiemmat käyttäjän muistiinpanot:** uuden salon tavallinen pituus on 6000 mm. Toisessa päässä on noin 8 mm ripustusreikä. Ehjä pää asetetaan vasemmalle mittavastetta vasten, reiällinen/huonompi pää oikealle. Avatut salot halutaan käyttää tehokkaasti ilman tarpeetonta jäännösvaraston kasvua.
 
-- **Lähde:** käyttäjän projektimuistiinpanot, 2026-09-07.
-- **Terminologia:** käytetään sanaa mittavaste; aiempi ”stopperi/stoppari” tarkoitti samaa laitteen osaa.
-- **Karkea arvio:** mittavasteen siirto kestää ehkä 10 sekuntia.
-- **Käyttäjän ilmoittama palkka:** 12 €/h. Tämä ei vielä määritä työnantajan kokonaiskustannusta.
-- **Keskimääräinen materiaalihinta:** 7 €/m; profiili- ja värikohtaisia hintoja ei ole määritelty.
-- **Johdettu vertailu:** 10 s × 12 €/h / 3600 s/h ≈ 0,0333 € per siirto. Hinnalla 7 €/m tämä vastaa noin 4,8 mm uutta profiilia. Yksi metri vastaa noin 35 minuutin palkkaa ja tarkentaa aiempaa puolen tunnin suuruusluokka-arviota.
-- **Päätetty suunta:** optimointia jatketaan materiaali edellä. Mittavasteen siirtoaika voidaan myöhemmin huomioida eriteltynä työaikakustannuksena pisteytyksessä.
-- **Nykyinen vaikutus koodiin:** ei muutosta. Nykyiseen materiaalipisteytykseen ei lisätä euroja sellaisenaan eikä arvioita muuteta automaattisesti score-parametreiksi.
-- **Ennen toteutusta selvitettävä:** ajan vaihtelu ja palkkakustannuksen soveltamisala. Materiaalikustannus ja työaika muunnetaan vertailukelpoisiin yksiköihin ja raportoidaan erikseen; regressioilla varmistetaan materiaalin ensisijaisuus.
+**Käyttäjän muistio 6.9.2026:** positiiviset mittavirheet voivat kasautua: viiden kappaleen +0,5 mm tekee yhteensä +2,5 mm. Nimellinen nolla- tai lähes nollajäännös voi jättää viimeisen kappaleen vajaaksi. Muutama millimetri lisähukkaa on parempi kuin liian lyhyt kappale.
 
-## Raakatangon fyysiset ominaisuudet
+**Likimääräinen havainto:** hyväksyttävä toleranssi on noin ±1 mm, vaikka pyritään tarkempaan; todellinen terä noin 3,4 mm. Soveltamisala ja mitattu vaihtelu ovat avoimia. Tämä ei ole uusi aktiivinen kerf-oletus. 0,1 mm:n laskentaresoluutio ei takaa fyysistä mittatarkkuutta.
 
-- **Luokitus:** vahvistettu tuotantohavainto
-- Uuden tangon tavallinen pituus on 6000 mm.
-- Tangon toisessa päässä on noin 8 mm ripustusreikä.
-- Tangot asetetaan sahalle ehjä pää vasemmalla mittavastetta vasten ja reiällinen, huonompi pää oikealle.
-- Laskenta säilyttää yleisen `stockLength`-syötteen nimellispituutena. Aktiivinen `sourceCapacityAllowance` vähentää siitä turvallisen optimointikapasiteetin; varaus ei muuta tallennettua nimellispituutta.
+**Päätös 10.9.2026:** yhteiset lähde- ja kappalevarat otettiin käyttöön alustavina konservatiivisina oletuksina. Aktiiviset luvut, soveltuminen uusiin/jäännöslähteisiin ja nimellisen/turvallisen pituuden ero ovat vain [MATERIAL.md](docs/domain/MATERIAL.md):ssä.
 
-## Mittatoleranssi ja kapasiteetin turvallisuusvarat
+**Avoin kalibrointi:** vertaa varoja mitattuihin uusiin salkoihin, vanhoihin jäännöksiin, ripustusreikiin, huonoihin päihin ja kappalekohtaisiin poikkeamiin. Laaja tuotantodata puuttuu. Kerf, lähdevara ja kappalevara pidetään erillisinä; fyysistä turvallisuutta ei todisteta vain testien läpäisyllä.
 
-- **Lähde ja päivämäärä:** käyttäjän muistio ”Tuleva tilaus-UI, varastonhallinta ja sahaustoleranssit”, 2026-09-06.
-- **Vahvistettu tuotantohavainto:** positiiviset mittavirheet voivat kasautua. Viisi kappaletta, joista kukin on 0,5 mm nimellismittaa pidempi, kuluttavat yhteensä 2,5 mm lisäpituutta. Laskennallinen nolla- tai lähes nollajäännös voi silloin jättää viimeisen kappaleen vajaaksi.
-- **Käyttäjän ilmoittamat likimääräiset mitat:** hyväksyttävä mittatoleranssi on noin ±1 mm, vaikka tavallisesti pyritään tarkempaan tulokseen. Todellinen terän leveys on noin 3,4 mm. Soveltamisala ja mitatut arvot tarkennetaan ennen mallin lukitsemista.
-- **Tuotantopreferenssi:** muutaman millimetrin ylimääräinen hukka per tanko on hyväksyttävämpi kuin viimeisen kappaleen jääminen liian lyhyeksi.
-- **Käyttäjän päätös 10.9.2026:** aktiivinen yhteinen oletus on `sourceCapacityAllowance = 20 mm` jokaiselle uudelle ja vanhalle jäännöslähteelle sekä `pieceCapacityAllowance = 1 mm` jokaiselle kappaleelle. Arvot ovat alustavia konservatiivisia oletuksia, eikä niitä ole kalibroitu laajalla tuotantodatalla.
-- **Nykyinen vaikutus koodiin:** kerfin oletus on edelleen 3 mm ja laskenta käyttää lomakkeen kerf-arvoa. Lähteen nimellispituus ei muutu: 6000 mm lähteen turvallinen alkukapasiteetti on 5980 mm ja 1500 mm jäännöksen 1480 mm. Kappaleen nimellismitta ei muutu; 950 mm kappale käyttää ennen kerfiä 951 mm kapasiteettia.
-- **Materiaalitase:** `nominalRemaining` on nimellisestä lähteestä nimellisten kappaleiden ja todellisen kerfin jälkeen laskettu loppupituus. `remaining` on turvallisesti uudelleenkäytettävä kapasiteettijäännös. Niiden erotus on `sourceCapacityAllowance + kappalemäärä × pieceCapacityAllowance`. Varausta ei raportoida kerf-hukkana eikä kirjata finalisoinnissa automaattisesti romuksi tai fyysiseksi jäännösriviksi.
-- **Nollajäännös ja viimeinen kappale:** turvallinen `remaining` saa olla täsmälleen 0. Oletusvarojen vuoksi salossa on silloin silti nimellistä varattua päätä, joten scheduler tekee viimeisestä kappaleesta `cut`-operaation. `release` säilyy vain aidolle nimelliselle täsmäsovitukselle ilman kapasiteettivaroja.
-- **Avoin kalibrointi:** 20 mm:n lähdevaraa ja 1 mm:n kappalevaraa pitää myöhemmin verrata mitattuihin uusiin tankoihin, jäännöksiin, ripustusreikiin, huonoihin päihin ja kappalekohtaisiin mittapoikkeamiin. Laskennan 0,1 mm:n resoluutio ei takaa tuotannon mittatarkkuutta.
+## Uuden materiaalin saldot, hälytykset ja vastaanotto
 
-## Uuden materiaalin saldot ja täydennys
+**Käyttäjän käyttötarve 6.9.2026:** runsaan varaston tarkkaa määrää ei tarvitse näyttää jatkuvasti. Vähäinen saldo on tärkeä täydennykselle. Todelliset saldot halutaan profiilin ja värin mukaan; rajaton saatavuus ei ole tunnettu saldo.
 
-### Raakalistan uuden työn oletukset (8.9.2026)
+**Käyttöliittymäpäätös 8.9.2026:** uuden työn jokaiselle profiilille valmiiksi rajaton harmaa ja musta, jotta käyttämätön profiili ei vaadi värin valintaa ennen laskentaa. Tämä on prototyypin lähtöoletus, ei inventaario. Aktiivinen oletus-/lisärivisopimus on materiaalimallissa.
 
-- **Luokitus:** käyttäjän vahvistama käyttöliittymäpäätös, tämän keskustelun selaintestipalautteen perusteella.
-- **Päätös:** jokaiselle profiilille luodaan valmiiksi kaksi rajatonta materiaaliriviä: harmaa ja musta. Näin uuden työn käyttämättömät profiilit eivät jää ilman materiaaliväriä.
-- **Vaikutus:** `createDefaultStockProfileRows()` käyttää harmaata oletusriviä ja mustaa tavallista lisäriviä. Tallennetut saatavuudet säilyvät ennallaan; rajattomuus on laskentaoletus, ei fyysisen saldon vahvistus.
+**Alustava, toteuttamaton hälytysmalli:** tilausraja 50 ja kriittinen raja 10 uutta salkoa per variantti. Nämä ovat logistisia kokeilurajoja, eivät optimeja tai score-asetuksia.
 
-- **Lähde ja päivämäärä:** käyttäjän muistio ”Tuleva tilaus-UI, varastonhallinta ja sahaustoleranssit”, 2026-09-06.
-- **Vahvistettu käyttötarve:** runsaan varaston tarkkaa määrää ei tarvitse pitää jatkuvasti näkyvissä. Vähäinen saldo on tärkeä sekä optimoinnille että täydennystilauksille.
-- **Tavoite:** tuotannossa seurataan todellisia uuden materiaalin kappalesaldoja variantilla `profileType + color`. Prototyypin `unlimited` on hyödyllinen laskentaoletus, mutta ei tunnettu fyysinen saldo eikä riittävä lähtötieto automaattisille hälytyksille.
-- **Nykyinen vaikutus koodiin:** rajalliset `quantity`-saldot ja rajaton materiaali ovat jo tuettuja. Finalisointi vähentää käytetyn uuden materiaalin authoritative post-order-varaston kautta. Erillisiä varastohälytyksiä tai vastaanottotoimintoa ei vielä ole.
-
-### Kaksi alustavaa hälytysrajaa
-
-**Luokitus:** alustava, myöhemmin kalibroitava tuotantosääntö. Yhteiset kokeilurajat ovat `reorderThreshold = 50` ja `criticalStockThreshold = 10`, yksikkönä uuden materiaalin tankojen kappalemäärä per materiaalivariantti.
-
-| Todellinen saldo | Suunniteltu tila |
+| Todellinen saldo | Ehdotettu tila |
 | --- | --- |
-| Yli 50 kpl | Normaali |
-| 11–50 kpl | Tilaa lisää |
-| 1–10 kpl | Kriittisen vähän |
-| 0 kpl | Loppu |
+| Yli 50 | Normaali |
+| 11–50 | Tilaa lisää |
+| 1–10 | Kriittisen vähän |
+| 0 | Loppu |
 
-50 tangon raja on logistinen ennakkovaroitus, ei optimoinnin käyttöraja. Esimerkiksi 34 tangon saldo antaa optimizerille edelleen 34 tankoa, vaikka käyttöliittymä kehottaa tilaamaan lisää. Hälytys ei muuta saldoa tai pisteytystä.
+34 salon hälytys ei vähennä optimizerin saatavuutta: käytettävissä on edelleen 34. Ennen toteutusta päätetään oikeiden alkusaldojen kirjaaminen ja tuntemattoman/rajattoman saldon näyttäminen. Raja voi myöhemmin olla profiili-/värikohtainen ja riippua kulutuksesta, toimitusajasta ja turvavarastosta.
 
-**Ennen toteutusta selvitettävä:** tuntemattoman/rajattoman saldon esitystapa ja todellisten alkusaldojen kirjaaminen. Rajat eivät ole todistettuja optimeja; myöhemmin ne voivat olla profiili- ja värikohtaisia sekä perustua kulutukseen, toimitusaikaan ja turvavarastoon.
+**Tuleva vastaanottotarve:** lisätään saapunut määrä oikean variantin saldoon, esimerkiksi 7 + 100 = 107. Virheellinen syöte tai tallennusvirhe ei saa jättää osittaista muutosta. Avoimen suunnitelman käsittely on rajattava toteutuksessa. Ensimmäinen vastaanotto ei tarvitse varastotapahtumahistoriaa. Hälytyksiä ja vastaanottoa ei ole vielä toteutettu.
 
-### Saapuvan materiaalin vastaanotto
+## Jäännökset ja niiden kierto
 
-- **Luokitus:** tuleva käyttötarve, ei vielä toteutettu.
-- Saapunut määrä kirjataan lisäyksenä oikean materiaalivariantin saldoon, ei uuden kokonaissaldon käsin korvaamisena: 7 varastossa + 100 vastaanotettua = 107 tankoa.
-- Vastaanoton on säilyttävä onnistuneesti tallennuksessa; virheellinen syöte tai tallennusvirhe ei saa jättää osittain muuttunutta saldoa.
-- Varastotapahtumien historia voidaan lisätä myöhemmin. Ensimmäinen vastaanottotoiminto ei edellytä tapahtumakirjanpitoa.
+**Vahvistettu fakta, käyttäjä 6.9.2026:** esimerkiksi viisi harmaata 1600 mm Pysty-jäännöstä ovat keskenään samanarvoisia. Fyysisen varaston pysyvä yksilö-ID ei tuo tähän tarpeellista eroa. Kesken työn eri pituisiksi sahatut tai eri jatkoleikkauksia odottavat lähteet täytyy silti erottaa. Tulevien attribuuttien vaikutus vaihtokelpoisuuteen on avoin.
 
-## Tuotannon järjestys ja pakkaaminen
+**Havainto 7.9.2026:** vanha fyysinen jäännösvarasto voi olla epätarkka; saman ajon välijäännökset tunnetaan laskennallisesti paremmin. Tämä ei anna lupaa keksiä saldoa tai ohittaa syötettyä varastoa.
 
-- **Prioriteettipäätös 2026-09-07:** käyttäjä nosti nippusahauksen ja tilausten putkituksen kehitysjärjestyksessä ylemmäs. Materiaali säilyy ensisijaisena. Putkituksen tarkka työnkulku ja tavoitemittari rajataan ennen toteutusta; sitä ei oleteta automaattisesti rolling-horizon-yhteisoptimoinniksi.
+**Karkea kokoluokka, käyttäjä 8.9.2026:** yhteensä noin 100 käyttökelpoista jäännöstä, epätasainen profiilijakauma. **Tarkennus 9.9.2026:** suurin osa noin 1300–1800 mm, enintään noin kolme yli 2000 mm. Pitkät palat käytetään melko nopeasti, jos kysyntää löytyy. Täydellisiä profiili-/väri-/pituussaldoja ei ole mitattu.
 
-- **Luokitus:** vahvistettu tuotantohavainto, ei vielä aktiivinen score-sääntö
-- Pysty- ja Vaakaprofiilit kannattaa sahata peräkkäin ja mieluiten aikaisin, jotta kokoonpano voi alkaa.
-- U-listoja tarvitaan vasta asennuksessa, joten ne voidaan sahata myöhemmin ja varastoida erikseen.
-- Ala- ja Yläkisko ovat saman aukon mittaisia ja pakataan yhteen aukon mukaan.
-- Yksi tilaus voi sisältää useita aukkoja; neljää ovea per aukko ei saa kovakoodata.
-- Materiaalikustannus on yleensä työajan säästöä tärkeämpi.
-- Avatut 6000 mm tangot halutaan käyttää tehokkaasti ilman tarpeetonta jäännösvaraston kasvua.
+**Nykyinen fyysinen säilytyskäytäntö, käyttäjä 9.9.2026:** U/Pysty/Vaste vähintään 1000 mm, Vaaka 500 mm, ylä-/alakisko 800 mm. Rajojen optimaalisuutta ei ole vahvistettu. Ne eivät ole productionin disposition-algoritmi.
 
-## Samanlaisten jäännösten vaihtokelpoisuus
+**Tutkimukseen rajattu päätös:** replay säästi rajan mittaisen tai pidemmän palan myös scoren luokitellessa sen romuksi. Suunnitelma pisteytettiin ensin muuttamattomasti ja fyysinen varastopolitiikka sovellettiin erikseen. Aineiston 24 tilausta vaikutti käyttäjästä normaalilta tuotannolta: 24 vanhin (27.7.2026), 1 uusin (7.9.2026). Benchmarkin 23 tilauksesta puuttuu käyttäjän pyynnöstä kokonaan 16/RR32. Raportti: [historiallinen replay](benchmarks/batch-search/flow-replay/RESULTS.md).
 
-- **Luokitus:** vahvistettu tuotantofakta
-- **Lähde ja päivämäärä:** käyttäjän tarkennus, 2026-09-06
-- **Havainto:** esimerkiksi viisi harmaata 1600 mm Pystyprofiilin jäännöstä ovat keskenään samanarvoisia ja vaihtokelpoisia. Tuotannolle ei ole merkitystä, mikä näistä fyysisistä kappaleista valitaan.
-- **Nykyinen vaikutus koodiin:** nykyinen `profileType + color + length` -ryhmittely ja `quantity` vastaavat tätä tarvetta. Pysyviä yksilöllisiä varastotunnuksia ei tarvita; tarkennus ei muuta laskentaa.
-- **Vaikutus myöhempään suunnitteluun:** identtisten lähteiden pelkkä keskinäinen vaihto ei saa muodostaa erillisiä optimointivaihtoehtoja. Työkohtaisia lähdeviitteitä voidaan käyttää sahausoperaatioiden ja valmistumisen seurantaan. Tällainen viite saa säilyä työn tallennuksessa, mutta se ei tarkoita pysyvää fyysisen varastokappaleen tunnusta.
-- **Ennen toteutusta selvitettävä:** tuotanto-operaatioiden malli voi erottaa kesken työn lähteet, joiden jäljellä oleva pituus, sijoitus tai jatkoleikkaukset eroavat. Samanlaisessa tilassa olevat lähteet voidaan edelleen käsitellä ryhmänä. Mahdollisten myöhempien materiaaliattribuuttien vaikutus vaihtokelpoisuuteen päätetään erikseen.
+Replayn pitkien palojen kertymä poikkesi fyysisestä havainnosta. Se voi johtua scoresta, erillisestä säilytyspolitiikasta, kysyntä-/batch-virrasta tai yhdistelmästä; se ei yksin osoita scorea vääräksi. A/B/C-varastot ovat stressitestejä, eivät normaalin inventaarion malleja. Tutkimus suljettiin tältä erää; myöhempi reality check ja laajempi aineisto kuuluvat [B-008](BACKLOG.md):aan.
 
-## Jäännösten tuleva arvo
+**Avoin arvomalli:** jäännöksen tuleva hyöty voi riippua profiilista, väristä, pituudesta, määrästä, iästä ja kausikysynnästä. Pitkä pala voi olla useaa lyhyttä joustavampi; koskematon uusi salko on edelleen joustavampi kuin pirstottu samanpituinen materiaali. `ordersSinceUse` on mahdollinen tuleva ikätieto, ei nykyinen kenttä. Terminal inventory value tarvitsee kysyntä- ja tuotantohistoriaa.
 
-- **Luokitus:** avoin mallinnuskysymys
-- Pitkä käyttökelpoinen jäännös voi olla arvokkaampi kuin usea lyhyt jäännös, mutta koskematon uusi tanko on joustavampi kuin saman pituuden pirstoutuminen.
-- Tuleva arvo voi riippua profiilityypistä, väristä, pituudesta, varastomäärästä, iästä ja kausittaisesta kysynnästä.
-- Mahdollinen kenttä iälle on esimerkiksi `ordersSinceUse`.
-- Historiallista kysyntä- ja tuotantodataa tarvitaan ennen luotettavaa terminal inventory value -kalibrointia.
+## Materiaalin arvo ja työaika
 
-## Sahausniput ja turvallisuus
+**Romualumiini, karkea arvio käyttäjältä 3.9.2026:** käyttökelvottomat palat myydään ja arvo on noin 10 % vastaavan uuden materiaalin arvosta. Aktiivinen score-checkpoint on materiaalidokumentissa. Arvio ei ole sidottu toteutuneisiin euroihin, kilogrammoihin, profiilimassoihin tai ajantasaiseen hintaan eikä osoita sahauslastun hyvitystä.
 
-- **Luokitus:** osittain vahvistettu, osittain avoin
-- Nykyinen turvallinen oletus on yksi profiilityyppi per sahausliike.
-- Tuleva yhteensopivuus pitää mallintaa muokattavana turvallisuussääntönä eikä kaikkien profiilien kovana identtisyysvertailuna.
-- Sahausnippu ei ole pysyvä: lähteitä voidaan lisätä ja poistaa leikkausten välillä.
-- Yhdessä liikkeessä voi myöhemmin olla useita uusia tankoja ja/tai jäännöksiä sekä eri värejä, jos turvallisuussäännöt sallivat sen.
-- `maxStackSize` on profiilityyppikohtainen. Tyypillinen arvo on usein 4 tai 6, mutta sitä ei saa tehdä globaaliksi vakioksi ilman tarkempaa tietoa.
+Ennen kalibrointia selvitä profiili-/seoskohtaiset suhteet, hyvityksen yksikkö, lastujen hyvitys, lajittelun/säilytyksen/kuljetuksen kulut ja osto-/romuhintojen vaihtelu.
 
-## Tilausten jäljitettävyys
+**Aiempi karkea vertailu:** metri hukkaprofiilia vastaa noin puolen tunnin palkkaa. **Käyttäjän tarkennukset 7.9.2026:** mittavasteen siirto ehkä 10 s, palkka 12 €/h, keskimääräinen materiaali 7 €/m. Johdettu vertailu: 10 s × 12 €/h / 3600 ≈ 0,0333 € eli noin 4,8 mm profiilia; yksi metri vastaa noin 35 minuutin palkkaa. Palkka ei tarkoita työnantajan kokonaiskustannusta ja profiili-/värikohtaiset hinnat puuttuvat.
 
-### Tilauksen väri ja manuaalinen syöttö
+Materiaali säilyy ensisijaisena. Työaika voidaan myöhemmin huomioida eriteltynä, vertailukelpoiseen yksikköön muunnettuna kustannuksena. Ajan vaihtelu ja kustannuksen soveltamisala pitää ensin selvittää. Euroja ei lisätä sellaisenaan nykyiseen ekvivalenttipituuspisteeseen.
 
-- **Luokitus:** käyttäjän vahvistama tuotantofakta.
-- **Lähde ja päivämäärä:** muistio ”Tuleva tilaus-UI, varastonhallinta ja sahaustoleranssit”, 2026-09-06.
-- Yksi tilaus on käytännössä yhtä materiaaliväriä, ja normaalissa tilauksessa tarvitaan kaikkia nykyisiä profiilityyppejä. Tämä ei ole vaatimus hylätä osittain täytettyjä tai vain joitakin profiileja sisältäviä tilauksia.
-- **Jo toteutettu:** tilauskortin yhteinen väri, viisi profiiliaccordionia ja pelkät mitta-/määräkentät riveillä. Muistion kuvaama hidas rivikohtainen profiilin ja värin valinta koskee vanhaa UI:ta.
-- `getOrdersFromForm() → normalizeOrderCuts()` tuottaa optimizerin nykyiset `profileType + color + length + quantity` -rivit ja säilyttää `orderId`:n. Tunniste ei ole optimointikriteeri. Tulevan tuloskohdistuksen rajoite kuvataan alla.
+## Laskenta-ajan käyttötavoitteet
 
-### Yhteinen ylä- ja alakiskosyöttö
+**Nimenomainen käyttäjävaatimus 8.9.2026, ei mitattu palvelulupaus:** käsin valitun 2–5 tilauksen normaalin materiaaliratkaisun, schedulerin ja suunnitelman pitäisi valmistua sekuntien suuruusluokassa. Automaattinen suuren jonon haku saa käyttää minuutteja, kymmeniä minuutteja tai tarvittaessa tunteja, jos lisäaika tuottaa mitattavaa materiaalihyötyä. Oletusbudjetista ei päätetä yhden laatukäyrän perusteella. Nykyiset rajoitteet ovat backlogissa, mittaukset [benchmark-hakemistossa](benchmarks/batch-search/README.md).
 
-- **Luokitus:** käyttäjän vahvistama tuotantosääntö
-- **Lähde ja päivämäärä:** tilauspohjaisen Sahattavat-UI:n tehtävänanto, 2026-09-06
-- **Havainto:** yhden tilauksen ylä- ja alakiskoilla on samat mitat ja samat kappalemäärät.
-- **Nykyinen vaikutus koodiin:** yhteinen `rails`-UI-osio laajenee adapterissa erillisiksi `topRail`- ja `bottomRail`-riveiksi. Fyysisiä profiilityyppejä tai niiden materiaalivarastoja ei yhdistetä. Aukkokohtaista mallia ei vielä ole.
+## Uuden havainnon kirjaaminen
 
-### U-listojen ja kiskojen oletuskappalemäärä
-
-- **Luokitus:** käyttäjän päättämä tuleva UI-muutos.
-- **Lähde ja päivämäärä:** käyttäjän projektimuistiinpanot, 2026-09-07.
-- **Toteutettu 2026-09-07:** uusia U-profiilin mittarivejä lisättäessä oletusmäärä on 2. `getDefaultOrderQuantity()` määrittää oletuksen myös tyhjän rivin tunnistukselle.
-- **Käyttäjän vahvistama tuotantofakta, 2026-09-07:** U-profiili asennetaan oviaukon molemmille pystysivuille, joten sitä sahataan aina parillisina määrinä. Oletusmäärä 2 tarkoittaa kahta U-profiilin kappaletta; määrää ei puoliteta adapterissa kuten yhteisessä kiskosyötössä.
-- **Avoin vaikutus validointiin:** oletusmäärä 2 on päätetty. Parittomien U-profiilimäärien mahdollinen estäminen rajataan erikseen ennen toteutusta; tuotantohavainto ei yksin muuta nykyistä core-validointia tai testitapausten kysyntää.
-- **Käyttäjän tarkennus 2026-09-07:** yhteisen ”Ala- ja yläkisko” -rivin ”Määrä (kpl)” tarkoittaa kiskojen yhteiskappalemäärää. Oletusarvo 2 tarkoittaa 1 alakiskoa ja 1 yläkiskoa; 4 tarkoittaa 2 alakiskoa ja 2 yläkiskoa. Kiskot sahataan aina pareittain. Tämä oikaisee aiemman virheellisen tulkinnan kahdesta kappaleesta kumpaakin profiilia.
-- **Nykyinen vaikutus koodiin (8.9.2026):** U-profiilin ja kiskojen oletus on 2. Kiskojen yhteismäärä puolitetaan profiileille ja vaaditaan positiiviseksi parilliseksi kokonaisluvuksi. Skeeman 4 kiskomäärät kaksinkertaistetaan palautuksessa skeemaan 5 fyysisen kysynnän säilyttämiseksi. Moottoriversio ei muutu.
-- **Varmistus:** U-profiilin oletus, adapterin tyhjät ja täytetyt rivit sekä tallennetun suunnitelman validointi katetaan regressioilla. Selaimen palautusta ja lisäyspainiketta ei voitu testata: käytettävissä oleva selain esti paikallisen tiedostosivun avaamisen.
-- **Määrän uusi merkitys toteutettu:** adapteri, otsikon yhteismäärä, fixture-muunnos ja regressiot käyttävät yhteismäärää. Vanhan tallenteen materiaaliratkaisu ja kuittaukset validoidaan migraation jälkeen.
-
-### Tuotantokohdistus ja batchit (päivitetty 8.9.2026)
-
-- **Luokitus:** käyttäjän vahvistama tuotantomallin päätös; lähde: toteutustehtävä 8.9.2026.
-- Batch selectorissa tilaus on jakamaton yksikkö: kaikki tilauksen kappaleet kuuluvat samaan batchiin. Batchin sisällä material optimizer saa käsitellä kappaleita yksittäin ja yhdistellä eri tilausten kappaleita.
-- Rajat ovat asetuksia: min 200, pehmeä tavoite 250, max 300. Yksittäinen suurempi tilaus on sallittu yksin oversized-batchina.
-- Ainoa aktiivinen objective on nykyinen materiaalipiste. Nippusahaus on schedulerin aktiivinen execution-ominaisuus, eikä sen hyötyä tai mittavasteen siirtoja pisteytetä.
-- Profiilikohtaiset alustavat nippukapasiteetit: U/Pysty/Vaaka 4, Ylä-/Alakisko 2. **Avoin tuotantotieto:** Vasteelle ei annettu kapasiteettia; toteutuksen varovainen oletus on 1, ei vahvistettu konekapasiteetti.
-- Valinnainen mittarivin `openingId` säilyy syötteessä, tallennuksessa ja kappalekohtaisessa operaatiotuloksessa yhdessä `orderId`:n kanssa. Puuttuvaa aukkotunnistetta ei päätellä. Eri aukot syötetään eri riveille.
-- Saman ajon jäännösten käyttö muodostaa eksplisiittiset operaatiodependencyt. Vanha syötetty jäännösvarasto säilyy erillisenä materiaalilähteenä.
-- Continuous-/rolling-/span-/age-plannerit, anti-starvation ja tuotantoaikakustannukset ovat myöhempää mahdollista kehitystä. Toteutuksen täsmällinen malli, testit ja rajaukset: `BATCH_AND_BUNDLE_SAWING_PLANNING.md`.
-
-### Fyysisen salon tunnistus ja poikkeama suunnitelmasta (9.9.2026)
-
-- **Lähde ja varmuus:** käyttäjän suora havainto todellisesta työstä. Työssä oli 25 sahausliikettä ja 64 kappaletta. Kolmanteen liikkeeseen suunniteltiin salonumerot 1, 2, 7 ja 4, mutta käytännössä sahalle otettiin salot 1, 2, 3 ja 4.
-- **Tuotantotarve:** työntekijän pitää voida merkitä fyysiset salot helposti ennen sahausta ja nähdä nykyisessä työvaiheessa suuret, yksiselitteiset salonumerot. Saman fyysisen salon jatkoleikkauksen ja saman ajon jäännöksen pitää säilyttää sama numero.
-- **Toteutettu vaikutus:** worker-numero johdetaan materiaaliplanin vakaasta `bars`-järjestyksestä erikseen jokaiselle profiilityypille. Valmistelunäkymä, profiiliblokkeihin etenevä scheduler ja järjestetty toteumaloki lisättiin muuttamatta materiaaliratkaisua. Nykyinen toteumaloki hyväksyy vielä vain suunnitellut lähteet.
-- **Avoin vaikutus:** väärän salon toteuman kirjaaminen, siitä seuraavan materiaalitaseen laskenta ja mahdollinen osittainen uudelleenoptimointi ovat erillinen seuraava vaihe. Alkuperäinen suunnitelma pitää säilyttää vertailtavana eikä poikkeamaa saa korjata vain vaihtamalla lähde-ID:tä ilman fysiikan validointia.
-
-### Profiiliblokit ja batchin fyysinen työkuorma (9.9.2026)
-
-- **Lähde ja varmuus:** käyttäjän oikeasta sahaustyöstä tekemä tuotantotarkennus. Noin 250 kappaleen batch voi vaatia niin monta uutta salkoa, etteivät koko batchin materiaalit mahdu yhtä aikaa sahan ympärille.
-- **Työprosessi:** sahalle tuodaan yhden profiiliblokin salot, ne numeroidaan ja sahataan, kappaleet kelmutetaan tai käsitellään aukkokohtaisesti ja siirretään pois ennen seuraavaa profiilia. Oletusjärjestys on Pysty, Vaste, Vaaka, U ja yhteinen ala-/yläkiskoblokki.
-- **Numerointi:** worker-numero alkaa jokaisessa fyysisessä profiilityypissä yhdestä. Se on suunnitelmasta johdettu merkintä, ei materiaalin sisäinen identiteetti. Kiskoblokissa Ala 1 ja Ylä 1 erotetaan profiilinimellä.
-- **Tuleva arviointitarve:** sama kappalemäärä voi merkitä hyvin erilaista kuormaa; esimerkiksi pitkät Pystyt vievät eri tavalla tilaa ja käsittelyaikaa kuin lyhyet Vaa'at. Mahdollinen workload-aware batch sizing voi myöhemmin huomioida kappalemäärän, kokonaismetrit, profiilityypin, tilantarpeen ja jälkikäsittelyn. Täsmällistä kaavaa tai uusia rajoja ei ole päätetty.
-- **Nykyinen rajaus:** batchin min/tavoite/max pysyvät arvoissa 200/250/300 ja valintalogiikka ennallaan.
-
-## Uuden merkinnän malli
-
-```md
-### Aihe
-
-- **Luokitus:** vahvistettu fakta | karkea arvio | avoin kysymys
-- **Havainto:** ...
-- **Lähde ja päivämäärä:** ...
-- **Nykyinen vaikutus koodiin:** ei vaikutusta | nykyinen asetus/funktio
-- **Ennen toteutusta selvitettävä:** ...
-```
-
-### Sahausliikkeen, mittavasteen ja minimierän tarkennus (8.9.2026)
-
-- **Luokitus:** käyttäjän vahvistama tuotantokuvaus ja batch-valinnan päätös; lähde: tämän keskustelun selaintestipalaute.
-- **Sahausliike:** saha käynnistetään ja terä lasketaan käsin alas, jolloin terä suorittaa leikkuun. Nippu voi tuottaa monta kappaletta yhdellä sahausliikkeellä.
-- **Mittavasteen siirto:** käyttäjä siirtää mittavasteen seuraavan sahausliikkeen mittaan. Batchin ensimmäinen asetus lasketaan mukaan, samoin jokainen myöhempi sahausmitan muutos. Saman mitan toistaminen ei lisää siirtoa.
-- **Batchin minimi:** estää pienen osajoukon valinnan suuresta jonosta. Jos koko avoimessa jonossa on alle minimin kappaleita, kaikki tilaukset valitaan samaan batchiin; yksittäisiä halvempia tilauksia ei poimita siitä erikseen.
-- **Vaikutus koodiin:** `schedule()` laskee ensiasetuksen mukaan `stopPositionChanges`-mittariin. `selectBatch()` arvioi lyhyen jonon kokonaan; vähintään minimikokoisesta jonosta se ei valitse alikokoista erää. Materiaalin puute ei oikeuta osittaista valmisratkaisua. Materiaalipisteytys ei muutu.
-- **Käyttäjän vahvistama testihavainto:** testin 2 materiaalitulos ja raakalistan rajattomat harmaa/musta-oletukset toimivat oikein. Vahvistus ei koske kaikkia aiemman selaintestilistan kohtia.
-
-### Aukkokohtainen kiskonippu (8.9.2026)
-
-- **Lähde ja varmuus:** käyttäjän tämän tehtävän nimenomainen tuotantosääntö: kaksi kiskoa kelmutetaan ja nimetään heti aukon pariksi.
-- **Toteutettu vaikutus:** saman tilauksen nimetyn aukon 1 ala + 1 ylä sahataan mahdollisuuksien mukaan samalla liikkeellä. Neljästä kokonaiskappaleesta alkaen profiilit niputetaan erikseen. Saman aukon samanmittaisia valmiita operaatioita suositaan peräkkäin.
-- **Rajaus:** puuttuva aukkotunnus ei oikeuta arvaamaan pareja. Lähteiden riippuvuudet, release-poiminnat ja profiilien kapasiteetit voivat estää yhteisen sahausliikkeen. Tuotantomittareita ei lisätä materiaalipisteytykseen.
-
-### Erilliset laskenta-ajan tavoitteet (8.9.2026)
-
-- **Lähde ja varmuus:** käyttäjän tämän tutkimustehtävän nimenomainen käyttövaatimus, ei väite jo saavutetusta vasteajasta kaikilla syötteillä.
-- **Käsin valittu batch:** 2–5 tilauksen normaalin materiaaliratkaisun, schedulerin ja sahaussuunnitelman pitää valmistua sekuntien suuruusluokassa. Automaattisen selectorin parantaminen ei saa hidastaa tätä polkua merkittävästi.
-- **Automaattinen batch-haku:** minuutit, kymmenet minuutit tai tarvittaessa tunnit ovat hyväksyttäviä, jos lisäaika tuottaa mitattavasti hyödyllisemmän materiaaliratkaisun. Oletusbudjettia ei päätetä ennen laatukäyrämittauksia.
-- **Vaikutus koodiin:** vain erillinen Node-tutkimus tässä vaiheessa. Materiaalipisteytys säilyy; työaikaa, nippuja tai mittavasteen siirtoja ei lisätä pisteisiin. Ensimmäiset mittaukset ja niiden rajaukset ovat `benchmarks/batch-search/RESULTS.md`:ssä.
-
-### Jäännösvaraston kokoluokka tutkimuksessa (8.9.2026)
-
-- **Lähde ja varmuus:** käyttäjän karkea arvio nykyisestä tuotannosta: yhteensä noin 100 käyttökelpoista jäännöstä. Profiilijakauma ei ole tasainen; tarkkoja saldoja, värejä tai pituuksia ei ole annettu.
-- **Vaikutus:** erillisen Node-benchmarkin synteettinen varasto johdetaan 23 tilauksen kysynnästä (tilaus 16 jätetään pois) ja nykyisellä sahausfysiikalla syntyvistä säästettävistä jäännöksistä. Simuloitu jakauma ei ole havaittu varastosaldo eikä automaattisesti sovelluksen oletus.
-- **Avoin kysymys:** todellinen jäännösten säilytys- ja uudelleenkäyttökierto voi muuttaa etenkin pituusjakaumaa; tuotantokelpoisuus pitää myöhemmin tarkistaa oikealla inventaariolla.
-
-### Jäännösten säilytyskäytäntö ja historiallinen replay (9.9.2026)
-
-- **Lähde ja varmuus:** käyttäjän ilmoittama nykyinen käytäntö: U-, Pysty- ja Vaste-profiilien säilytysraja 1000 mm, Vaaka 500 mm ja molemmat kiskot 800 mm. Rajojen optimaalisuutta ei ole vahvistettu.
-- **Tutkimusta koskeva päätös:** käyttäjä vahvisti, että rajan mittainen tai pidempi loppupala säästetään simulaatiossa myös silloin, kun nykyinen score luokittelee sen romuksi. Suunnitelma lasketaan ja pisteytetään ensin muuttumattomalla production-koodilla; fyysinen säilytyssääntö on tutkimuksen erillinen varastopäivitys.
-- **Aineiston tulkinta:** käyttäjän mukaan 24 tilauksen otos vaikuttaa normaalilta tuotannolta. Tilaus 24 on vanhin (27.7.2026), tilaus 1 uusin (7.9.2026); saapumisjärjestys on 24 → 1. Nykyinen kelvollinen benchmark-fixture sisältää 23 tilausta, koska tilaus 16 / RR32 on jätetty pois.
-- **Vaikutus ja rajaus:** production-scorea, varastopäivitystä tai käyttöliittymää ei muutettu. Tulokset, jäljitettävät jäännökset ja otoksen rajaukset ovat `benchmarks/batch-search/flow-replay/RESULTS.md`:ssä. Säilytysrajoja tai score-kertoimia ei kalibroida tämän otoksen perusteella.
-- **Fyysisen varaston reality check:** käyttäjän havainto 9.9.2026: varastossa on noin 100 palaa, suurin osa noin 1300–1800 mm ja enintään noin kolme yli 2000 mm. Pitkät käyttökelpoiset palat käytetään melko nopeasti, jos kysyntää löytyy. Replayhin jäi 34 vähintään 3000 mm palaa, joten sen kappalemäärä on mahdollinen mutta pituusjakauma ja kokonaismetrit eivät kuvaa nykyistä fyysistä varastoa.
-- **Tulkinta:** pitkien palojen ero voi liittyä scoreen, tutkimuksen scoresta erilliseen säilytyspolitiikkaan, simuloituun kysyntä-/batch-virtaan tai niiden yhdistelmään. Se ei osoita scorea väärin kalibroiduksi. A/B/C-varastot säilyvät stressi- ja algoritmitesteinä.
-
-### Työkalun rooli tuotannossa (9.9.2026)
-
-- **Lähde ja varmuus:** käyttäjän projektirajaus. Profiilituotanto on nuorta ja tuotantorytmiin vaikuttavat muun tuotannon tarpeet, koneviat, materiaalisaatavuus ja vaihteleva tilaustilanne.
-- **Tavoite:** sovellus on helppokäyttöinen ja joustava sahaus- ja päätöksentekotyökalu, jota kokenut työnjohtaja tai työntekijä käyttää senhetkisen tilanteen mukaan. Tavoite ei ole koko tehtaan pitkän aikavälin automaattinen tuotannonohjaus.
-- **Rajaus:** nykyiset tuotantokäytännöt ovat baselineja, eivät automaattisesti optimaalisia sääntöjä. Niitä voidaan muuttaa erikseen validoidun paremman käytännön perusteella.
+Kirjaa aihe, luokitus, havainto, käyttäjä/muu lähde ja päivämäärä, mahdollinen aktiiviseen domain-dokumenttiin osoittava linkki sekä ennen toteutusta selvitettävä asia. Erota käyttäjän päätös, mitattu fakta, johdettu arvio ja avoin kysymys toisistaan. Älä kopioi toteutuksen koko teknistä kuvausta tähän.

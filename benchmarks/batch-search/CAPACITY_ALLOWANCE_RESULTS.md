@@ -1,5 +1,7 @@
 # Kapasiteettivaramallin fixture-vertailu
 
+> Tarkoituksellisen kapasiteettimallimuutoksen historiallinen vertailu 10.9.2026. Tämä raportti säilyttää ennen/jälkeen-näytön; aktiiviset säännöt ovat domain-dokumenteissa. Nykytila: [materiaalimalli](../../docs/domain/MATERIAL.md), [tuotantomalli](../../docs/domain/PRODUCTION.md).
+
 Vertailun lähtöpiste on commit `863f612` ennen lähde- ja kappalekohtaisten
 kapasiteettivarojen käyttöönottoa. Uusi aktiivinen malli käyttää 20 mm:n
 `sourceCapacityAllowance`-varaa lähdettä kohti ja 1 mm:n

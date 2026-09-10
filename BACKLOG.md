@@ -1,148 +1,56 @@
-# BACKLOG.md
+# Avoin backlog
 
-## Tarkoitus
+Tässä ovat todelliset avoimet ongelmat ja rajoitteet. Merkintä ei anna toteutuslupaa. Kehitysjärjestys on [roadmapissa](ROADMAP.md); [valmistuneet B-001/B-003/B-004/B-005/B-007](docs/history/COMPLETED_BACKLOG.md) ovat historiassa. ID:tä ei käytetä uudelleen.
 
-Tähän kirjataan todelliset mutta ei-välitöntä korjausta vaativat virheet, tekniset rajoitteet ja rajatut parannusideat. Tiedosto estää pienten havaintojen unohtumisen ilman, että ne keskeyttävät nykyisen työn.
+Tila: havaittu, suunniteltu tai tutkittavana. Prioriteetti kertoo vaikutuksesta, ei automaattisesta toteutusjärjestyksestä. Sulje valmistunut kohta siirtämällä sen olennainen näyttö historiaan tai tutkimusraporttiin.
 
-Backlog-merkintä ei ole toteutuslupa eikä todistus virheestä. Ennen korjausta tarkista havainto nykyisestä lähdekoodista ja tee mahdollisuuksien mukaan toistettava regressiotapaus.
+## B-009 — Toteutunut materiaalilähde voi poiketa suunnitellusta
 
-Roadmap-vaiheet kuuluvat `ROADMAP.md`:hen. Liiketoiminta- ja tuotantofaktat sekä epävarmat oletukset kuuluvat `DOMAIN_NOTES.md`:hen.
+- **Tila / prioriteetti:** suunniteltu, korkea ennen varsinaista tuotantokäyttöä. Havaittu 9.9.2026.
+- **Ongelma:** kolmannen liikkeen suunnitellut salot 1/2/7/4 korvautuivat käytännössä saloilla 1/2/3/4. Nykyinen actualSourceIds hyväksyy vain suunnitellut lähteet.
+- **Vaikutus:** toteumaa ei voi korjata turvallisesti; jäljellä olevat pituudet, operaatiot ja finalisoinnin varasto voivat poiketa todellisesta työstä.
+- **Hyväksymisraja:** säilytä alkuperäinen suunnitelma ja eroteltu toteuma, validoi muuttuneet lähdepituudet ja jäljellä olevat operaatiot, estä virheellinen finalisointi. Lähteen valinta, korjaus ja mahdollinen osittainen uudelleenoptimointi rajataan erikseen. Ei pelkkää ID:n vaihtoa. [Tuotantomalli](docs/domain/PRODUCTION.md).
 
-## Tilat ja prioriteetit
+## B-006 — Synkroninen batch-haku suurissa tilausjonoissa
 
-Tilat:
+- **Tila / prioriteetti:** havaittu, keskitaso; tutkittava ennen suuren jonon tavallista käyttöä. Havaittu 8.9.2026.
+- **Ongelma:** aktiivinen selector käy kaikki sopivat tilausyhdistelmät läpi synkronisesti; jokainen tarvitsee materiaaliratkaisun. Syöteraja 100 tilausta ei takaa käytettävää vasteaikaa.
+- **Näyttö / vaikutus:** 10 pientä tilausta voi tuottaa 1023 osajoukkoa. Historiallisessa 23 tilauksen / 1231 kappaleen aineistossa (16 pois) oli 85 030 kelvollista ehdokasta. Aiempi noin 11 päivän arvio oli ekstrapolaatio, ei tehty kokonaisajo eikä nykyversion mittaus.
+- **Tutkimus:** [Node-hakukoe](benchmarks/batch-search/RESULTS.md) ja [inventory-study](benchmarks/batch-search/inventory-study/RESULTS.md) tukevat rajattua kaksivaiheista hakua, mutta eivät todista yleistä laatua tai oletusaikaa. Koeversio ei ole selaimessa.
+- **Seuraava hyväksymisraja:** uusia jonoja, aloitussiemeniä ja äärellisiä varastoja; materiaalilaatu ajan funktiona ja paras valmis validoitu tulos. Erota materiaalihakijan rivijärjestysherkkyys selectorin ehdokasvalinnasta: samankin batchin piste vaihteli tutkimuksessa. Säilytä alkuperäinen järjestys, kunnes erillinen laatututkimus perustelee muutoksen. Ennen UI-toteutusta rajaa peruutus, syöterevisio ja suurten jonojen generaattori ilman täyttä osajoukkoluetteloa.
 
-- `havaittu`: alustava mutta konkreettinen havainto;
-- `vahvistettu`: toistettu nykyisellä koodilla;
-- `suunniteltu`: rajaus ja hyväksymiskriteerit sovittu;
-- `valmis`: toteutettu ja testattu; valmis kohta voidaan myöhemmin siirtää historiaksi.
+## B-011 — Monimittaisen materiaalivariantin jäljellä oleva DP-kustannus
 
-Prioriteetit:
+- **Tila / prioriteetti:** havaittu, keskitaso. Jatkaa B-007:n avoimeksi jäänyttä osaa; kirjattu erilliseksi 10.9.2026, havainto 9.9.2026.
+- **Ongelma:** reachable-state-DP ja vakaa merge poistivat tyhjien kapasiteettien ja join/Map/sort-polun työtä, mutta pienien pattern-listojen yhdistämistä ja määrävektorien kopiointia kertyy edelleen paljon.
+- **Näyttö:** [merge-raportissa](benchmarks/batch-search/PATTERN_MERGE_RESULTS.md) A / 3+9+21 -materiaalimediaani oli 34,69 → 20,23 s; jälkeen-profiilissa merge noin 45,1 % ja DP:n muu oma työ 43,0 %. Harmaan Vaakan 74 kappaletta / 13 mittaa hallitsi aikaa. Nämä ovat kapasiteettivaramallia edeltäviä mittauksia, eivät nykyversion uudelleen mitattuja nopeuksia.
+- **Vaikutus:** yksittäinen normaalisti laskettava batch voi edelleen jäädä sekuntien käyttötavoitteen ulkopuolelle; yleistä vasteaikatakuuta ei ole.
+- **Seuraava tutkimus:** varmista ilmiö nykyisillä kapasiteettiasetuksilla pienessä vertailussa, profiloi merge-kutsujen määrä ja vektorikopiot ilman kuumimman silmukan kellotusta. Priorisoi täsmällistä työn vähentämistä. Hyväksy mahdollinen optimointi vain samoilla järjestetyillä kuvioilla, täydellä plan/score/operation-tuloksella ja mutatoimattomuudella; ei score-, rivijärjestys- tai beam-karsintamuutosta samalla.
 
-- `korkea`: voi rikkoa oikeellisuuden, materiaalitaseen tai käyttäjän työn;
-- `keskitaso`: haittaa käyttöä tai luotettavuutta mutta sillä on turvallinen kiertotapa;
-- `matala`: rajattu UX-, ylläpidettävyys- tai harvinainen reunatapaus.
+## B-002 — Osittaisten inventory-beam-tilojen heuristinen järjestys
 
-## Avoimet havainnot
+- **Tila / prioriteetti:** havaittu, matala.
+- **Ongelma:** osittaisten tilojen järjestys ei käytä samaa materiaalitalousmallia kuin valmiiden suunnitelmien scoreCompleteMaterialTransitionPlan.
+- **Vaikutus:** lupaava tila voi karsiutua ennen kokonaispisteytystä. Valmis tulos voi olla kelvollinen mutta heikompi kuin toinen löydettävissä oleva.
+- **Hyväksymisraja:** ensin pienet oracle- tai kattavat vertailut ja konkreettinen laatupoikkeama; vasta sitten rajattu ranking-muutos. Ei hakulaadun väittämistä pelkkien PASS-regressioiden perusteella. [Materiaalimalli](docs/domain/MATERIAL.md).
 
-### B-010 — Kappalemäärä ei yksin kuvaa batchin fyysistä työkuormaa
+## B-008 — Replayn pitkät jäännökset poikkeavat fyysisestä varastosta
 
-- **Tila:** havaittu 2026-09-09; tarkkaa mallia ei ole suunniteltu.
-- **Prioriteetti:** keskitaso tuotannon käyttökokemuksen mittaamisen jälkeen.
-- **Alue:** batch-kokojen käytettävyys ja myöhempi workload-aware sizing.
-- **Havainto:** nykyinen min/tavoite/max 200/250/300 perustuu fyysisten kappaleiden määrään. Esimerkiksi 250 noin 3000 mm Pystyä ja 250 noin 500 mm Vaakaa vaativat hyvin erilaisen tilan, materiaalinkäsittelyn ja sahaamisen jälkeisen työn.
-- **Rajaus:** nykyisiä rajoja, selectorin logiikkaa tai materiaalipistettä ei muuteta. Projektin rooli säilyy joustavana työntekijän ja työnjohdon apuvälineenä.
-- **Myöhempi arviointi:** mittaa ennen kaavaa ainakin kappalemäärä, kokonaismetrit, profiilityyppi, fyysinen tilantarve ja profiilikohtainen jälkikäsittely. Hyväksyttävän kuorman pitää pysyä käyttäjän hallittavana ilman pitkän aikavälin automaattiohjausta.
+- **Tila / prioriteetti:** havaittu, matala; avataan uudelleen vain erillisen score-/varastokalibroinnin yhteydessä. Havaittu 9.9.2026.
+- **Ongelma:** replayhin jäi 34 vähintään 3000 mm palaa; käyttäjän noin 100 palan varastossa suurin osa on noin 1300–1800 mm ja enintään noin kolme yli 2000 mm.
+- **Vaikutus:** synteettistä pituusjakaumaa ei voi pitää normaalina inventaariona tai score-kalibroinnin todisteena.
+- **Seuraava tutkimus:** suurempi tilausaineisto ja fyysinen reality check. Erota scoren, scoresta erillisen säilytyspolitiikan ja kysyntä-/batch-virran vaikutukset. Poikkeama ei yksin todista scorea vääräksi. [Replay-raportti](benchmarks/batch-search/flow-replay/RESULTS.md), [tuotantohavainnot](DOMAIN_NOTES.md).
 
-### B-009 — Toteutunut materiaalilähde voi poiketa suunnitellusta
+## B-010 — Kappalemäärä ei yksin kuvaa batchin työkuormaa
 
-- **Tila:** suunniteltu 2026-09-09; toteumalokin tietopohja on valmis, korjauspolkua ei ole toteutettu.
-- **Prioriteetti:** korkea ennen varsinaista tuotantokäyttöä.
-- **Alue:** tuotannon suoritusnäkymä, toteumaloki ja jäljellä olevan työn materiaalitase.
-- **Havainto:** työntekijä voi ottaa sahausliikkeeseen eri fyysisen salon kuin schedulerin suunnittelema lähde. Nykyinen skeeman 6 tapahtuma sisältää `actualSourceIds`-kentän, mutta validointi sallii siinä vielä vain suunnitellut lähteet.
-- **Toisto tai näyttö:** käyttäjän tuotantohavainnossa 25 sahausliikkeen ja 64 kappaleen työssä kolmannen liikkeen suunnitellut salonumerot olivat 1, 2, 7 ja 4, mutta toteutuneet 1, 2, 3 ja 4.
-- **Vaikutus:** poikkeama voi muuttaa seuraavien operaatioiden käytettävissä olevia pituuksia ja lopullista jäännösvarastoa. Pelkkä numeron vaihtaminen lokiin ei riitä materiaalitaseen varmistamiseen.
-- **Hyväksymiskriteeri:** käyttäjä voi valita toteutuneen salon, sovellus säilyttää muuttumattoman alkuperäisen suunnitelman, laskee jäljellä olevan työn fyysisesti kelvolliseksi ja estää virheellisen varastofinalisoinnin. Suunniteltu ja toteutunut lähde näkyvät jäljitettävästi. Osittainen uudelleenoptimointi rajataan ja testataan erikseen.
+- **Tila / prioriteetti:** havaittu, keskitaso; erillinen myöhempi mittaustyö. Havaittu 9.9.2026.
+- **Ongelma:** sama 250 kappaletta voi olla pitkiä Pystyjä tai lyhyitä Vaakoja; sahan ympäristön tila, kantaminen ja jälkikäsittely kuormittuvat eri tavalla.
+- **Vaikutus:** nykyinen kappalemääräraja ei ennusta fyysistä kuormaa, vaikka profiiliblokit rajaavat valmistelua.
+- **Hyväksymisraja:** mittaa kokonaismetrit, profiili, tilantarve ja jälkikäsittely ennen laskentakaavaa. Kantomäärä on operaattorin päätös. Älä muuta selectorin nykyisiä kokorajoja tai scorea ilman erillistä päätöstä. [Tuotantohavainnot](DOMAIN_NOTES.md).
 
-### B-008 — Replay tuottaa fyysistä varastoa enemmän pitkiä jäännöksiä
+## B-012 — Vanha sparse-tutkimusmuunnos ei hyväksy nykyistä productionia
 
-- **Tila:** havaittu 2026-09-09
-- **Prioriteetti:** matala; arvioidaan uudelleen vain score-kalibroinnin yhteydessä.
-- **Alue:** optimizerin laatutesti, score ja terminaalinen jäännösvarasto.
-- **Havainto:** jatkuvan materiaalivirran replayhin jäi 34 vähintään 3000 mm palaa, kun käyttäjän nykyisessä noin 100 palan fyysisessä varastossa vain arviolta enintään kolme palaa ylittää 2000 mm ja suurin osa on noin 1300–1800 mm.
-- **Mahdolliset syyt:** nykyinen score voi suosia pitkiksi arvotettuja loppujäännöksiä, tutkimuksen fyysinen säilytyspolitiikka poikkeaa score-dispositionista, simuloitu kysyntä-/batch-virta poikkeaa tuotannosta tai tekijät vaikuttavat yhdessä. Syytä ei ole eroteltu eikä scorea ole todistettu väärin kalibroiduksi.
-- **Myöhempi hyväksymiskriteeri:** jos scorea kalibroidaan, vertaa terminaalisen varaston pituusjakaumaa suurempaan tilausaineistoon ja samanaikaiseen fyysisen varaston reality checkiin. Älä käytä A/B/C-stressivarastojen tai tämän replayn jakaumaa normaalin varaston totuutena.
-
-### B-007 — Tyhjien DP-kapasiteettisolujen kustannus jäännösvarastolla
-
-- **Tila:** valmis 2026-09-09; saavutettujen kapasiteettien toteutus siirretty production-funktioon.
-- **Prioriteetti:** keskitaso ennen suuremman varaston koekäyttöä.
-- **Alue:** `findCandidatePatternsDP`, yksittäisen materiaaliratkaisun laskenta.
-- **Havainto:** 6 000 mm lähde ja 3 mm kerf muodostavat 0,1 mm tarkkuudella 60 031 kapasiteettisolua, joista jokainen alustetaan taulukoksi. Jokainen määrälohko käy myös tyhjät kapasiteetit läpi. Tätä toistetaan beam-tilojen eri jäännöspituuksille.
-- **Näyttö:** kanonisella 100 jäännöksen A-varastolla 4/5 tilauksen normaalit suunnitelmat kestivät noin 54/50 sekuntia; pitkien C-jäännösten vastaavat ajot katkaistiin 60 sekunnissa. Erillisessä profiloinnissa lähes kaikki aika kului kuviolaskentaan. Tarkat syötteet ja tulokset: `benchmarks/batch-search/inventory-study/`.
-- **Rajattu Node-koe:** saavutettujen kapasiteettien käsittely samassa järjestyksessä säilytti 1 354 kuviotestin tulokset sekä kaikki 14 valmistunutta normaalia vertailusuunnitelmaa pisteineen ja operaatioineen. 2–5 tilauksen manuaaliset testit valmistuivat noin 0,04–4,8 sekunnissa; myös kaksi aiemmin aikakatkaistua tapausta valmistui.
-- **Rajoite:** haun valitsema monimittainen samanvärinen kolmen tilauksen yhdistelmä 3/9/21 kesti erillisessä kylmässä A-varaston mittauksessa edelleen noin 32,8 s. Perusbatchien nopeutusta ei saa yleistää kaikkiin samankokoisiin valintoihin. Alkuperäisen ja Node-kokeen 35/35 regressioryhmää läpäistiin.
-- **Toteutus ja varmistus:** production käyttää vain saavutettuja kapasiteetteja ja käsittelee ne samoissa laskevissa järjestyksissä. Ennen/jälkeen-vertailu säilytti 1 354 järjestettyä kuviotulosta sekä 14 tallennettua kokonaista suunnitelmaa scoreineen ja operaatioineen. Core 35/35, tuotannon ohjaus-/persistenssit 18/18 ja HTTP-selainpolku läpäistiin. Scorea, kerfiä, batch-hakua tai scheduleria ei muutettu.
-- **Pattern-merge 9.9.2026:** jatkoprofilointi osoitti, että harmaan Vaakaprofiilin 6,89 miljoonaa `keepDistinctPatterns()`-kutsua käsitteli 48,57 miljoonaa pattern-viittausta. Production yhdistää nyt kaksi valmiiksi järjestettyä ja distinct-listaa vakaalla suoralla mergellä ilman kuuman polun `join()`-avaimia, Map-deduplikointia tai yleistä lajittelua. 1 354 kuviotulosta, 15 tallennettua suunnitelmaa scoreineen ja operaatioineen sekä beam-tilastot säilyivät identtisinä.
-- **Jäljelle jäävä suorituskykyraja:** vaikean 3/9/21-batchin materiaalimediaani laski 34,69 sekunnista 20,23 sekuntiin. CPU-otannassa suora `mergeDistinctSortedPatterns()` on nyt suurin yksittäinen kehys, noin 45,1 % profiloidusta ajosta; `findCandidatePatternsDP()`-funktion muu oma työ vie noin 43,0 %. Mahdollinen seuraava tutkimus kohdistetaan merge-kutsujen määrään ja kapasiteettipäivitysten vektorikopioihin semantiikkaa muuttamatta.
-
-### B-006 — Batch-yhdistelmien synkroninen haku suurissa tilausjonoissa
-
-- **Tila:** havaittu 2026-09-08
-- **Prioriteetti:** keskitaso suurissa jonoissa
-- **Alue:** `PRODUCTION_PLANNING.selectBatch`, selaimen laskennan reagointi.
-- **Havainto:** selector luettelee kokorajaan mahtuvat tilausyhdistelmät ja arvioi ne synkronisesti. Kymmenen pientä tilausta voi tuottaa 1023 yhdistelmää; lomake sallii enintään 100 tilausta, jolloin haku voi olla käytännössä mahdoton. Ongelma koskee hakumäärää ja pääsäikeen varaamista, ei materiaalipisteen oikeellisuutta.
-- **Rajaus:** käyttäjän pyynnön mukaisesti ensimmäiseen versioon ei lisätty heuristista esikarsintaa. Tyypillinen arvioitu jono on 5–10 tilausta.
-- **Mittaus 8.9.2026:** viisi 50 kappaleen Pysty-tilausta eri mitoilla vaati kuuden ehdokkaan arviointiin noin 27,4 sekuntia Nodessa.
-- **Lisämittaus 8.9.2026:** Excelin 23 tilausta / 1 231 kappaletta (tilaus 16 pois) tuottaa 85 030 ehdokasta rajoilla 200/250/300. Kuuden normaalin materiaalihakunäytteen 8,3–12,9 s perusteella koko ensimmäisen batchin exhaustive-haun karkea arvio oli noin 11 vuorokautta. Tämä oli ekstrapolaatio, ei toteutettu pitkä ajo.
-- **Node-koeversio 8.9.2026:** erillinen kaksivaiheinen monialoitus-/naapurihaku ja ajokohtainen materiaaliryhmävälimuisti, ei muutosta aktiiviseen selainpolkuun. 10 minuutin ajossa paras löytyi 18,9 s kohdalla eikä enää parantunut; kolmessa pienaineiston vertailussa saatiin sama paras batch ja piste kuin exhaustive-ehdokashaulla. Täysi raportti: `benchmarks/batch-search/RESULTS.md`. Yksi jono ei todista yleistä laatutasoa tai sopivaa oletusaikaa.
-- **Jatkotutkimus 8.9.2026:** kolmella 100 jäännöksen varastolla parhaat löytyivät noin 19–59 s kohdalla ja säilyivät 10 minuuttiin. Kahdella äärellisellä varastolla löytyi sama paras A-batch; not-found-tuloksia ei tulkittu suoraan mahdottomiksi. Viiden järjestyksen voittajapisteiden ero oli 0,306 %; myös materiaalihakijan sisäinen mittojen järjestys vaikutti tulokseen. Raportti: `benchmarks/batch-search/inventory-study/RESULTS.md`. Yksittäisen materiaalilaskennan nopeus on eritelty B-007:ssä.
-- **Seuraava askel:** laajenna laatukäyrävertailu eri jonoihin, aloitussiemeniin, äärelliseen varastoon ja vanhoihin jäännöksiin. Päätä production-hakutapa ja oletusbudjetti vasta mittauksista. Pidä käsin valitun batchin normaalihaku erillisenä. Älä palauta karsitun haun tulosta kaikkien batchien parhaana.
-
-
-
-### B-005 — Core-profiilitestien paluuarvo ei vastaa Node-ajurin määritystä
-
-- **Tila:** valmis 2026-09-08. Lähtöajossa vahvistettiin 33/34-tulos; batch-työn koko testipaketin ajamiseksi ryhmä määritettiin kahdeksan rivin taulukoksi. Kaikki kahdeksan tapausta ja koko 35 ryhmän ajo läpäisevät. Alkuperäinen havainto oli vahvistettu myös commitin `838158d` lähteistä.
-- **Prioriteetti:** keskitaso
-- **Alue:** `run-regressions.cjs`, testiryhmän paluuarvon tarkistus.
-- **Havainto:** `runCoreProfileTypeValidationRegressionTests()` palauttaa kahdeksan PASS/FAIL-riviä, mutta ryhmä on ajurin boolean-listassa ilman `expectedRows`-arvoa. Kaikki kahdeksan tapausta läpäisevät, mutta `result === true` hylkää taulukon ja koko ajo päättyy tulokseen 33/34 sekä paluukoodiin 1.
-- **Hyväksymiskriteeri:** ryhmä määritetään eksplisiittisesti kahdeksan rivin taulukoksi; väärä rivimäärä tai yksikin FAIL hylätään edelleen. Korjausta ei yhdistetty U-profiilin oletusmäärämuutokseen.
-
-### B-002 — Osittaisten inventory-beam-tilojen heuristinen järjestys
-
-- **Tila:** havaittu ja dokumentoitu
-- **Prioriteetti:** matala ennen systemaattista laatumittausta
-- **Alue:** optimizerin hakulaatu
-- **Havainto:** valmiit ratkaisut käyttävät `scoreCompleteMaterialTransitionPlan()`-pisteytystä, mutta osittaiset beam-tilat järjestetään kevyemmällä heuristiikalla.
-- **Vaikutus:** beam voi karsia haaran, joka olisi päätynyt parempaan valmiiseen materiaaliratkaisuun.
-- **Ennen toteutusta:** rakenna mittaus ja pienien tapausten oracle; älä muuta heuristiikkaa yksittäisen esimerkin perusteella.
-- **Hyväksymiskriteeri:** uusi ranking parantaa mitattua laatua edustavassa testipankissa ilman kohtuutonta suorituskykyhaittaa.
-
-### B-004 — Suoran core-kutsun profiilivalidointi hyväksyy perityn ominaisuuden
-
-Päivitys 8.9.2026: nykyinen lähdekoodi hylkää nämä profiilit ja kaikki kahdeksan core-profiiliregressiota läpäisevät. Alla oleva virhekuvaus on historiallinen; korjaus oli repossa ennen batch-työtä. Tässä työssä korjattiin vain B-005:n ajurimääritys.
-
-- **Tila:** vahvistettu Node-ajolla 2026-09-06
-- **Prioriteetti:** keskitaso
-- **Alue:** core-rajapintojen syötevalidointi; ei tallennetun työtilan validointi
-- **Havainto:** `validateCutProfileTypes()` ja eräät materiaalin validointikohdat käyttävät edelleen `PROFILE_TYPES[avain] === undefined` -tarkistusta, joka ei erota omia profiileja prototyypin ominaisuuksista.
-- **Toisto tai näyttö:** `validateCutProfileTypes([{ profileType: "constructor", color: "gray", length: 1000, quantity: 1 }])` palauttaa `true`. Samalla syötteellä ja kuuden normaalin harmaan profiilin rajattomalla varastolla `optimizeOrderByProfileTypeWithInventory()` palauttaa `complete: true`, nolla tankoa ja tyhjän `remainingItems`-listan.
-- **Vaikutus:** suora core-kutsuja voi saada virheellisestä profiilista virheellisen valmiin tuloksen. Tavallinen UI-valikko ei tuota tätä nimeä, ja `calculate()`-polun riippumaton tulosvalidointi hylkää kappaletaseen poikkeaman. B-003 estää vastaavat nimet tallenteista.
-- **Ennen toteutusta:** kartoita puhtaiden core-rajapintojen profiilijäsenyyden tarkistukset ja lisää niiden omat regressiot. Älä yhdistä korjausta moduuli-irrotukseen.
-- **Hyväksymiskriteeri:** suorat core-rajapinnat hylkäävät perityt ja tuntemattomat profiilinimet; kuusi sallittua profiilia ja normaalit optimointitulokset säilyvät ennallaan.
-
-## Valmistuneet
-
-### B-003 — Persistoidun profiilinimen tarkistus hyväksyy perityn ominaisuuden
-
-- **Tila:** valmis; automaattiset Node- ja selaintestit sekä käyttäjän tarkistus läpäisty 2026-09-06
-- **Prioriteetti:** keskitaso
-- **Alue:** localStorage / profiilityypin validointi ja palautus
-- **Korjaus:** raakalistan rivit, sahattavat rivit, jäännösrivit ja suunnitelman tangot hyväksyvät vain `PROFILE_TYPES`-olion omat avaimet. Prototyypistä perittyjä nimiä ei hyväksytä profiileiksi.
-- **Testit:** `runStoredProfileTypeValidationRegressionTests()` kattaa 90 tapausta: kuusi kelvollista profiilia sekä perityt nimet, tuntemattomat nimet ja virheelliset tyypit kaikissa neljässä tallennuskohdassa. Vanha koodi epäonnistui 48 tapauksessa; korjattu läpäisee kaikki. Node-ajurissa 30/30 ryhmää läpäisty. Eristetyssä Edgessä 84 virheellistä tallennetta hylättiin ennen varastorivien palautusta ja 12 nykyistä/legacy-tallennetta palautui käynnistyksessä suunnitelmineen ja TEHTY-merkintöineen.
-- **Rajaus:** tallennusskeema 3 ja moottoriversio `material-v0.3` säilyvät; kelvollisten tallenteiden muoto ei muutu. Suorien core-kutsujen vastaava tarkistus on erillinen B-004. Optimointia tai moduulirakennetta ei muutettu.
-
-### B-001 — Persistoidun stock-ryhmän default/additional-invariantti
-
-- **Tila:** valmis; automaattiset testit ja käyttäjän selaintarkistus läpäisty 2026-09-06
-- **Prioriteetti:** matala
-- **Alue:** localStorage / uuden materiaalin rivit
-- **Korjaus:** jokaisella profiiliryhmällä vaaditaan täsmälleen yksi oletusrivi ennen työtilan palautusta. Validointi ja palautus käyttävät samaa `isAdditionalStoredStockProfileRow()`-sääntöä.
-- **Legacy-yhteensopivuus:** puuttuva `additional` tulkitaan oletusriviksi vain profiilin ensimmäisellä rivillä. Eksplisiittinen oletusrivi saa edelleen olla lisärivin jälkeen. Skeema säilyy versiona 3.
-- **Testit:** uusi `runStoredStockDefaultRowValidationRegressionTests()` kattaa 14 tapausta sekä luonnokselle että suunnitelmalliselle työtilalle. Vahvistettu selaimessa yhden oletusrivin ja poistettavuuden säilyminen, viiden korruptin riviyhdistelmän hylkäys ennen varaston palautusta sekä nykyisen ja legacy-työn palautuminen suunnitelmineen ja TEHTY-merkintöineen. Väri-, persistenssi-, finalisointi- ja perusregressiot läpäisty.
-
-## Uuden merkinnän malli
-
-```md
-### B-NNN — Lyhyt nimi
-
-- **Tila:** havaittu
-- **Prioriteetti:** matala | keskitaso | korkea
-- **Alue:** ...
-- **Havainto:** mitä tapahtuu
-- **Toisto tai näyttö:** pienin tunnettu tapaus
-- **Vaikutus:** miksi asialla on merkitystä
-- **Kiertotapa:** jos sellainen on
-- **Hyväksymiskriteeri:** milloin kohta voidaan merkitä valmiiksi
-```
+- **Tila / prioriteetti:** havaittu, matala; tutkimustyökalun toistettavuus. Vahvistettu 10.9.2026 dokumentaatioauditissa.
+- **Ongelma:** `createRuntime(data, { sparsePatterns: true })` kutsuu alkuperäiselle dense-funktiolle tehtyä lähdemuunnosta ilman jo-sparse-tarkistusta. Nykyisen lähteen alustus päättyy `Sparse experiment anchor changed` -virheeseen ennen optimointia. Esimerkiksi vanha sparse-probe ja inventory-study-haun oletusreitti käyttävät tätä valintaa.
+- **Vaikutus:** vanhat toistokomennot eivät sellaisenaan toista koetta nykyversiolla. Erillinen run-sparse-regressions-ajuri tunnistaa jo-sparse-productionin ja on eri polku; pysyvä nykyversion pattern-ajuri ei tarvitse tutkimusmuunnosta.
+- **Hyväksymisraja:** rajaa erillisessä työssä vanhan dense/sparse-kokeen ja nykyversion tutkimuksen lähdeversiot; älä naamioi kahta nykyistä sparse-ajoa dense/sparse-vertailuksi. Lukitse vanhan lähteen muunnos, nykyisen lähteen käsittely ja aidosti muuttuneen ankkurin hylkäys. Production-optimizeria tai historiallisia tuloksia ei muuteta tämän korjauksen vuoksi. [Benchmark-ohje](benchmarks/batch-search/README.md).

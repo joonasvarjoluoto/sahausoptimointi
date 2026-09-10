@@ -1,5 +1,7 @@
 # A-varaston vaikean batchin kuviolaskennan profilointi — 9.9.2026
 
+> Historiallinen profilointi commitista 4d967b66, ennen pattern-mergen production-siirtoa. Ensimmäinen ehdotus on sittemmin toteutettu; tämä raportti säilyttää alkuperäisen näyttönsä. Nykytila: [materiaalimalli](../../../docs/domain/MATERIAL.md), [tuotantomalli](../../../docs/domain/PRODUCTION.md).
+
 Batchin 3/9/21 noin 35 sekunnin laskenta kuluttaa 98,2 % materiaalilaskenta-ajasta harmaaseen Vaakaprofiiliin. Sen 74 kappaletta ja 13 eri lyhyttä mittaa synnyttävät paljon vaihtoehtoisia määrävektoreita samoihin kapasiteetteihin. Kumulatiivinen pattern-käsittely kasvaa paljon enemmän kuin saavutettujen kapasiteettien tai beam-tilojen määrä. CPU-otannassa keepDistinctPatterns kattaa noin 76 % koko ajosta, ja määrävektorin join-avaimen muodostus on sen selvästi raskain rivi.
 
 Productioniin ei tehty muutoksia. Pohja on commit 4d967b66b4a5268249e22455155b2e36dc0fc6c5. Tarkat lähde-, fixture- ja inventaariohashit ovat jokaisessa ajotiedostossa. Kaikki 12 ajoa vertasivat koko tankosuunnitelmaa, scorea ja scheduler-operaatioita aiemmin tallennettuun referenssiin ja läpäisivät vertailun. Instrumentoinnilla mitataan samaa hakua; mitään välimuistia tai uusia hakujärjestyksiä ei käytetä.

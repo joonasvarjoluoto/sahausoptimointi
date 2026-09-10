@@ -1,5 +1,7 @@
 # Jatkuvan jäännösvirran historiallinen replay — 9.9.2026
 
+> Historiallinen, suljettu tutkimuscheckpoint 9.9.2026 ennen kapasiteettivaramallia. Fyysinen säilytyspolitiikka on vain tutkimuksessa, ei productionin finalisointisääntö. Nykytila: [materiaalimalli](../../../docs/domain/MATERIAL.md), [tuotantomalli](../../../docs/domain/PRODUCTION.md).
+
 ## Johtopäätös
 
 Tyhjästä aloitettu, vähitellen saapuvien tilausten replay tuotti kuudessa batchissa **143 palan loppuvaraston (293,929 m)**. Metreinä varaston huippu oli 307,904 m. Jäännökset olivat aina seuraavan batchin käytettävissä. Noin 100 palaa on käyttäjän nykyisen fyysisen varastohavainnon perusteella realistinen kappalemäärä, mutta simulaation pituusjakauma ja kokonaismateriaalimäärä eivät vastaa havaittua varastoa.
@@ -42,7 +44,7 @@ Tämä on tarkoituksellinen tutkimuspolitiikka, ei väite productionin nykyisen 
 
 Rajat pysyvät 200 / 250 / 300:ssa. Enintään 12 sopivan yhdistelmän jonossa käytetään **nykyistä production-selectoria** ja normaalia materiaalihakua kaikille ehdokkaille, 60 s kokonaiskatolla. Kaikki saapumisskenaarioiden valinnat olivat tätä polkua.
 
-Suuremmissa jonoissa käytetään olemassa olevaa `search.cjs`-two-stage-hakua: enintään **10 s tai 40 arviointia**, seed `230916`, kevyt beam/pattern 2/2 ja normaali 20/10, yksi normaali tarkennus neljää kevyttä arviota kohti. Käytössä on nykyinen täsmällinen varianttivälimuisti. Lopullisesta voittajasta otetaan vain tilausjoukko ja se lasketaan uudelleen normaalilla production-materiaalihakijalla, erillisellä 60 s katolla. Näin hakubudjetti ei tarkoita koko batch-vaiheen 10 sekunnin aikarajaa.
+Suuremmissa jonoissa käytetään olemassa olevaa `../search.cjs`-two-stage-hakua: enintään **10 s tai 40 arviointia**, seed `230916`, kevyt beam/pattern 2/2 ja normaali 20/10, yksi normaali tarkennus neljää kevyttä arviota kohti. Käytössä on nykyinen täsmällinen varianttivälimuisti. Lopullisesta voittajasta otetaan vain tilausjoukko ja se lasketaan uudelleen normaalilla production-materiaalihakijalla, erillisellä 60 s katolla. Näin hakubudjetti ei tarkoita koko batch-vaiheen 10 sekunnin aikarajaa.
 
 `all`-ajon ensimmäisten viiden jonon ehdokasmäärät olivat 85 030, 39 182, 4 487, 681 ja 110. Haku arvioi vastaavasti 16, 40, 40, 40 ja 40 ehdokas/tarkennus-kutsua; kaikki tallennetut voittajat olivat normaalisti arvioituja. Ensimmäinen pysähtyi aikarajaan, muut työmäärärajaan. Viimeisessä jonossa oli yksi ehdokas. Globaalia batch-optimia ei ole todistettu. Seinäkelloraja voi vaihtaa tutkittujen ehdokkaiden määrää uusinta-ajossa; talletetut suunnitelmat ovat tämän ajon tarkka evidenssi.
 

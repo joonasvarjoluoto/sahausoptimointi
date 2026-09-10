@@ -1,5 +1,7 @@
 # Batch-haun tutkimustulokset, 8.9.2026
 
+> Tutkimuscheckpoint 8.9.2026: tässä esitetyt nykytilaväitteet ja ajat koskevat tuon ajon lähdeversiota. Kaksivaiheinen haku on edelleen Node-koe, ei selainselector. Nykytila: [materiaalimalli](../../docs/domain/MATERIAL.md), [tuotantomalli](../../docs/domain/PRODUCTION.md).
+
 ## Rajaus ja aineisto
 
 Erillinen Node-koeversio; tuotannon selainpolkua, materiaali- tai scheduler-lähteitä ei muutettu tässä tutkimuksessa. Aiemmat paikalliset kiskomuutokset olivat mukana lähteissä. Sovelluslähteiden SHA-256-tunnisteet ovat JSON-tuloksissa. Node v24.19.0. Mittaukset tehtiin peräkkäisinä CPU-ajoina tällä koneella, ilman rinnakkaisia benchmarkeja.

@@ -1,3 +1,5 @@
+> Historiallinen dokumentti, arkistoitu 10.9.2026. Kuvaa eri ajankohtien suunnitelmia ja testituloksia; ei nykyisen toiminnan ohje. Nykytila: [arkkitehtuuri](../ARCHITECTURE.md), [tuotantomalli](../domain/PRODUCTION.md) ja [roadmap](../../ROADMAP.md). Alla olevien vanhojen väitteiden aikamuotoja ei ole muutettu.
+
 # Tuotantobatchit ja nippusahaus
 
 ## Päätös ja toteutus 8.9.2026

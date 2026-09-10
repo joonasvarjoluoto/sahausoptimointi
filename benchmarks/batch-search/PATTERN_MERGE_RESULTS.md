@@ -1,5 +1,7 @@
 # Järjestettyjen pattern-listojen suora merge — 9.9.2026
 
+> Historiallinen ennen/jälkeen-checkpoint 9.9.2026. Vakaa merge on productionissa; mittaukset edeltävät kapasiteettivaramallia eivätkä ole nykyversion nopeuslupaus. Nykytila: [materiaalimalli](../../docs/domain/MATERIAL.md), [tuotantomalli](../../docs/domain/PRODUCTION.md).
+
 ## Muutos ja semantiikka
 
 `findCandidatePatternsDP()` yhdisti aiemmin kapasiteetin vanhan ja uuden pattern-listan, muodosti jokaiselle määrävektorille `join(",")`-avaimen, deduplikoi Mapilla, lajitteli koko tuloksen ja otti `maxPatterns` ensimmäistä.

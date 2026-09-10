@@ -1,3 +1,5 @@
+> Historiallinen dokumentti, arkistoitu 10.9.2026. Kuvaa eri ajankohtien suunnitelmia ja testituloksia; ei nykyisen toiminnan ohje. Nykytila: [arkkitehtuuri](../ARCHITECTURE.md), [tuotantomalli](../domain/PRODUCTION.md) ja [roadmap](../../ROADMAP.md). Alla olevien vanhojen väitteiden aikamuotoja ei ole muutettu.
+
 # DEMO_PLAN.md
 
 ## Tarkoitus
@@ -10,7 +12,7 @@ Tekninen pitkän aikavälin eteneminen säilyy `ROADMAP.md`:ssä, yksittäiset v
 
 Käyttäjän uusi päätös korvaa alla olevan aiemman järjestyksen batchien ja nippusahauksen osalta: aktiivinen demo on kokonaisten tilausten batch-valinta → nykyinen materiaalihaku → dependency-aware nippusahaus. Materiaali on ainoa pisteytyskriteeri. Mittariveillä voi antaa aukon tunnuksen. Finalisointi poistaa vain batchin tilaukset ja säilyttää jonon.
 
-Testattu kolmen tilauksen ei-FIFO-esimerkki, nippudemo ja selaintarkistuksen tulokset ovat `BATCH_AND_BUNDLE_SAWING_PLANNING.md`:ssä. Käyttäjän testejä täydentävä todellinen HTTP-selaintesti läpäistiin 8.9.2026; myös Node- ja ohjaustestit läpäisevät.
+Testattu kolmen tilauksen ei-FIFO-esimerkki, nippudemo ja selaintarkistuksen tulokset ovat [nykyinen tuotantomalli](../domain/PRODUCTION.md) (aiempi tuotantosuunnitteludokumentti):ssä. Käyttäjän testejä täydentävä todellinen HTTP-selaintesti läpäistiin 8.9.2026; myös Node- ja ohjaustestit läpäisevät.
 
 ## Aiempi demo-prioriteettijärjestys (historia / myöhemmät kohteet)
 

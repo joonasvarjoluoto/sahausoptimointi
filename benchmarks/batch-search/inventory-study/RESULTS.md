@@ -1,5 +1,7 @@
 # Jäännösvaraston vaikutus batch-hakuun — 8.9.2026
 
+> Tutkimuscheckpoint 8.9.2026 ennen reachable-state- ja merge-optimointien production-siirtoa. Ne ovat sittemmin aktiivisia. Raportin mittaukset ja suunnitelmat ovat kapasiteettivaramallia edeltävästä versiosta; niitä ei päivitetä uuden moottorin tuloksiksi. Nykytila: [materiaalimalli](../../../docs/domain/MATERIAL.md), [tuotantomalli](../../../docs/domain/PRODUCTION.md).
+
 Keskeinen löydös on yksittäisen materiaalilaskennan tarkka nopeutus Node-koeversiossa: tyhjien DP-tilojen ohittaminen säilytti vertailusuunnitelmat, ja neljä valittua 2–5 tilauksen perusbatchia valmistuivat kaikissa kolmessa jäännösvarastossa alle viidessä sekunnissa. Tämä ei ole yleinen vasteaikatakuu: haun suosimalle monimittaiselle kolmen tilauksen batchille on lisäksi erillinen vaikean tapauksen mittaus. Nykyinen production-toteutus ei vielä sisällä nopeutusta; sen suurimmat vertailut ylittivät 60 sekuntia.
 
 Automaattisen haun parhaat löytymisajat A/B/C-varastoissa olivat 52.5 s / 19.2 s / 59.3 s. Alla erotetaan nämä laatukäyrät käsin valitun batchin nopeudesta, äärellisen varaston toteutuskelpoisuudesta ja syöttöjärjestyksen vaikutuksesta.

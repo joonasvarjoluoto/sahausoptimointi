@@ -1,5 +1,26 @@
 # Batch-haun Node-koeversio
 
+## Valitse tutkimus aiheen mukaan
+
+Tämä on benchmark-työkalujen kartta, ei aktiivisen optimizerin spesifikaatio. [Nykyinen materiaalimalli](../../docs/domain/MATERIAL.md), [tuotantomalli](../../docs/domain/PRODUCTION.md) ja [regressioiden valinta](../../docs/TESTING.md) kuvaavat productionin.
+
+| Kysymys | Raportti |
+| --- | --- |
+| Batch-haun laatu ajan funktiona ja Node-anytime-koe | [Ensimmäinen hakututkimus](RESULTS.md) |
+| A/B/C-jäännökset, äärelliset saldot, rivijärjestysherkkyys ja alkuperäinen dense/sparse-vertailu | [Inventory-study](inventory-study/RESULTS.md) |
+| Vaikean A / 3+9+21 -materiaalikutsun syy | [Reachable-profile](reachable-profile/RESULTS.md) |
+| Vakaan pattern-mergen semantiikka ja mitattu hyöty | [Merge-vertailu](PATTERN_MERGE_RESULTS.md) |
+| Jäännösten kierto ja fyysinen säilytyspolitiikka | [Suljettu flow-replay](flow-replay/RESULTS.md) |
+| Kapasiteettivarojen tarkoitukselliset plan-/score-erot | [Kapasiteettivertailu](CAPACITY_ALLOWANCE_RESULTS.md) |
+
+Raportit ovat ajankohtiensa tutkimusnäyttöä. Reachable-state ja merge on jo siirretty productioniin; automaattinen kaksivaiheinen batch-haku ja tutkimusvälimuistit eivät ole selaimessa. Kapasiteettivaramalli muutti myöhemmin suunnitelmien kelpoisuutta ja pisteitä. Historialliset JSONit säilyttävät omat lähdehashinsa.
+
+Alla olevat koeasetelmat ja komennot kuvaavat alkuperäisiä tutkimuksia. Apurit lataavat nykyisen työpuun lähteitä, elleivät erikseen nouda Git-checkpointia. Nykyisen version `sparsePatterns`-valinta ei palauta vanhaa dense-algoritmia. Täsmällinen vanhan kokeen toisto tarvitsee sen lähdeversion; vanhan referenssin vertailu voi tarkoituksella epäonnistua uuden kapasiteettimallin kanssa. Älä ylikirjoita talletettua tutkimusaineistoa nykyversion ajolla. Pysyvä nykyversion pattern-ajuri tarkistaa päivitetyt digestit kuten testausohjeessa kuvataan.
+
+**Tunnettu toistorajoite (B-012):** runtime.cjs:n `sparsePatterns: true` yrittää edelleen dense-lähdemuunnosta ja pysähtyy nykyisellä productionilla `Sparse experiment anchor changed` -virheeseen. Tämä koskee esimerkiksi sparse-probe.cjs:ää ja inventory-study-haun oletuspolkua. `off` jättää muunnoksen pois mutta ei muuta nykyistä algoritmia denseksi. Erillinen run-sparse-regressions.cjs tunnistaa jo siirretyn production-toteutuksen; se ei tee nykyversiossa kahden algoritmin vertailua. [Avoin korjaus](../../BACKLOG.md).
+
+## Alkuperäiset koeasetelmat ja toistokomennot
+
 Tämä hakukoe ei ole kytketty selaimeen. Se käyttää nykyistä materiaalihaku-, pisteytys-, validointi- ja scheduler-koodia muuttamatta niiden lähteitä. Myös käyttöliittymän normaalit hakuasetukset säilyvät.
 
 ## Aineisto ja toisto
