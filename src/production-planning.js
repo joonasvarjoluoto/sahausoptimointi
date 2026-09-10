@@ -100,6 +100,12 @@ const PRODUCTION_PLANNING = (() => {
         const sources = plan.bars.map(bar => ({
             id: bar.id, profileType: bar.profileType, color: bar.color ?? null,
             origin: bar.source === "new" ? "new" : "old-remnant", sourceLength: bar.sourceLength,
+            usableCapacity: bar.usableCapacity ?? bar.sourceLength,
+            sourceCapacityAllowance: bar.sourceCapacityAllowance ?? 0,
+            pieceCapacityAllowance: bar.pieceCapacityAllowance ?? 0,
+            totalPieceCapacityAllowance: bar.totalPieceCapacityAllowance ?? 0,
+            totalCapacityAllowance: bar.totalCapacityAllowance ?? 0,
+            nominalRemaining: bar.nominalRemaining ?? bar.remaining,
             remaining: bar.remaining, waste: bar.waste,
             pieces: bar.groupedCuts.flatMap(cut => Array.from({ length: cut.quantity }, () => {
                 const piece = pools.get(key({ ...bar, length: cut.length }))?.shift();
@@ -145,29 +151,62 @@ const PRODUCTION_PLANNING = (() => {
 
     function schedule(sources, kerf, profiles = profileDefaults) {
         const physics = typeof CUTTING_PHYSICS !== "undefined" ? CUTTING_PHYSICS : require("./cutting-physics.js");
+        const material = typeof MATERIAL !== "undefined" ? MATERIAL : require("./material.js");
         if (kerf < 0 || !physics.hasSupportedMillimeterPrecision(kerf)) throw new Error("Virheellinen sahausvara.");
         const states = new Map();
         const pieceIds = new Set();
+
+        function getCapacitySettings(source) {
+            return {
+                sourceCapacityAllowance: source.sourceCapacityAllowance ?? 0,
+                pieceCapacityAllowance: source.pieceCapacityAllowance ?? 0
+            };
+        }
+
+        function cutState(state, piece) {
+            const physicalCut = physics.cutPiece(state.nominalRemaining, piece.length, kerf);
+            if (!physicalCut.possible) return { possible: false };
+            const capacityUseUnits = physics.millimetersToDpUnits(piece.length) +
+                physics.millimetersToDpUnits(state.source.pieceCapacityAllowance ?? 0) +
+                physics.millimetersToDpUnits(physicalCut.waste);
+            const remainingCapacityUnits = physics.millimetersToDpUnits(state.remaining);
+            if (capacityUseUnits > remainingCapacityUnits) return { possible: false };
+            return {
+                possible: true,
+                remaining: physics.dpUnitsToMillimeters(remainingCapacityUnits - capacityUseUnits),
+                nominalRemaining: physicalCut.remaining,
+                waste: physicalCut.waste
+            };
+        }
+
         for (const source of sources) {
             getCompatibility(source, profiles);
             if (!source.id || states.has(source.id) || !["new", "old-remnant", "same-run-remnant"].includes(source.origin) ||
                 (source.origin === "same-run-remnant") !== Boolean(source.parentSourceId) ||
                 !source.pieces.length || source.sourceLength <= 0) throw new Error("Virheellinen materiaalilähde.");
-            let remaining = source.sourceLength;
-            let waste = 0;
             for (const piece of source.pieces) {
                 if (typeof piece.pieceId !== "string" || !piece.pieceId || pieceIds.has(piece.pieceId) ||
                     typeof piece.orderId !== "string" || !piece.orderId || piece.quantity !== 1 || piece.length <= 0 ||
                     !(piece.openingId == null || typeof piece.openingId === "string") ||
                     piece.profileType !== source.profileType || (piece.color ?? null) !== (source.color ?? null)) throw new Error("Virheellinen kappaleprovenance.");
                 pieceIds.add(piece.pieceId);
-                const cut = physics.cutPiece(remaining, piece.length, kerf);
-                if (!cut.possible) throw new Error("Kappale ei mahdu lähteeseen.");
-                remaining = cut.remaining;
-                waste += physics.millimetersToDpUnits(cut.waste);
             }
-            if (remaining !== source.remaining || waste !== physics.millimetersToDpUnits(source.waste)) throw new Error("Lähteen materiaalitase ei täsmää.");
-            states.set(source.id, { source, pieces: [...source.pieces], remaining: source.sourceLength, lastOperation: null });
+            const calculated = material.calculateMaterialBarCapacity(
+                source.sourceLength,
+                source.pieces.map(piece => ({ length: piece.length, quantity: 1 })),
+                kerf,
+                getCapacitySettings(source)
+            );
+            if (!calculated.possible || calculated.remaining !== source.remaining ||
+                calculated.nominalRemaining !== (source.nominalRemaining ?? source.remaining) ||
+                physics.millimetersToDpUnits(calculated.waste) !== physics.millimetersToDpUnits(source.waste) ||
+                calculated.usableCapacity !== (source.usableCapacity ?? source.sourceLength) ||
+                calculated.totalPieceCapacityAllowance !== (source.totalPieceCapacityAllowance ?? 0) ||
+                calculated.totalCapacityAllowance !== (source.totalCapacityAllowance ?? 0)) {
+                throw new Error("Lähteen materiaalitase ei täsmää.");
+            }
+            states.set(source.id, { source, pieces: [...source.pieces],
+                remaining: calculated.usableCapacity, nominalRemaining: source.sourceLength, lastOperation: null });
         }
         const visiting = new Set(), visited = new Set(), consumedParents = new Set();
         function check(state) {
@@ -215,8 +254,11 @@ const PRODUCTION_PLANNING = (() => {
                 priority(a) - priority(b) || (a.source.id < b.source.id ? -1 : 1));
             const first = activeReady[0];
             const piece = first.pieces[0];
-            // Täsmälleen valmis loppukappale poimitaan ilman sahausliikettä.
-            const kind = first.remaining === piece.length ? "release" : "cut";
+            // Release on sallittu vain fyysiselle nimellistäsmäsovitukselle. Kapasiteettivara
+            // jättää saloon viimeisteltävän pään, vaikka turvallinen kapasiteetti loppuu nollaan.
+            const firstCut = cutState(first, piece);
+            if (!firstCut.possible) throw new Error("Järjestetty sahaus ei mahdu lähteeseen.");
+            const kind = first.nominalRemaining === piece.length ? "release" : "cut";
             const rule = getCompatibility(first.source, profiles);
             const group = [{ state: first, piece }];
             let limit = rule.maxStackSize;
@@ -228,7 +270,7 @@ const PRODUCTION_PLANNING = (() => {
                     const partner = state.pieces.find(p => railPairs.get(p.pieceId) === pairKey &&
                         p.profileType !== piece.profileType);
                     const other = getCompatibility(state.source, profiles);
-                    if (partner && state.remaining !== partner.length && other.maxStackSize >= 2) {
+                    if (partner && state.nominalRemaining !== partner.length && other.maxStackSize >= 2) {
                         group.push({ state, piece: partner });
                         limit = railPairCompatibility.maxStackSize;
                         compatibilityGroup = railPairCompatibility.compatibilityGroup;
@@ -244,7 +286,7 @@ const PRODUCTION_PLANNING = (() => {
                     (!(isRail(piece) || isRail(p)) || p.profileType === piece.profileType) &&
                     (!pairKey && !railPairs.has(p.pieceId)));
                 if (other.compatibilityGroup === rule.compatibilityGroup && group.length < nextLimit &&
-                    candidate && (state.remaining === piece.length ? "release" : "cut") === kind) {
+                    candidate && (state.nominalRemaining === piece.length ? "release" : "cut") === kind) {
                     group.push({ state, piece: candidate });
                     limit = nextLimit;
                 }
@@ -257,20 +299,24 @@ const PRODUCTION_PLANNING = (() => {
                 if (parentOp) dependencies.add(parentOp);
                 const index = state.pieces.findIndex(p => p.pieceId === selectedPiece.pieceId);
                 const [output] = state.pieces.splice(index, 1);
-                const cut = physics.cutPiece(state.remaining, output.length, kerf);
+                const cut = cutState(state, output);
                 if (!cut.possible) throw new Error("Järjestetty sahaus ei mahdu lähteeseen.");
                 operation.sources.push({ id: state.source.id, profileType: state.source.profileType, color: state.source.color,
                     origin: state.lastOperation ? "same-run-remnant" : state.source.origin,
-                    before: state.remaining, after: cut.remaining, waste: cut.waste });
+                    before: state.nominalRemaining, after: cut.nominalRemaining, waste: cut.waste });
                 operation.pieces.push({ ...output, sourceId: state.source.id });
                 state.remaining = cut.remaining;
+                state.nominalRemaining = cut.nominalRemaining;
                 state.lastOperation = operation.id;
             }
             operation.dependencyIds = [...dependencies];
             operations.push(operation);
         }
         for (const state of states.values()) {
-            if (state.remaining !== state.source.remaining) throw new Error("Sahausjärjestys muutti materiaalitulosta.");
+            if (state.remaining !== state.source.remaining ||
+                state.nominalRemaining !== (state.source.nominalRemaining ?? state.source.remaining)) {
+                throw new Error("Sahausjärjestys muutti materiaalitulosta.");
+            }
         }
         const cuts = operations.filter(o => o.kind === "cut");
         return { operations, metrics: {

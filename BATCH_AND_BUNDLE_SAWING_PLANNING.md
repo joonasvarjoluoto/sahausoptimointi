@@ -58,7 +58,7 @@ Profiilikohtaiset `profileDefaults`-asetukset:
 
 Scheduler käsittelee valmiit lähteet yhtenäisinä profiiliblokkeina järjestyksessä Pysty, Vaste, Vaaka, U ja viimeisenä yhteinen kiskoblokki. Se valitsee jokaisella kierroksella aikaisimman keskeneräisen blokin ready-lähteet ja käyttää niiden sisällä aiempaa priorisointia, niputusta ja tie-breakeja. Ala- ja yläkisko ovat samassa blokissa, joten `railPairCompatibility` ja saman aukon läheisyys säilyvät. Lähteen parent-riippuvuus validoidaan jo samaan profiilityyppiin, joten nykyarkkitehtuurissa ei ole sallittua blokit ylittävää dependencyä.
 
-`cutPiece()` tarkistaa alkuperäiset lähteet ja jokaisen operaation. Scheduler ei lisää kerfiä, toleranssia, päävaraa eikä muuta dispositionia. Nimellinen täsmäsovitus säilyy nykyisen fysiikan mukaisena. Täsmälleen oikean mittainen loppukappale on `kind: "release"` -poiminta, joka näkyy suoritusjärjestyksessä mutta ei kasvata sahausliikkeiden määrää. Muut leikkaukset ovat `kind: "cut"` -operaatioita.
+`cutPiece()` tarkistaa nimellisen sahausfysiikan, ja materiaalimoduuli tarkistaa erikseen lähde- ja kappalekohtaisen kapasiteettivaran. Scheduler ei lisää niitä kerfiin eikä muuta dispositionia. Täsmälleen nimelliseen lähdepituuteen osuva loppukappale ilman kapasiteettivaroja on `kind: "release"` -poiminta. Oletusvarojen kanssa turvallisen kapasiteetin nollaan käyttävä kappale on `kind: "cut"`, koska varattu salon pää pitää vielä katkaista. Release näkyy suoritusjärjestyksessä mutta ei kasvata sahausliikkeiden määrää.
 
 ## Saman batchin jäännökset ja DAG
 
@@ -76,7 +76,7 @@ Batchin tilaukset, kappalemäärät, kokorajat ja materiaalipisteen komponentit 
 
 Operaatiokeskeinen näkymä näyttää aktiivisen profiiliblokin, sen edistymisen, koko batchin edistymisen ja seuraavan työvaiheen hallitsevana. Sahaus- tai poimintamitta, suuret profiilityyppikohtaiset salonumerot, nipun koko ja kappaleet näkyvät ennen toissijaisia tilaus- ja aukkotietoja. Kiskojen sekanipussa numeron yhteydessä näkyy myös kiskoprofiili, koska sekä Ala- että Yläkiskolla voi olla Salko 1. Valmiit vaiheet tiivistyvät ja seuraava näkyy esikatseluna. Operaatiot voi kuitata vain schedulerin järjestyksessä. Vain viimeisin kuittaus voidaan perua.
 
-Skeema 6 säilyttää skeeman 5 kentät ja lisää `executionState = { version: 1, planDigest, events }`. Skeeman 4 työ migroidaan ensin kaksinkertaistamalla kiskojen lomakemäärät. Skeeman 5 batch saa tyhjän toteumalokin, joten vanha tallennettu työ alkaa operaatiosta 1. Materiaalimoottoriversio `material-v0.3` säilyy, koska materiaalifysiikka ja score-yhteensopivuus eivät muutu.
+Skeema 6 säilyttää skeeman 5 kentät ja lisää `executionState = { version: 1, planDigest, events }`. Skeeman 4 työ migroidaan ensin kaksinkertaistamalla kiskojen lomakemäärät. Skeeman 5 batch saa tyhjän toteumalokin, joten vanha tallennettu työ alkaa operaatiosta 1. Kapasiteettivaramallin materiaalimoottoriversio on `material-v0.4`; skeemaa ei nostettu, koska varat ovat ohjelman yhteisiä asetuksia eivätkä tallennettavan työn syötteitä.
 
 Operaatiolistaa tai valmistelulistaa ei tallenneta toisena totuutena: ne muodostetaan uudelleen validoidusta materiaalista ja kysynnästä. Toteumaloki sisältää vain plan-digestin ja järjestetyt kuittaustapahtumat. Tapahtuma varaa `actualSourceIds`-kentän myöhemmälle toteutuneen lähteen käsittelylle, mutta versio 1 hyväksyy vain suunnitellut lähteet. Palautus tarkistaa valitut kokonaiset tilaukset, materiaalitaseen, varastorajat, sahausfysiikan, tuotantokohdistuksen, digestin ja tapahtumien järjestyksen.
 
@@ -102,8 +102,8 @@ Production execution -selaintesti 9.9.2026: yhden mustan tilauksen Pysty 4000 mm
 
 ### Käyttäjän selaintarkistus
 
-1. Avaa sovellus omalla nykyisellä käyttötavallasi. Syötä kolme mustaa tilausta: Pysty 2200 × 1 (aukko A), 3800 × 1 (B), 3797 × 1 (C). Käytä 6000 mm salkoa, kerfiä 3, rajatonta mustaa Pystyä ja tyhjää jäännöslistaa.
-2. Aseta batchin min/tavoite/max = 2/2/2 ja laske. Batchiin tulee 2200 + 3797; 3800 jää jonoon. Suunnitelmassa on yksi uusi salko ja nollajäännös.
+1. Avaa sovellus omalla nykyisellä käyttötavallasi. Syötä kolme mustaa tilausta: Pysty 2200 × 1 (aukko A), 3800 × 1 (B), 3772 × 1 (C). Käytä 6000 mm salkoa, kerfiä 3, rajatonta mustaa Pystyä ja tyhjää jäännöslistaa.
+2. Aseta batchin min/tavoite/max = 2/2/2 ja laske. Batchiin tulee 2200 + 3772; 3800 jää jonoon. Suunnitelmassa on yksi uusi salko ja turvallinen kapasiteettijäännös on nolla. Nimellinen loppupituus on 22 mm, joka koostuu 20 mm:n lähdevarasta ja kahdesta 1 mm:n kappalevarasta.
 3. Avaa sahausjärjestys ja varmista tilaus-/aukkotiedot. Lataa sivu uudelleen: batch, asetukset ja kohdistukset säilyvät.
 4. Merkitse salko tehdyksi ja päätä työ. Vain 3800-tilaus jää jonoon. Laske se seuraavana batchina; alle minimin jäävä yhden kappaleen batch sallitaan.
 5. Nippudemo: kaksi mustaa Pysty-tilausta ja kaksi valkoista, jokaisessa 4000 × 1, vastaavat rajattomat materiaalit, min/tavoite/max = 4/4/4. Neljä lähdettä sahataan samalla 4000 mm:n mitalla yhdessä nipussa, vaikka värit eroavat.
@@ -114,7 +114,7 @@ Käyttäjän jatkotestit: palautus, TEHTY, finalisointi, seuraava batch, syötte
 
 Agentin täydentävät selaintestit 8.9.2026 läpäisty: harmaan ja mustan oletusrivit; tilausotsikon fyysinen kappalemäärä ja sen päivittyminen määrää muutettaessa sekä riviä poistettaessa; suljetun kortin ja TEHTY-tilan säilyminen uudelleenlatauksessa; Pysty/Vaaka-profiilieristys samalla 4000 mm mitalla; kiskojen 4000 × 3 -rivin kuusi fyysistä kappaletta ja erilliset 2+1 niput kummallekin kiskolle; alle minimin jäävän koko jonon valinta; rajojen 2/3/4 sallimat 2 ja 4 kappaleen batchit sekä jakamaton 5 kappaleen oversized-tilaus. Suljetun kortin työpöytäasettelu tarkistettu kuvasta; erillistä mobiililaitetestiä ei tehty. Selaimen virhe- ja varoitusloki oli tyhjä.
 
-Jatkosahauksen fixture: musta Pysty 4000 × 1 + 1000 × 1, saatavilla täsmälleen yksi uusi 6000 mm tanko, kerf 3, ei jäännösvarastoa. Tulos: yksi tanko, kaksi peräkkäistä saman lähteen sahausta 6000 → 1997 → 994 mm, sahahukka 6 mm, kaksi mittavasteen siirtoa ja oikeat aukot J1/J2. Aiempi testiohje oletti yhden tangon myös rajattomalla saatavuudella. Se oletus oli väärä: sekä HEAD että työversio valitsevat silloin kaksi tankoa pisteellä 7187,8; yhden tangon palautetun ratkaisun piste on 7250,4. Tämä ei ole uuden schedulerin regressio eikä peruste muuttaa materiaalipisteytystä tässä työssä.
+Jatkosahauksen fixture: musta Pysty 4000 × 1 + 1000 × 1, saatavilla täsmälleen yksi uusi 6000 mm tanko, kerf 3, ei jäännösvarastoa. Tulos: yksi tanko, kaksi peräkkäistä saman lähteen sahausta nimellisesti 6000 → 1997 → 994 mm, 972 mm turvallinen jäännös, sahahukka 6 mm, kaksi mittavasteen siirtoa ja oikeat aukot J1/J2. Aiempi testiohje oletti yhden tangon myös rajattomalla saatavuudella. Materiaalipiste voi valita silloin eri jaon; tätä scheduler-fixturea varten saatavuus pidetään äärellisenä yhdessä tangossa.
 
 
 ### Kiskojen yhteismäärä ja aukkoparit, 8.9.2026

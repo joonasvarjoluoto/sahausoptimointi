@@ -56,8 +56,7 @@ Ennen mahdollista muutosta selvitä:
 - Uuden tangon tavallinen pituus on 6000 mm.
 - Tangon toisessa päässä on noin 8 mm ripustusreikä.
 - Tangot asetetaan sahalle ehjä pää vasemmalla mittavastetta vasten ja reiällinen, huonompi pää oikealle.
-- Nykyinen laskenta käyttää silti yleistä `stockLength`-syötettä eikä vähennä kiinteää päävaraa.
-- Tuleva malli voi tarvita esimerkiksi `usableLength`- ja `endAllowance`-kentät.
+- Laskenta säilyttää yleisen `stockLength`-syötteen nimellispituutena. Aktiivinen `sourceCapacityAllowance` vähentää siitä turvallisen optimointikapasiteetin; varaus ei muuta tallennettua nimellispituutta.
 
 ## Mittatoleranssi ja kapasiteetin turvallisuusvarat
 
@@ -65,19 +64,11 @@ Ennen mahdollista muutosta selvitä:
 - **Vahvistettu tuotantohavainto:** positiiviset mittavirheet voivat kasautua. Viisi kappaletta, joista kukin on 0,5 mm nimellismittaa pidempi, kuluttavat yhteensä 2,5 mm lisäpituutta. Laskennallinen nolla- tai lähes nollajäännös voi silloin jättää viimeisen kappaleen vajaaksi.
 - **Käyttäjän ilmoittamat likimääräiset mitat:** hyväksyttävä mittatoleranssi on noin ±1 mm, vaikka tavallisesti pyritään tarkempaan tulokseen. Todellinen terän leveys on noin 3,4 mm. Soveltamisala ja mitatut arvot tarkennetaan ennen mallin lukitsemista.
 - **Tuotantopreferenssi:** muutaman millimetrin ylimääräinen hukka per tanko on hyväksyttävämpi kuin viimeisen kappaleen jääminen liian lyhyeksi.
-- **Nykyinen vaikutus koodiin:** ei parametrimuutosta. Kerfin oletus on edelleen 3 mm ja laskenta käyttää lomakkeen kerf-arvoa. `src/cutting-physics.js`:n `cutPiece()` hyväksyy nimellismittojen täsmäsovituksen; erillistä toleranssi- tai kapasiteettivaraa ei ole. Laskennan 0,1 mm:n resoluutio ei takaa tuotannon mittatarkkuutta.
-
-### Ehdotettu malli, ei vielä käytössä
-
-Pidä erillisinä nimellinen kappalemitta, terän todellinen/nimellinen leveys ja käytettävissä olevan tangon pituus sekä niiden mahdolliset turvallisuusvarat:
-
-- kappale: nimellismitta + kappalekohtainen kapasiteettivara;
-- sahaus: kerf + erikseen määritelty kerfin turvallisuusvara;
-- lähde: `stockLength` − mahdollinen `endAllowance` − mahdollinen tankokohtainen turvallisuusvara.
-
-Noin **1 mm / sahattava kappale** on alustava konservatiivinen kokeiluarvo, ei päätetty tuotantoasetus. Se varaisi kapasiteettia eikä käskisi sahaamaan kappaletta 1 mm ylipitkäksi. Myös kerfin ympärille voidaan arvioida oma pieni marginaali. Kappaletoleranssia ei piiloteta keinotekoiseksi esimerkiksi 5 mm:n kerfiksi.
-
-**Ennen toteutusta selvitettävä:** kalibroi varat tuotantohavainnoilla; määrittele soveltuminen uusiin tankoihin ja jäännöksiin, viimeiseen katkaisuun sekä päävaraan. Erota laskennallisesti varattu kapasiteetti toteutuneesta sahahukasta ja fyysisestä jäännöksestä. Nykyisen `cutPiece()`-säännön tai tallennetun suunnitelman tulkinnan muuttaminen vaatii erillisen päätöksen, yhteensopivuusarvion ja täsmäsovitus-/kumuloitumisregressiot.
+- **Käyttäjän päätös 10.9.2026:** aktiivinen yhteinen oletus on `sourceCapacityAllowance = 20 mm` jokaiselle uudelle ja vanhalle jäännöslähteelle sekä `pieceCapacityAllowance = 1 mm` jokaiselle kappaleelle. Arvot ovat alustavia konservatiivisia oletuksia, eikä niitä ole kalibroitu laajalla tuotantodatalla.
+- **Nykyinen vaikutus koodiin:** kerfin oletus on edelleen 3 mm ja laskenta käyttää lomakkeen kerf-arvoa. Lähteen nimellispituus ei muutu: 6000 mm lähteen turvallinen alkukapasiteetti on 5980 mm ja 1500 mm jäännöksen 1480 mm. Kappaleen nimellismitta ei muutu; 950 mm kappale käyttää ennen kerfiä 951 mm kapasiteettia.
+- **Materiaalitase:** `nominalRemaining` on nimellisestä lähteestä nimellisten kappaleiden ja todellisen kerfin jälkeen laskettu loppupituus. `remaining` on turvallisesti uudelleenkäytettävä kapasiteettijäännös. Niiden erotus on `sourceCapacityAllowance + kappalemäärä × pieceCapacityAllowance`. Varausta ei raportoida kerf-hukkana eikä kirjata finalisoinnissa automaattisesti romuksi tai fyysiseksi jäännösriviksi.
+- **Nollajäännös ja viimeinen kappale:** turvallinen `remaining` saa olla täsmälleen 0. Oletusvarojen vuoksi salossa on silloin silti nimellistä varattua päätä, joten scheduler tekee viimeisestä kappaleesta `cut`-operaation. `release` säilyy vain aidolle nimelliselle täsmäsovitukselle ilman kapasiteettivaroja.
+- **Avoin kalibrointi:** 20 mm:n lähdevaraa ja 1 mm:n kappalevaraa pitää myöhemmin verrata mitattuihin uusiin tankoihin, jäännöksiin, ripustusreikiin, huonoihin päihin ja kappalekohtaisiin mittapoikkeamiin. Laskennan 0,1 mm:n resoluutio ei takaa tuotannon mittatarkkuutta.
 
 ## Uuden materiaalin saldot ja täydennys
 

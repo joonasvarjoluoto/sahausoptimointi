@@ -10,6 +10,7 @@ const suites = [
     { name: "runCoreRegressionTests", expectedRows: 4 },
     { name: "runCutPieceBoundaryTests", expectedRows: 5 },
     { name: "runCuttingPhysicsRegressionTests", expectedRows: 23 },
+    { name: "runMaterialCapacityAllowanceRegressionTests", expectedRows: 8 },
     { name: "runDecimalExactFitRegressionTest", expectedRows: 2 },
     ...[
         "runOrderInputRegressionTests",

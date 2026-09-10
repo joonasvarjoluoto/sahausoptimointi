@@ -107,6 +107,12 @@ function createProductionPlanDigest(plan, execution) {
         bars: plan.bars.map(bar => ({
             id: bar.id, number: bar.number, profileType: bar.profileType,
             color: bar.color ?? null, source: bar.source, sourceLength: bar.sourceLength,
+            usableCapacity: bar.usableCapacity,
+            sourceCapacityAllowance: bar.sourceCapacityAllowance,
+            pieceCapacityAllowance: bar.pieceCapacityAllowance,
+            totalPieceCapacityAllowance: bar.totalPieceCapacityAllowance,
+            totalCapacityAllowance: bar.totalCapacityAllowance,
+            nominalRemaining: bar.nominalRemaining,
             groupedCuts: bar.groupedCuts.map(cut => ({ length: cut.length, quantity: cut.quantity })),
             remaining: bar.remaining, waste: bar.waste, remnantStatus: bar.remnantStatus
         })),

@@ -1,8 +1,225 @@
 // Puhdas materiaalivarasto ja lähteiden kulutus; riippuu vain sahausfysiikan mitta-apureista.
 const MATERIAL = (() => {
-    const { hasSupportedMillimeterPrecision, millimetersToDpUnits } =
+    const {
+        cutPiece,
+        hasSupportedMillimeterPrecision,
+        millimetersToDpUnits,
+        dpUnitsToMillimeters
+    } =
         typeof module !== "undefined" && module.exports
             ? require("./cutting-physics.js") : CUTTING_PHYSICS;
+
+    const MATERIAL_CAPACITY_DEFAULTS = Object.freeze({
+        sourceCapacityAllowance: 20,
+        pieceCapacityAllowance: 1
+    });
+
+    function normalizeMaterialCapacitySettings(settings = {}) {
+
+        const sourceCapacityAllowance =
+            settings.sourceCapacityAllowance ??
+            MATERIAL_CAPACITY_DEFAULTS.sourceCapacityAllowance;
+
+        const pieceCapacityAllowance =
+            settings.pieceCapacityAllowance ??
+            MATERIAL_CAPACITY_DEFAULTS.pieceCapacityAllowance;
+
+
+        for (const [name, value] of [
+            ["Lähdekohtaisen kapasiteettivaran", sourceCapacityAllowance],
+            ["Kappalekohtaisen kapasiteettivaran", pieceCapacityAllowance]
+        ]) {
+
+            if (
+                !Number.isFinite(value) ||
+                value < 0 ||
+                !hasSupportedMillimeterPrecision(value)
+            ) {
+                throw new Error(
+                    name +
+                    " pitää olla nolla tai positiivinen enintään 0,1 mm tarkkuudella."
+                );
+            }
+        }
+
+
+        return {
+            sourceCapacityAllowance:
+                sourceCapacityAllowance,
+
+            pieceCapacityAllowance:
+                pieceCapacityAllowance
+        };
+    }
+
+    function getUsableMaterialCapacity(
+        sourceLength,
+        settings = {}
+    ) {
+
+        if (
+            !Number.isFinite(sourceLength) ||
+            sourceLength <= 0 ||
+            !hasSupportedMillimeterPrecision(sourceLength)
+        ) {
+            throw new Error(
+                "Materiaalilähteen nimellispituuden pitää olla suurempi kuin 0 enintään 0,1 mm tarkkuudella."
+            );
+        }
+
+
+        const capacitySettings =
+            normalizeMaterialCapacitySettings(settings);
+
+        const usableUnits = Math.max(
+            0,
+            millimetersToDpUnits(sourceLength) -
+            millimetersToDpUnits(
+                capacitySettings.sourceCapacityAllowance
+            )
+        );
+
+
+        return dpUnitsToMillimeters(usableUnits);
+    }
+
+    function calculateMaterialBarCapacity(
+        sourceLength,
+        pattern,
+        kerf,
+        settings = {}
+    ) {
+
+        if (!Array.isArray(pattern) || pattern.length === 0) {
+            throw new Error(
+                "Materiaalikappaleen sahauskuvion pitää olla epätyhjä taulukko."
+            );
+        }
+
+        if (
+            !Number.isFinite(kerf) ||
+            kerf < 0 ||
+            !hasSupportedMillimeterPrecision(kerf)
+        ) {
+            throw new Error(
+                "Sahanterän leveyden pitää olla nolla tai positiivinen enintään 0,1 mm tarkkuudella."
+            );
+        }
+
+
+        const capacitySettings =
+            normalizeMaterialCapacitySettings(settings);
+
+        const usableCapacity =
+            getUsableMaterialCapacity(
+                sourceLength,
+                capacitySettings
+            );
+
+        let remainingCapacityUnits =
+            millimetersToDpUnits(usableCapacity);
+
+        let nominalRemaining = sourceLength;
+        let wasteUnits = 0;
+        let pieceCount = 0;
+
+
+        for (const item of pattern) {
+
+            if (
+                item === null ||
+                typeof item !== "object" ||
+                !Number.isFinite(item.length) ||
+                item.length <= 0 ||
+                !hasSupportedMillimeterPrecision(item.length) ||
+                !Number.isSafeInteger(item.quantity) ||
+                item.quantity <= 0
+            ) {
+                throw new Error(
+                    "Materiaalikappaleen sahauskuvio on virheellinen."
+                );
+            }
+
+
+            for (let quantity = 0; quantity < item.quantity; quantity++) {
+
+                const physicalCut =
+                    cutPiece(
+                        nominalRemaining,
+                        item.length,
+                        kerf
+                    );
+
+
+                if (!physicalCut.possible) {
+                    return {
+                        possible: false,
+                        usableCapacity: usableCapacity
+                    };
+                }
+
+
+                const capacityUseUnits =
+                    millimetersToDpUnits(item.length) +
+                    millimetersToDpUnits(
+                        capacitySettings.pieceCapacityAllowance
+                    ) +
+                    millimetersToDpUnits(
+                        physicalCut.waste
+                    );
+
+
+                if (capacityUseUnits > remainingCapacityUnits) {
+                    return {
+                        possible: false,
+                        usableCapacity: usableCapacity
+                    };
+                }
+
+
+                remainingCapacityUnits -=
+                    capacityUseUnits;
+
+                nominalRemaining =
+                    physicalCut.remaining;
+
+                wasteUnits +=
+                    millimetersToDpUnits(
+                        physicalCut.waste
+                    );
+
+                pieceCount++;
+            }
+        }
+
+
+        const totalPieceCapacityAllowance =
+            pieceCount *
+            capacitySettings.pieceCapacityAllowance;
+
+
+        return {
+            possible: true,
+            usableCapacity: usableCapacity,
+            remaining:
+                dpUnitsToMillimeters(
+                    remainingCapacityUnits
+                ),
+            nominalRemaining:
+                nominalRemaining,
+            waste:
+                dpUnitsToMillimeters(wasteUnits),
+            sourceCapacityAllowance:
+                capacitySettings.sourceCapacityAllowance,
+            pieceCapacityAllowance:
+                capacitySettings.pieceCapacityAllowance,
+            totalPieceCapacityAllowance:
+                totalPieceCapacityAllowance,
+            totalCapacityAllowance:
+                capacitySettings.sourceCapacityAllowance +
+                totalPieceCapacityAllowance
+        };
+    }
 
     const PROFILE_TYPES = Object.freeze({
         uProfile: Object.freeze({
@@ -368,7 +585,8 @@ const MATERIAL = (() => {
     function getMaterialSourcesForProfile(
         materialInventory,
         profileType,
-        color = null
+        color = null,
+        capacitySettings = {}
     ) {
 
         validateMaterialAvailability(
@@ -385,6 +603,11 @@ const MATERIAL = (() => {
 
         const normalizedColor =
             color ?? null;
+
+        const normalizedCapacitySettings =
+            normalizeMaterialCapacitySettings(
+                capacitySettings
+            );
 
         const sources = [];
 
@@ -413,6 +636,20 @@ const MATERIAL = (() => {
 
                 sourceLength:
                     remnant.length,
+
+                usableCapacity:
+                    getUsableMaterialCapacity(
+                        remnant.length,
+                        normalizedCapacitySettings
+                    ),
+
+                sourceCapacityAllowance:
+                    normalizedCapacitySettings
+                        .sourceCapacityAllowance,
+
+                pieceCapacityAllowance:
+                    normalizedCapacitySettings
+                        .pieceCapacityAllowance,
 
                 unlimited:
                     false,
@@ -452,6 +689,20 @@ const MATERIAL = (() => {
 
                 sourceLength:
                     materialInventory.stockLength,
+
+                usableCapacity:
+                    getUsableMaterialCapacity(
+                        materialInventory.stockLength,
+                        normalizedCapacitySettings
+                    ),
+
+                sourceCapacityAllowance:
+                    normalizedCapacitySettings
+                        .sourceCapacityAllowance,
+
+                pieceCapacityAllowance:
+                    normalizedCapacitySettings
+                        .pieceCapacityAllowance,
 
                 unlimited:
                     newStock.unlimited,
@@ -882,8 +1133,13 @@ const MATERIAL = (() => {
         };
     }
 
-    return Object.freeze({ PROFILE_TYPES,
+    return Object.freeze({
+        PROFILE_TYPES,
+        MATERIAL_CAPACITY_DEFAULTS,
         isSupportedProfileType,
+        normalizeMaterialCapacitySettings,
+        getUsableMaterialCapacity,
+        calculateMaterialBarCapacity,
         validateMaterialAvailability,
         createMaterialInventory,
         getMaterialSourcesForProfile,

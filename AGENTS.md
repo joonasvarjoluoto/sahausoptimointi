@@ -26,7 +26,7 @@ Projekti toimii suoraan selaimessa ilman rakennusvaihetta tai paketinhallintaa:
 
 - `index.html`: mobiiliystävälliset syötteet, työtoiminnot ja tulosalue.
 - `app.js`: käyttöliittymä, optimizerit, pisteytys ja dispositioniin perustuva jälkivarasto, renderöinti, dev-testit ja localStorage-työtila.
-- `src/material.js`: profiilimäärittely, materiaalivaraston validointi ja muodostus, variantin lähteet, lähteen kulutus sekä materiaalikulutuksen laskenta.
+- `src/material.js`: profiilimäärittely, kapasiteettivara-asetukset ja -tase, materiaalivaraston validointi ja muodostus, variantin lähteet, lähteen kulutus sekä materiaalikulutuksen laskenta.
 - `src/cutting-physics.js`: puhdas `cutPiece()`-sahausfysiikka sekä 0,1 mm:n mittamuunnokset ja tarkkuustarkistus.
 - `src/production-planning.js`: puhdas kokonaisia tilauksia valitseva batch-selector, kappalekohdistus ja dependency-aware nippusahausscheduler.
 - `src/production-integration.js`: tuotantokerroksen lomake-, materiaali-, renderöinti- ja persistenssisovittimet.
@@ -42,7 +42,7 @@ Ensimmäinen materiaaliraja (10.9.2026): `isSupportedProfileType()`, `validateMa
 Tallennetun työtilan nykyinen versiointi:
 
 - `WORK_STATE_SCHEMA_VERSION = 6`
-- `WORK_STATE_ENGINE_VERSION = "material-v0.3"`
+- `WORK_STATE_ENGINE_VERSION = "material-v0.4"`
 
 Kun skeema tai moottorin yhteensopivuus muuttuu, arvioi versionnosto ja päivitä dokumentaatio samassa rajatussa työssä.
 
@@ -59,13 +59,13 @@ Nykyiset kuusi fyysisesti erillistä profiilityyppiä ovat:
 
 Eri profiilityypit eivät ole materiaalina vaihtokelpoisia. Materiaalin nykyinen vähimmäisidentiteetti on `profileType + color`; tietomallin pitää sallia myöhemmät lisäattribuutit ilman täydellistä uudelleenkirjoitusta. Väri on materiaalin yhteensopivuudessa kova rajoite, mutta tulevassa sahausjärjestyksessä yleensä pehmeä tuotantopreferenssi.
 
-Uuden tangon pituus tulee `stockLength`-syötteestä. Noin 8 mm ripustusreikää tai huonompaa tangon päätä ei saa kovakoodata nykyiseen hukkaan; tuleva malli voi käyttää esimerkiksi `usableLength`- ja `endAllowance`-kenttiä.
+Uuden tangon nimellispituus tulee `stockLength`-syötteestä. Aktiivinen kapasiteettimalli vähentää jokaiselta uudelta ja vanhalta jäännöslähteeltä alustavasti 20 mm:n `sourceCapacityAllowance`-varan ja varaa jokaiselle kappaleelle 1 mm:n `pieceCapacityAllowance`-varan. Arvot ovat yhteisiä, konservatiivisia oletuksia, eivät tuotantodatalla kalibroituja vakioita. Ne eivät muuta nimellisiä lähde- tai kappalemittoja eivätkä kerfiä.
 
 Jäännös kuuluu aina materiaalivarianttiin. Nykyinen ryhmittelyavain on `profileType + color + length`, ja ryhmä sisältää `quantity`-määrän. Pysyviä jäännös-ID:itä ei tarvita, mutta optimointihaku saa luoda anonyymejä väliaikaisia lähdeinstansseja.
 
 Sahausvaran oletus on 3 mm. `cutPiece()` on sahausfysiikan authoritative sääntö. Älä muuta huomaamatta sitä, milloin terän leveys vähennetään, tai täydellisen loppusovituksen semantiikkaa.
 
-Pidä todellinen kerf, kappalekohtainen mittatoleranssi ja lähteen kapasiteettivarat erillisinä. `DOMAIN_NOTES.md`:n noin 3,4 mm:n terähavainto ja ehdotettu 1 mm/kappale eivät ole nykyisiä oletusasetuksia. Turvallisuusvaraa ei saa piilottaa kerfin kasvattamiseen; 0,1 mm:n laskentatarkkuus ei takaa tuotannon mittatarkkuutta.
+Pidä todellinen kerf, kappalekohtainen kapasiteettivara ja lähteen kapasiteettivara erillisinä. `DOMAIN_NOTES.md`:n noin 3,4 mm:n terähavainto ei ole nykyinen kerf-oletus. Turvallisuusvaraa ei saa piilottaa kerfin kasvattamiseen; 0,1 mm:n laskentatarkkuus ei takaa tuotannon mittatarkkuutta.
 
 Pidä materiaalinäkymä ja tuleva tuotantonäkymä erillään:
 
@@ -111,9 +111,9 @@ Tarkka toteutus ja testausohjeet: `BATCH_AND_BUNDLE_SAWING_PLANNING.md`. Käytt�
 - Scheduler suorittaa batchin yhtenäisinä profiiliblokkeina järjestyksessä Pysty → Vaste → Vaaka → U → kiskot. Ala- ja yläkisko kuuluvat samaan viimeiseen blokkiin, jotta aukkokohtainen 1+1-sekanippu säilyy. Parent-/same-run-remnant-riippuvuus hyväksytään vain saman profiilin sisällä, joten se ei ylitä blokkirajaa.
 - Lähteen jatkoleikkaus riippuu edellisestä operaatiosta. Erillinen saman ajon jäännöslähde voi käyttää `parentSourceId`:tä; sykli, kaksoiskäyttö ja väärä materiaalitase hylätään. Ready saman ajon jäännös priorisoidaan ennen riippumatonta uutta lähdettä.
 - Mittavasteen siirtoihin lasketaan batchin ensimmäinen sahausmitan asetus ja jokainen seuraava sahausmitan muutos. Saman mitan toistaminen tai pelkkä loppukappaleen poiminta ei lisää siirtoa. Sahausliike tarkoittaa käynnistetyn sahan terän laskemista leikkuuseen.
-- Täsmälleen oikean mittainen loppukappale on `release`-poiminta, ei keksitty sahausliike. `cutOperationCount` ja nippumittarit koskevat vain `kind: "cut"` -operaatioita.
+- Täsmälleen nimelliseen fyysiseen lähdepituuteen osuva loppukappale ilman kapasiteettivaroja on `release`-poiminta. Oletusvarojen kanssa turvallisen kapasiteetin nollaan käyttävä viimeinen kappale on edelleen `cut`, koska salossa on viimeisteltävä varattu pää. `cutOperationCount` ja nippumittarit koskevat vain `kind: "cut"` -operaatioita.
 - Tuotanto-operaatiot johdetaan validoidusta materiaalista; ne eivät muuta scorea, kerfiä, lähteiden varastokulutusta tai loppujäännösten dispositionia.
-- Skeemassa 6 säilyvät skeeman 5 batch- ja tilaustiedot ja lisäksi `executionState = { version, planDigest, events }`. Skeeman 4 työ migroidaan ensin kysynnän säilyttävällä kiskomäärämuunnoksella skeemaan 5 ja sitten skeemaan 6. Vanha batch aloittaa toteuman nollasta. Materiaalimoottori on edelleen `material-v0.3`; operaatiolistaa ei tallenneta rinnakkaiseksi totuudeksi.
+- Skeemassa 6 säilyvät skeeman 5 batch- ja tilaustiedot ja lisäksi `executionState = { version, planDigest, events }`. Skeeman 4 työ migroidaan ensin kysynnän säilyttävällä kiskomäärämuunnoksella skeemaan 5 ja sitten skeemaan 6. Vanha batch aloittaa toteuman nollasta. Materiaalimoottori on `material-v0.4`; kapasiteettimallia edeltävä laskettu suunnitelma ei ole uuden moottorin kanssa yhteensopiva. Operaatiolistaa ei tallenneta rinnakkaiseksi totuudeksi.
 - Operaatiot kuitataan schedulerin määräämässä järjestyksessä, ja vain viimeisin kuittaus voidaan perua. Nykyinen tapahtumaversio tallentaa myös `actualSourceIds`-kentän, mutta hyväksyy niihin vain suunnitellut lähteet; suunnitellun ja toteutuneen lähteen poikkeaman käsittely on seuraava erillinen vaihe.
 - Batch-historia, työaikakustannukset, anti-starvation ja peruutettava taustalaskenta ovat myöhempää työtä.
 
@@ -140,6 +140,8 @@ Uusi materiaali ja jäännös sisältävät aina värin:
 ```
 
 Rajattomalla uudella lähteellä `quantity` on `null`. Äärellisellä lähteellä se on kokonaisluku vähintään 0; nollamääräistä lähdettä ei saa tarjota optimizerille. `createMaterialInventory()` yhdistää jäännökset nykyisin saman `profileType + color + length` -avaimen alle.
+
+Materiaalilähde säilyttää nimellisen `sourceLength`-pituuden ja erillisen `usableCapacity`-kapasiteetin. Tangon `nominalRemaining` täsmää nimellisten kappaleiden ja todellisen kerf-hukan kanssa; `remaining` on turvallisesti uudelleenkäytettävä kapasiteettijäännös. `totalCapacityAllowance` erittelee lähdevaran ja kappalevarojen summan. Score, disposition ja finalisoinnin uusi jäännös käyttävät turvallista `remaining`-pituutta, joten epävarmaa varattua päätä ei kirjata kerfiksi, romuksi eikä uutena fyysisenä jäännösrivinä. Turvallinen jäännös saa olla täsmälleen nolla.
 
 Uuden työn raakalistassa on käyttäjän päätöksellä (8.9.2026) jokaiselle kuudelle profiilille rajaton harmaa oletusrivi ja rajaton musta lisärivi. Profiililla säilyy täsmälleen yksi `additional: false` -rivi; musta rivi toimii tavallisena poistettavana lisärivinä. Tallennetun työn palautus ei lisää rivejä eikä muuta saatavuuksia näiden oletusten mukaisiksi.
 
@@ -190,7 +192,7 @@ Sahattavat syötetään tilauskortteina: pysyvä sisäinen `id`, käyttäjän va
 
 **Kiskosyöte ja aukkoparit toteutettu (2026-09-08):** oletus 2 tarkoittaa yhtä ylä- ja yhtä alakiskoa. Täytetty määrä on positiivinen parillinen kokonaisluku. Tyhjä mitta oletuksella 2 tai vanhalla oletuksella 1 ohitetaan. Schedulerin eksplisiittinen `railPairCompatibility` sallii ala+ylä-sekanipun vain, kun saman `orderId + openingId` -aukon koko kiskokysyntä on täsmälleen yksi kumpaakin, mitat ja värit täsmäävät, molemmat lähteet ovat valmiina sahausta varten ja kapasiteetit sallivat parin. Puuttuvaa aukkoa ei arvata. Suuremmat määrät niputetaan profiileittain; saman aukon samanmittaiset valmiit operaatiot priorisoidaan peräkkäin. Materiaalipisteet ja fysiikka eivät muutu.
 
-Skeeman 4 työ muunnetaan palautuksessa skeemaan 5 kaksinkertaistamalla vanhat kiskorivien määrät ja edelleen skeemaan 6 lisäämällä toteumatila. Skeeman 5 batch aloittaa operaatiot nollasta; batchiton työ saa `executionState: null`-arvon. Sen jälkeen suoritetaan tavallinen rakenteellinen ja semanttinen validointi. Kysyntä, materiaaliratkaisu ja salon valmistumistila säilyvät; itse vanhaa oliota ei mutatoida. Moottoriversio pysyy `material-v0.3`:na.
+Skeeman 4 työ muunnetaan palautuksessa skeemaan 5 kaksinkertaistamalla vanhat kiskorivien määrät ja edelleen skeemaan 6 lisäämällä toteumatila. Skeeman 5 batch aloittaa operaatiot nollasta; batchiton työ saa `executionState: null`-arvon. Sen jälkeen suoritetaan tavallinen rakenteellinen ja semanttinen validointi. Kysyntä, materiaaliratkaisu ja salon valmistumistila säilyvät; itse vanhaa oliota ei mutatoida. Materiaalimoottorin nykyinen versio on `material-v0.4`; vanhan moottoriversion laskettu suunnitelma hylätään, koska kapasiteettivarat muuttavat suunnitelman toteutuskelpoisuutta ja jäännöksiä.
 
 Työntekijälle näytettävä salonumero johdetaan materiaaliplanin vakaasta `bars`-järjestyksestä erikseen jokaiselle profiilityypille: profiilin ensimmäinen fyysinen lähde on 1, seuraava 2 ja niin edelleen. Eri profiileilla saa olla sama worker-numero. Sisäinen `bar.id`/`sourceId` säilyy globaalisti yksilöllisenä ja samana fyysisen salon kaikissa jatkoleikkauksissa, joten myös saman ajon jäännös säilyttää worker-numeronsa. Worker-labelia ei tallenneta uutena identiteettinä.
 
@@ -202,13 +204,13 @@ Tallennettu suunnitelma validoidaan rakenteellisesti, semanttisesti ja sahausfys
 
 Tallennettujen raakalista- ja jäännösrivien sekä suunnitelman tankojen profiilinimen pitää olla `PROFILE_TYPES`-olion oma avain. Tilauskorteilla on täsmälleen viisi tunnettua osiota määrätyssä järjestyksessä. Prototyypistä peritty ominaisuus, kuten `constructor` tai `toString`, ei ole kelvollinen profiili tai osio.
 
-Skeema 6 tallentaa `orders`-rakenteen, ei rinnakkaista `inputRows`-kopiota. Tallenteen semanttinen validointi muodostaa kysynnän samalla adapterilla kuin UI. Batchin toteumatila sidotaan suunnitelman ja johdettujen operaatioiden digestiin; tapahtumien pitää muodostaa operaatiolistan järjestyksessä etenevä etuliite. Enintään 100 tilausta, 120 merkkiä nimessä ja yhteensä 1000 laajennettua mittariviä sallitaan; kiskorivi lasketaan kahdeksi myös luonnoksessa. Tunnisteet ovat yksilöllisiä, värit tuettuja tai luonnoksessa tyhjiä, osioiden avausarvot booleaneja ja numeroiden lomakearvot merkkijonoja. Luonnos saa sisältää vielä korjattavia numeroarvoja; laskettu suunnitelma vaatii kelvollisen kysynnän. Käyttäjän luvalla skeeman 3 kuvitteellisia testitöitä ei migroida: vanha tallenne poistuu palautuksessa, työ nollataan ja käyttäjälle näytetään ilmoitus. Moottoriversio säilyy ennallaan.
+Skeema 6 tallentaa `orders`-rakenteen, ei rinnakkaista `inputRows`-kopiota. Tallenteen semanttinen validointi muodostaa kysynnän samalla adapterilla kuin UI. Batchin toteumatila sidotaan suunnitelman ja johdettujen operaatioiden digestiin; tapahtumien pitää muodostaa operaatiolistan järjestyksessä etenevä etuliite. Enintään 100 tilausta, 120 merkkiä nimessä ja yhteensä 1000 laajennettua mittariviä sallitaan; kiskorivi lasketaan kahdeksi myös luonnoksessa. Tunnisteet ovat yksilöllisiä, värit tuettuja tai luonnoksessa tyhjiä, osioiden avausarvot booleaneja ja numeroiden lomakearvot merkkijonoja. Luonnos saa sisältää vielä korjattavia numeroarvoja; laskettu suunnitelma vaatii kelvollisen kysynnän. Käyttäjän luvalla skeeman 3 kuvitteellisia testitöitä ei migroida: vanha tallenne poistuu palautuksessa, työ nollataan ja käyttäjälle näytetään ilmoitus. Skeema pysyy versiossa 6, koska kapasiteettivarat ovat yhteisiä moottoriasetuksia; moottoriversio `material-v0.4` erottaa uuden suunnitelmatuloksen vanhasta.
 
 U-profiilin uusien mittarivien oletusmäärä on 2 (2026-09-07). Tyhjä U-mitta määrällä 2 ohitetaan adapterissa samoin kuin vanha tyhjä oletusrivi määrällä 1. Täytetyn rivin määrää ei muuteta eikä parittomia määriä estetä tässä UI-muutoksessa. Kiskojen oletus on myös 2 yhteiskappaletta; muiden osioiden oletus on 1.
 
 ## Testaus
 
-`node run-material-regressions.cjs` tarkistaa materiaalimoduulin suoran CommonJS-latauksen, eristetyn tavallisen selainmoduulin ilman `app.js`:ää, globaalialiaset sekä neljän ennen irrotusta tallennetun fixturen täydet tulokset. Vertailu kattaa varaston, optimoinnin, UI-suunnitelman, piste-erittelyn, materiaalikulutuksen, jälkivaraston, operaatiot ja mahdottoman tapauksen virheilmoituksen. Lähtödigest on commitista `54445d7`; odotusta ei saa päivittää pelkän refaktoroinnin vuoksi.
+`node run-material-regressions.cjs` tarkistaa materiaalimoduulin suoran CommonJS-latauksen, eristetyn tavallisen selainmoduulin ilman `app.js`:ää, globaalialiaset sekä neljän kapasiteettimallin fixturen täydet tulokset. Vertailu kattaa varaston, optimoinnin, UI-suunnitelman, piste-erittelyn, materiaalikulutuksen, jälkivaraston, operaatiot ja mahdottoman tapauksen virheilmoituksen. Checkpoint päivitettiin tarkoituksellisessa `material-v0.4`-käyttäytymismuutoksessa; sitä ei saa päivittää pelkän refaktoroinnin vuoksi.
 
 Projektissa ei vielä ole varsinaista testikehystä. Turvallinen perustestiajo on `runCoreRegressionTests()`: se ajaa A:n, A:n jäännöksillä, D1:n ja profiilieristyksen ilman DOM- tai localStorage-käsittelyä. Se tarkistaa checkpoint-odotukset, riippumattoman tulosvalidoinnin, sahausfysiikan, syötteiden mutatoimattomuuden ja deterministisen toiston. `createDevelopmentTestCases()` tuottaa sekä tämän ajon että selainloaderien tuoreet lähtötiedot.
 
@@ -218,7 +220,7 @@ Pidä ajurin testilista eksplisiittisenä: lisää sinne vain ilman selainta toi
 
 `runCuttingPhysicsRegressionTests()` lukitsee 23 mittamuunnos-, desimaaliraja-, nollakerf- ja virheellisen tarkkuuden tapausta muuttamatta avointa työtä. Se täydentää aiempia `runCutPieceBoundaryTests()`- ja `runDecimalExactFitRegressionTest()`-testejä. Pidä dev-testit sahausmoduulin ulkopuolella.
 
-`runOrderInputRegressionTests()` tarkistaa tilausadapterin, kiskoparit, tunnisteet ja neljän perustapauksen täsmälleen samat optimointitulokset. `runCandidatePatternMergeRegressionTests()` vertaa suoraa pattern-mergeä aiempaan Map/dedup/sort-semanttiikkaan ja lukitsee duplikaatit, tasatilanteet, kiintiön sekä kerf-täsmäsovitukset. `runStoredOrderValidationRegressionTests()` tarkistaa skeeman 6 rakenteen ja kysynnän sekä skeeman 3 hylkäyksen. Nämä ja `runProductionRegressionTests()` kuuluvat Node-ajurin 36 ryhmään. Tuotantoregressiot kattavat profiilityyppikohtaiset worker-numerot, profiiliblokkien järjestyksen, kiskoblokin, saman salon jatkoleikkauksen, toteumalokin järjestyksen, perumisen, plan-digestin ja skeeman 5 migraation. Pysyvä pattern-regressio vertaa edelleen 1 354 kuviota ja tallennettujen tapausten scoret sekä materiaaliplanit; scheduler-tulokset lukitaan profiiliblokkiversion omalla digestillä. `runCoreProfileTypeValidationRegressionTests()` on eksplisiittisesti kahdeksan rivin taulukko (B-005 korjattu). Selaimen `runOrderInputUiRegressionTests()` testaa irrotetun tilauskortin turvallisen DOM-roundtripin muuttamatta avointa työtä. Fixture-loaderit käyttävät `createDevelopmentOrdersFromCuts()`-adapteria; eriävät ylä-/alakiskolistat hylätään ennen lomakkeen muuttamista. Tämä ei rajoita suoria core-testejä eikä ole tallennemigraatio.
+`runOrderInputRegressionTests()` tarkistaa tilausadapterin, kiskoparit, tunnisteet ja neljän perustapauksen optimointitulokset. `runMaterialCapacityAllowanceRegressionTests()` lukitsee 20 mm:n lähdevaran, 1 mm:n kappalevaran, hylättävän rajatapauksen, turvallisen nollajäännöksen, muuttumattoman kerfin, materiaalitaseen, jälkivaraston ja nollakapasiteetin viimeisen sahausliikkeen. `runCandidatePatternMergeRegressionTests()` vertaa suoraa pattern-mergeä aiempaan Map/dedup/sort-semanttiikkaan ja lukitsee duplikaatit, tasatilanteet, kiintiön sekä kerf-täsmäsovitukset. `runStoredOrderValidationRegressionTests()` tarkistaa skeeman 6 rakenteen ja kysynnän sekä skeeman 3 hylkäyksen. Nämä ja `runProductionRegressionTests()` kuuluvat Node-ajurin 37 ryhmään. Tuotantoregressiot kattavat profiilityyppikohtaiset worker-numerot, profiiliblokkien järjestyksen, kiskoblokin, saman salon jatkoleikkauksen, toteumalokin järjestyksen, perumisen, plan-digestin ja skeeman 5 migraation. Pysyvä pattern-regressio vertaa edelleen 1 354 kuviota ja tallennettujen tapausten scoret sekä materiaaliplanit; scheduler-tulokset lukitaan profiiliblokkiversion omalla digestillä. `runCoreProfileTypeValidationRegressionTests()` on eksplisiittisesti kahdeksan rivin taulukko (B-005 korjattu). Selaimen `runOrderInputUiRegressionTests()` testaa irrotetun tilauskortin turvallisen DOM-roundtripin muuttamatta avointa työtä. Fixture-loaderit käyttävät `createDevelopmentOrdersFromCuts()`-adapteria; eriävät ylä-/alakiskolistat hylätään ennen lomakkeen muuttamista. Tämä ei rajoita suoria core-testejä eikä ole tallennemigraatio.
 
 Aja tuotantoputken ohjaus- ja persistenssimuutoksissa myös `node run-production-ui-regressions.cjs`. Sen 32 tarkistusta käyttävät testikaksoisia; ne eivät korvaa todellista selaimen DOM-, palautus- tai asettelutestiä.
 
@@ -239,7 +241,7 @@ Perustestit:
 
 - **Testi A ilman jäännöksiä:** 17 uutta tankoa (U 4, Pysty 7, Vaaka 2, Yläkisko 2, Alakisko 2). Tämä on käsin perusteltu profiilikohtainen tankomääräminimi.
 - **Testi A jäännöksillä:** `totalBars = 22`, `newBars = 10`, `remnantBars = 12`, kaikki 12 annettua jäännöstä käytetään ja uusista tangoista syntyy nykyisin 9 säästettävää jäännöstä.
-- **Testi D1:** Pysty 2200 mm × 2, vanha Pysty-jäännös 3900 mm × 1 ja rajaton uusi materiaali. Odotettu tulos on yksi uusi tanko, 2200 mm × 2, noin 1594 mm jäännös ja vanha 3900 mm jäännös käyttämättä.
+- **Testi D1:** Pysty 2200 mm × 2, vanha Pysty-jäännös 3900 mm × 1 ja rajaton uusi materiaali. Odotettu tulos on yksi uusi tanko, 2200 mm × 2, 1572 mm turvallinen jäännös, 1594 mm nimellinen loppupituus ja vanha 3900 mm jäännös käyttämättä.
 
 Aja tehtävän laajuuteen nähden soveltuvat tarkistukset. Käytä `node --check`-syntaksitarkistusta muuttuneille JavaScript-tiedostoille (nyt `app.js`, `src/cutting-physics.js` ja `run-regressions.cjs`), jos Node on saatavilla, ja `git diff --check`-tarkistusta. Optimointia, persistenssiä tai selainlatausta muuttava työ vaatii lisäksi relevantit regressiot ja mahdollisuuksien mukaan selaintestin. Älä väitä selaintestiä tehdyksi, jos sitä ei voitu ajaa.
 

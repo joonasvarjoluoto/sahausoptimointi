@@ -55,7 +55,8 @@ const files = [...source('index.html').matchAll(/<script src="([^"]+)"/g)].map(m
 const context = vm.createContext({ console: { log() {}, table() {} } });
 for (const file of files) new vm.Script(source(file), { filename: file }).runInContext(context);
 assert.equal(vm.runInContext(`Object.entries(MATERIAL).every(([name, value]) =>
-    name === 'PROFILE_TYPES' ? PROFILE_TYPES === value : globalThis[name] === value)`, context), true);
+    ['PROFILE_TYPES', 'MATERIAL_CAPACITY_DEFAULTS'].includes(name)
+        ? eval(name) === value : globalThis[name] === value)`, context), true);
 const snapshot = vm.runInContext(`JSON.stringify(createDevelopmentTestCases().map(test => {
     const inventory = createMaterialInventory(test.materialAvailability);
     const optimization = optimizeOrderByProfileTypeWithInventory(test.cuts, inventory, test.kerf, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS);
@@ -68,7 +69,7 @@ const snapshot = vm.runInContext(`JSON.stringify(createDevelopmentTestCases().ma
         postInventory: calculatePostOrderMaterialInventory(plan, inventory, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings),
         execution: optimization.complete ? createProductionExecution(plan, createDevelopmentOrdersFromCuts(test.cuts), test.kerf) : null };
 }))`, context, { timeout: 60000 });
-// Commitin 54445d7 app.js ennen material-irrotusta: A, A jäännöksillä, D1 ja mahdoton profiilieristys.
+// Kapasiteettivaramallin checkpoint: A, A jäännöksillä, D1 ja mahdoton profiilieristys.
 assert.equal(crypto.createHash('sha256').update(snapshot).digest('hex'),
-    '1d65f2fd78fb8b59501570d9bc1e6af1a33abe9c4965c336343ba74e60986820');
-console.log('PASS material CommonJS/isolated browser module, global aliases and four complete pre-extraction fixture snapshots');
+    'a8098c4cb28db5d98d7987ae96591081d8cfa311b94a7cbbff0bc1044f7d8a56');
+console.log('PASS material CommonJS/isolated browser module, global aliases and four capacity-model fixture snapshots');

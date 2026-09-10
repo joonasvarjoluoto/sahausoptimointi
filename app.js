@@ -8,7 +8,10 @@ var {
 const { DP_DIMENSION_SCALE } = CUTTING_PHYSICS;
 
 
-const { PROFILE_TYPES } = MATERIAL;
+const {
+    PROFILE_TYPES,
+    MATERIAL_CAPACITY_DEFAULTS
+} = MATERIAL;
 
 // var säilyttää nykyiset window-/dev-nimet; toteutus on yhteinen materiaalimoduuli.
 var {
@@ -16,6 +19,9 @@ var {
     validateMaterialAvailability,
     createMaterialInventory,
     getMaterialSourcesForProfile,
+    normalizeMaterialCapacitySettings,
+    getUsableMaterialCapacity,
+    calculateMaterialBarCapacity,
     consumeMaterialSource,
     calculateMaterialUsage
 } = MATERIAL;
@@ -1213,7 +1219,14 @@ function findMaterialSourceCandidates(
                 items,
                 materialSource.sourceLength,
                 kerf,
-                maxPatternsPerSource
+                maxPatternsPerSource,
+                {
+                    sourceCapacityAllowance:
+                        materialSource.sourceCapacityAllowance ?? 0,
+
+                    pieceCapacityAllowance:
+                        materialSource.pieceCapacityAllowance ?? 0
+                }
             );
 
 
@@ -1233,6 +1246,24 @@ function findMaterialSourceCandidates(
 
                 sourceLength:
                     materialSource.sourceLength,
+
+                usableCapacity:
+                    materialSource.usableCapacity,
+
+                sourceCapacityAllowance:
+                    candidate.sourceCapacityAllowance,
+
+                pieceCapacityAllowance:
+                    candidate.pieceCapacityAllowance,
+
+                totalPieceCapacityAllowance:
+                    candidate.totalPieceCapacityAllowance,
+
+                totalCapacityAllowance:
+                    candidate.totalCapacityAllowance,
+
+                nominalRemaining:
+                    candidate.nominalRemaining,
 
                 sourceUnlimited:
                     materialSource.unlimited,
@@ -1464,6 +1495,195 @@ function calculatePostOrderMaterialInventory(
         scrapRemnants:
             scrapRemnants
     };
+}
+
+
+function runMaterialCapacityAllowanceRegressionTests() {
+
+    const results = [];
+    const record = (test, passed) => results.push({
+        test: test,
+        result: passed ? "PASS" : "FAIL"
+    });
+
+    const availability = {
+        stockLength: 6000,
+        newStock: Object.keys(PROFILE_TYPES).map(profileType => ({
+            profileType: profileType,
+            color: "black",
+            unlimited: true,
+            quantity: null
+        })),
+        remnants: [{
+            profileType: "verticalProfile",
+            color: "black",
+            length: 1500,
+            quantity: 1
+        }]
+    };
+
+    const inventory = createMaterialInventory(availability);
+    const sources = getMaterialSourcesForProfile(
+        inventory,
+        "verticalProfile",
+        "black",
+        PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+    );
+    const newSource = sources.find(source => source.source === "new");
+    const remnantSource = sources.find(source => source.source === "remnant");
+
+    record(
+        "6000 mm lähteen nimellispituus ja turvallinen kapasiteetti",
+        newSource.sourceLength === 6000 &&
+            newSource.usableCapacity === 5980
+    );
+
+    record(
+        "1500 mm jäännöksen nimellispituus ja turvallinen kapasiteetti",
+        remnantSource.sourceLength === 1500 &&
+            remnantSource.usableCapacity === 1480
+    );
+
+    const fivePieces = calculateMaterialBarCapacity(
+        6000,
+        [{ length: 1000, quantity: 5 }],
+        3,
+        PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+    );
+
+    record(
+        "Viisi kappaletta varaa viisi millimetriä kappalevarausta",
+        fivePieces.possible &&
+            fivePieces.totalPieceCapacityAllowance === 5 &&
+            fivePieces.totalCapacityAllowance === 25
+    );
+
+    const withoutAllowances = calculateMaterialBarCapacity(
+        6000,
+        [{ length: 5977, quantity: 1 }],
+        3,
+        {
+            sourceCapacityAllowance: 0,
+            pieceCapacityAllowance: 0
+        }
+    );
+    const withAllowances = calculateMaterialBarCapacity(
+        6000,
+        [{ length: 5977, quantity: 1 }],
+        3,
+        PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+    );
+    const rejectedCandidates = findCandidatePatternsDP(
+        [{ length: 5977, quantity: 1 }],
+        6000,
+        3,
+        10,
+        PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+    );
+
+    record(
+        "Turvavarat hylkäävät muuten mahtuvan kuvion",
+        withoutAllowances.possible &&
+            !withAllowances.possible &&
+            rejectedCandidates.length === 0
+    );
+
+    const exactCapacity = calculateMaterialBarCapacity(
+        6000,
+        [{ length: 5976, quantity: 1 }],
+        3,
+        PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+    );
+    const exactCandidates = findCandidatePatternsDP(
+        [{ length: 5976, quantity: 1 }],
+        6000,
+        3,
+        10,
+        PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+    );
+
+    record(
+        "Turvallinen kapasiteetti saa päättyä täsmälleen nollaan",
+        exactCapacity.possible &&
+            exactCapacity.remaining === 0 &&
+            exactCapacity.nominalRemaining === 21 &&
+            exactCandidates.length === 1 &&
+            exactCandidates[0].remaining === 0
+    );
+
+    record(
+        "Kapasiteettivaraukset eivät kasvata kerf-hukkaa",
+        fivePieces.waste === 15 &&
+            exactCapacity.waste === 3
+    );
+
+    const capacityPlan = {
+        complete: true,
+        bars: [{
+            ...fivePieces,
+            source: "new",
+            profileType: "verticalProfile",
+            color: "black",
+            sourceLength: 6000,
+            pattern: [{ length: 1000, quantity: 5 }]
+        }],
+        remainingItems: []
+    };
+    const uiPlan = adaptMaterialOptimizationForUi(
+        capacityPlan,
+        PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings
+    );
+    const postInventory = calculatePostOrderMaterialInventory(
+        uiPlan,
+        inventory,
+        PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings
+    );
+    const dispositionTails = [
+        ...postInventory.generatedRemnants,
+        ...postInventory.scrapRemnants
+    ];
+
+    record(
+        "Materiaalitase ja jälkivarasto käyttävät turvallista jäännöstä",
+        verifyOptimizationBarBalances(capacityPlan) &&
+            dispositionTails.length === 1 &&
+            dispositionTails[0].length ===
+                fivePieces.remaining &&
+            dispositionTails[0].length !==
+                fivePieces.nominalRemaining
+    );
+
+    const exactSource = {
+        id: "capacity-exact",
+        profileType: "verticalProfile",
+        color: "black",
+        origin: "new",
+        sourceLength: 6000,
+        ...exactCapacity,
+        pieces: [{
+            pieceId: "capacity-piece",
+            orderId: "capacity-order",
+            openingId: null,
+            profileType: "verticalProfile",
+            color: "black",
+            length: 5976,
+            quantity: 1
+        }]
+    };
+    const execution = PRODUCTION_PLANNING.schedule(
+        [exactSource],
+        3
+    );
+
+    record(
+        "Nollakapasiteetin viimeinen kappale on sahaus eikä release-poiminta",
+        execution.operations.length === 1 &&
+            execution.operations[0].kind === "cut" &&
+            execution.operations[0].sources[0].after === 21
+    );
+
+    console.table(results);
+    return results;
 }
 
 
@@ -2247,7 +2467,11 @@ function findCandidatePatternsDP(
     items,
     stockLength,
     kerf,
-    maxPatterns = 10
+    maxPatterns = 10,
+    capacitySettings = {
+        sourceCapacityAllowance: 0,
+        pieceCapacityAllowance: 0
+    }
 ) {
 
     if (!Array.isArray(items)) {
@@ -2280,12 +2504,27 @@ function findCandidatePatternsDP(
     }
 
 
+    const normalizedCapacitySettings =
+        normalizeMaterialCapacitySettings(
+            capacitySettings
+        );
+
     const stockLengthUnits =
-        millimetersToDpUnits(stockLength);
+        millimetersToDpUnits(
+            getUsableMaterialCapacity(
+                stockLength,
+                normalizedCapacitySettings
+            )
+        );
 
     const kerfUnits = millimetersToDpUnits(kerf);
 
-    const capacity = stockLengthUnits + kerfUnits;
+    const hasCapacityAllowances =
+        normalizedCapacitySettings.sourceCapacityAllowance > 0 ||
+        normalizedCapacitySettings.pieceCapacityAllowance > 0;
+
+    const capacity = stockLengthUnits +
+        (hasCapacityAllowances ? 0 : kerfUnits);
 
 
     const chunks = [];
@@ -2317,6 +2556,9 @@ function findCandidatePatternsDP(
 
         const itemSize =
             millimetersToDpUnits(item.length) +
+            millimetersToDpUnits(
+                normalizedCapacitySettings.pieceCapacityAllowance
+            ) +
             kerfUnits;
 
 
@@ -2429,33 +2671,19 @@ function findCandidatePatternsDP(
             }
 
 
-            let remaining = stockLength;
-            let waste = 0;
+            const materialBalance =
+                calculateMaterialBarCapacity(
+                    stockLength,
+                    pattern,
+                    kerf,
+                    normalizedCapacitySettings
+                );
 
 
-            for (const item of pattern) {
-
-                for (let i = 0; i < item.quantity; i++) {
-
-                    const result =
-                        cutPiece(
-                            remaining,
-                            item.length,
-                            kerf
-                        );
-
-
-                    if (!result.possible) {
-
-                        throw new Error(
-                            "DP-ehdokas ei läpäissyt sahaustarkistusta."
-                        );
-                    }
-
-
-                    remaining = result.remaining;
-                    waste += result.waste;
-                }
+            if (!materialBalance.possible) {
+                throw new Error(
+                    "DP-ehdokas ei läpäissyt kapasiteettitarkistusta."
+                );
             }
 
 
@@ -2463,8 +2691,22 @@ function findCandidatePatternsDP(
 
             candidates.push({
                 pattern: pattern,
-                remaining: remaining,
-                waste: waste,
+                remaining:
+                    materialBalance.remaining,
+                nominalRemaining:
+                    materialBalance.nominalRemaining,
+                waste:
+                    materialBalance.waste,
+                usableCapacity:
+                    materialBalance.usableCapacity,
+                sourceCapacityAllowance:
+                    materialBalance.sourceCapacityAllowance,
+                pieceCapacityAllowance:
+                    materialBalance.pieceCapacityAllowance,
+                totalPieceCapacityAllowance:
+                    materialBalance.totalPieceCapacityAllowance,
+                totalCapacityAllowance:
+                    materialBalance.totalCapacityAllowance,
                 dpCapacityUsed:
                     dpUnitsToMillimeters(usedCapacity)
             });
@@ -5179,11 +5421,21 @@ function findExactFiniteInventoryFeasibilityPlan(
     stats.attempted = true;
 
 
-    // Lähteen yksi ylimääräinen kerf-yksikkö tekee
-    // pituus + kerf -pakkaamisesta cutPiece()-säännön mukaisen:
-    // viimeinen kappale ei tarvitse perään täyttä kerfiä.
     const kerfUnits =
         millimetersToDpUnits(kerf);
+
+    const capacitySettings =
+        normalizeMaterialCapacitySettings({
+            sourceCapacityAllowance:
+                materialSources[0]?.sourceCapacityAllowance ?? 0,
+
+            pieceCapacityAllowance:
+                materialSources[0]?.pieceCapacityAllowance ?? 0
+        });
+
+    const hasCapacityAllowances =
+        capacitySettings.sourceCapacityAllowance > 0 ||
+        capacitySettings.pieceCapacityAllowance > 0;
 
     const pieces = [];
 
@@ -5199,7 +5451,11 @@ function findExactFiniteInventoryFeasibilityPlan(
         const pieceSizeUnits =
             millimetersToDpUnits(
                 item.length
-            ) + kerfUnits;
+            ) +
+            millimetersToDpUnits(
+                capacitySettings.pieceCapacityAllowance
+            ) +
+            kerfUnits;
 
 
         for (
@@ -5236,8 +5492,13 @@ function findExactFiniteInventoryFeasibilityPlan(
 
         const capacityUnits =
             millimetersToDpUnits(
-                source.sourceLength
-            ) + kerfUnits;
+                source.usableCapacity ??
+                getUsableMaterialCapacity(
+                    source.sourceLength,
+                    capacitySettings
+                )
+            ) +
+            (hasCapacityAllowances ? 0 : kerfUnits);
 
 
         for (
@@ -5518,45 +5779,38 @@ function findExactFiniteInventoryFeasibilityPlan(
         }
 
 
-        let remaining =
-            source.sourceLength;
-
-        let waste = 0;
-
-
-        for (const patternItem of pattern) {
-
-            for (
-                let quantity = 0;
-                quantity < patternItem.quantity;
-                quantity++
-            ) {
-
-                const cut =
-                    cutPiece(
-                        remaining,
-                        patternItem.length,
-                        kerf
-                    );
+        const materialBalance =
+            calculateMaterialBarCapacity(
+                source.sourceLength,
+                pattern,
+                kerf,
+                capacitySettings
+            );
 
 
-                if (!cut.possible) {
-                    throw new Error(
-                        "Tarkan toteutettavuushaun sahausjako oli virheellinen."
-                    );
-                }
-
-
-                remaining = cut.remaining;
-                waste += cut.waste;
-            }
+        if (!materialBalance.possible) {
+            throw new Error(
+                "Tarkan toteutettavuushaun sahausjako oli virheellinen."
+            );
         }
 
 
         bars.push({
             pattern: pattern,
-            remaining: remaining,
-            waste: waste,
+            remaining: materialBalance.remaining,
+            nominalRemaining:
+                materialBalance.nominalRemaining,
+            waste: materialBalance.waste,
+            usableCapacity:
+                materialBalance.usableCapacity,
+            sourceCapacityAllowance:
+                materialBalance.sourceCapacityAllowance,
+            pieceCapacityAllowance:
+                materialBalance.pieceCapacityAllowance,
+            totalPieceCapacityAllowance:
+                materialBalance.totalPieceCapacityAllowance,
+            totalCapacityAllowance:
+                materialBalance.totalCapacityAllowance,
             source: source.source,
             profileType: source.profileType,
             color: source.color ?? null,
@@ -5650,7 +5904,20 @@ function optimizeOrderInventoryBeamDP(
             })),
 
             remaining: bar.remaining,
+            nominalRemaining:
+                bar.nominalRemaining,
             waste: bar.waste,
+
+            usableCapacity:
+                bar.usableCapacity,
+            sourceCapacityAllowance:
+                bar.sourceCapacityAllowance,
+            pieceCapacityAllowance:
+                bar.pieceCapacityAllowance,
+            totalPieceCapacityAllowance:
+                bar.totalPieceCapacityAllowance,
+            totalCapacityAllowance:
+                bar.totalCapacityAllowance,
 
             source: bar.source,
             profileType: bar.profileType,
@@ -6018,8 +6285,26 @@ function optimizeOrderInventoryBeamDP(
                         remaining:
                             candidate.remaining,
 
+                        nominalRemaining:
+                            candidate.nominalRemaining,
+
                         waste:
                             candidate.waste,
+
+                        usableCapacity:
+                            candidate.usableCapacity,
+
+                        sourceCapacityAllowance:
+                            candidate.sourceCapacityAllowance,
+
+                        pieceCapacityAllowance:
+                            candidate.pieceCapacityAllowance,
+
+                        totalPieceCapacityAllowance:
+                            candidate.totalPieceCapacityAllowance,
+
+                        totalCapacityAllowance:
+                            candidate.totalCapacityAllowance,
 
                         source:
                             candidate.source,
@@ -6629,6 +6914,10 @@ const PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS = Object.freeze({
     feasibilityFallbackMaxPieces: 24,
     feasibilityFallbackMaxSources: 16,
     feasibilityFallbackMaxStates: 100000,
+    sourceCapacityAllowance:
+        MATERIAL_CAPACITY_DEFAULTS.sourceCapacityAllowance,
+    pieceCapacityAllowance:
+        MATERIAL_CAPACITY_DEFAULTS.pieceCapacityAllowance,
     scoreSettings: Object.freeze({
         minimumLength: 500,
         fullValueLength: 4500,
@@ -6768,7 +7057,8 @@ function optimizeOrderByProfileTypeWithInventory(
                 getMaterialSourcesForProfile(
                     materialInventory,
                     profileType,
-                    variant.color
+                    variant.color,
+                    options
                 );
 
 
@@ -8374,13 +8664,19 @@ function runStoredWorkStateColorRegressionTest() {
                     color: "black",
                     source: "new",
                     sourceLength: 6000,
+                    usableCapacity: 5980,
+                    sourceCapacityAllowance: 20,
+                    pieceCapacityAllowance: 1,
+                    totalPieceCapacityAllowance: 1,
+                    totalCapacityAllowance: 21,
+                    nominalRemaining: 3797,
                     groupedCuts: [
                         {
                             length: 2200,
                             quantity: 1
                         }
                     ],
-                    remaining: 3797,
+                    remaining: 3776,
                     waste: 3,
                     remnantStatus: "reusable"
                 }
@@ -9259,13 +9555,19 @@ function runWorkFinalizationPersistenceRegressionTest() {
                 color: "black",
                 source: "new",
                 sourceLength: 6000,
+                usableCapacity: 5980,
+                sourceCapacityAllowance: 20,
+                pieceCapacityAllowance: 1,
+                totalPieceCapacityAllowance: 1,
+                totalCapacityAllowance: 21,
+                nominalRemaining: 1497,
                 groupedCuts: [
                     {
                         length: 4500,
                         quantity: 1
                     }
                 ],
-                remaining: 1497,
+                remaining: 1476,
                 waste: 3,
                 remnantStatus: "reusable"
             }
@@ -9378,7 +9680,7 @@ function runWorkFinalizationPersistenceRegressionTest() {
         storedSnapshot.remnantRows.find(row =>
             row.profileType === "verticalProfile" &&
             row.color === "black" &&
-            row.length === "1497" &&
+            row.length === "1476" &&
             row.quantity === "1"
         );
 
@@ -9553,6 +9855,7 @@ function verifyOptimizationBarBalances(
     for (const bar of optimization.bars) {
 
         let cutLengthUnits = 0;
+        let pieceCount = 0;
 
 
         for (const item of bar.pattern) {
@@ -9562,7 +9865,38 @@ function verifyOptimizationBarBalances(
                     item.length
                 ) *
                 item.quantity;
+
+            pieceCount += item.quantity;
         }
+
+
+        const sourceCapacityAllowance =
+            bar.sourceCapacityAllowance ?? 0;
+
+        const pieceCapacityAllowance =
+            bar.pieceCapacityAllowance ?? 0;
+
+        const expectedPieceCapacityAllowance =
+            pieceCount * pieceCapacityAllowance;
+
+        const totalPieceCapacityAllowance =
+            bar.totalPieceCapacityAllowance ??
+            expectedPieceCapacityAllowance;
+
+        const totalCapacityAllowance =
+            bar.totalCapacityAllowance ??
+            sourceCapacityAllowance +
+            totalPieceCapacityAllowance;
+
+        const usableCapacity =
+            bar.usableCapacity ??
+            bar.sourceLength -
+            sourceCapacityAllowance;
+
+        const nominalRemaining =
+            bar.nominalRemaining ??
+            bar.remaining +
+            totalCapacityAllowance;
 
 
         const accountedLengthUnits =
@@ -9571,7 +9905,7 @@ function verifyOptimizationBarBalances(
                 bar.waste
             ) +
             millimetersToDpUnits(
-                bar.remaining
+                nominalRemaining
             );
 
         const sourceLengthUnits =
@@ -9580,9 +9914,36 @@ function verifyOptimizationBarBalances(
             );
 
 
+        const capacityAccountedUnits =
+            cutLengthUnits +
+            millimetersToDpUnits(bar.waste) +
+            millimetersToDpUnits(bar.remaining) +
+            millimetersToDpUnits(totalCapacityAllowance);
+
+
         if (
-            sourceLengthUnits !==
-            accountedLengthUnits
+            !Number.isFinite(usableCapacity) ||
+            usableCapacity < 0 ||
+            !hasSupportedMillimeterPrecision(usableCapacity) ||
+            !Number.isFinite(sourceCapacityAllowance) ||
+            sourceCapacityAllowance < 0 ||
+            !hasSupportedMillimeterPrecision(sourceCapacityAllowance) ||
+            !Number.isFinite(pieceCapacityAllowance) ||
+            pieceCapacityAllowance < 0 ||
+            !hasSupportedMillimeterPrecision(pieceCapacityAllowance) ||
+            totalPieceCapacityAllowance !==
+                expectedPieceCapacityAllowance ||
+            totalCapacityAllowance !==
+                sourceCapacityAllowance +
+                totalPieceCapacityAllowance ||
+            millimetersToDpUnits(usableCapacity) !==
+                Math.max(
+                    0,
+                    sourceLengthUnits -
+                    millimetersToDpUnits(sourceCapacityAllowance)
+                ) ||
+            sourceLengthUnits !== accountedLengthUnits ||
+            sourceLengthUnits !== capacityAccountedUnits
         ) {
 
             throw new Error(
@@ -10240,6 +10601,18 @@ function adaptMaterialOptimizationForUi(
 
             sourceLength:
                 bar.sourceLength,
+            usableCapacity:
+                bar.usableCapacity ?? bar.sourceLength,
+            sourceCapacityAllowance:
+                bar.sourceCapacityAllowance ?? 0,
+            pieceCapacityAllowance:
+                bar.pieceCapacityAllowance ?? 0,
+            totalPieceCapacityAllowance:
+                bar.totalPieceCapacityAllowance ?? 0,
+            totalCapacityAllowance:
+                bar.totalCapacityAllowance ?? 0,
+            nominalRemaining:
+                bar.nominalRemaining ?? bar.remaining,
             groupedCuts: bar.pattern.map(item => ({
                 length: item.length,
                 quantity: item.quantity
@@ -10359,7 +10732,7 @@ function getRemnantStatusLabel(remnantStatus) {
 
 const WORK_STORAGE_KEY = "sahausoptimointi.currentWork";
 const WORK_STATE_SCHEMA_VERSION = 6;
-const WORK_STATE_ENGINE_VERSION = "material-v0.3";
+const WORK_STATE_ENGINE_VERSION = "material-v0.4";
 const MAX_STORED_FORM_ROW_COUNT = 1000;
 
 const DEFAULT_STOCK_LENGTH = "6000";
@@ -10558,6 +10931,24 @@ function isValidStoredPlan(plan) {
         Number.isFinite(bar.sourceLength) &&
         bar.sourceLength > 0 &&
         hasSupportedMillimeterPrecision(bar.sourceLength) &&
+        Number.isFinite(bar.usableCapacity) &&
+        bar.usableCapacity >= 0 &&
+        hasSupportedMillimeterPrecision(bar.usableCapacity) &&
+        Number.isFinite(bar.sourceCapacityAllowance) &&
+        bar.sourceCapacityAllowance >= 0 &&
+        hasSupportedMillimeterPrecision(bar.sourceCapacityAllowance) &&
+        Number.isFinite(bar.pieceCapacityAllowance) &&
+        bar.pieceCapacityAllowance >= 0 &&
+        hasSupportedMillimeterPrecision(bar.pieceCapacityAllowance) &&
+        Number.isFinite(bar.totalPieceCapacityAllowance) &&
+        bar.totalPieceCapacityAllowance >= 0 &&
+        hasSupportedMillimeterPrecision(bar.totalPieceCapacityAllowance) &&
+        Number.isFinite(bar.totalCapacityAllowance) &&
+        bar.totalCapacityAllowance >= 0 &&
+        hasSupportedMillimeterPrecision(bar.totalCapacityAllowance) &&
+        Number.isFinite(bar.nominalRemaining) &&
+        bar.nominalRemaining >= 0 &&
+        hasSupportedMillimeterPrecision(bar.nominalRemaining) &&
         Array.isArray(bar.groupedCuts) &&
         bar.groupedCuts.length > 0 &&
         bar.groupedCuts.every(cut =>
@@ -10597,6 +10988,17 @@ function adaptStoredPlanForVerification(plan) {
             color: bar.color ?? null,
             source: bar.source,
             sourceLength: bar.sourceLength,
+            usableCapacity: bar.usableCapacity,
+            sourceCapacityAllowance:
+                bar.sourceCapacityAllowance,
+            pieceCapacityAllowance:
+                bar.pieceCapacityAllowance,
+            totalPieceCapacityAllowance:
+                bar.totalPieceCapacityAllowance,
+            totalCapacityAllowance:
+                bar.totalCapacityAllowance,
+            nominalRemaining:
+                bar.nominalRemaining,
             pattern: bar.groupedCuts.map(cut => ({
                 length: cut.length,
                 quantity: cut.quantity
@@ -10619,38 +11021,24 @@ function verifyStoredPlanSawPhysics(plan, kerf) {
 
     for (const bar of plan.bars) {
 
-        let calculatedRemaining = bar.sourceLength;
-        let calculatedWasteUnits = 0;
+        const calculated =
+            calculateMaterialBarCapacity(
+                bar.sourceLength,
+                bar.groupedCuts,
+                kerf,
+                bar
+            );
 
 
-        for (const cut of bar.groupedCuts) {
-
-            for (let quantity = 0; quantity < cut.quantity; quantity++) {
-
-                const cutResult = cutPiece(
-                    calculatedRemaining,
-                    cut.length,
-                    kerf
-                );
-
-
-                if (!cutResult.possible) {
-                    throw new Error(
-                        "Tallennetun suunnitelman sahausta ei voida tehdä annetusta lähteestä."
-                    );
-                }
-
-
-                calculatedRemaining = cutResult.remaining;
-                calculatedWasteUnits += millimetersToDpUnits(
-                    cutResult.waste
-                );
-            }
+        if (!calculated.possible) {
+            throw new Error(
+                "Tallennetun suunnitelman sahausta ei voida tehdä annetusta lähteestä."
+            );
         }
 
 
         if (
-            millimetersToDpUnits(calculatedRemaining) !==
+            millimetersToDpUnits(calculated.remaining) !==
             millimetersToDpUnits(bar.remaining)
         ) {
             throw new Error(
@@ -10660,11 +11048,25 @@ function verifyStoredPlanSawPhysics(plan, kerf) {
 
 
         if (
-            calculatedWasteUnits !==
+            millimetersToDpUnits(calculated.waste) !==
             millimetersToDpUnits(bar.waste)
         ) {
             throw new Error(
                 "Tallennetun suunnitelman sahahukka ei vastaa sahausfysiikkaa."
+            );
+        }
+
+
+        if (
+            millimetersToDpUnits(calculated.nominalRemaining) !==
+                millimetersToDpUnits(bar.nominalRemaining) ||
+            millimetersToDpUnits(calculated.usableCapacity) !==
+                millimetersToDpUnits(bar.usableCapacity) ||
+            millimetersToDpUnits(calculated.totalCapacityAllowance) !==
+                millimetersToDpUnits(bar.totalCapacityAllowance)
+        ) {
+            throw new Error(
+                "Tallennetun suunnitelman kapasiteettitase ei vastaa materiaalimallia."
             );
         }
     }
@@ -10899,13 +11301,19 @@ function createStoredPlanSemanticRegressionState() {
                     color: "black",
                     source: "new",
                     sourceLength: 6000,
+                    usableCapacity: 5980,
+                    sourceCapacityAllowance: 20,
+                    pieceCapacityAllowance: 1,
+                    totalPieceCapacityAllowance: 1,
+                    totalCapacityAllowance: 21,
+                    nominalRemaining: 3797,
                     groupedCuts: [
                         {
                             length: 2200,
                             quantity: 1
                         }
                     ],
-                    remaining: 3797,
+                    remaining: 3776,
                     waste: 3,
                     remnantStatus: "reusable"
                 }
@@ -13411,12 +13819,18 @@ function runInventoryBeamFeasibilityRegressionTest() {
                 witness
             );
 
+        const legacyCapacityOptions = {
+            ...PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS,
+            sourceCapacityAllowance: 0,
+            pieceCapacityAllowance: 0
+        };
+
         optimization =
             optimizeOrderByProfileTypeWithInventory(
                 cuts,
                 materialInventory,
                 3,
-                PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS
+                legacyCapacityOptions
             );
 
         optimizationValid =
@@ -13790,7 +14204,7 @@ function createDevelopmentTestCases() {
                 newBars: 1,
                 remnantBars: 0,
                 reusableGeneratedRemnants: 1,
-                newBarRemaining: 1594,
+                newBarRemaining: 1572,
                 remainingItems: []
             }
         },
