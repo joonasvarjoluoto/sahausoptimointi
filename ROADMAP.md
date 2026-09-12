@@ -6,19 +6,21 @@ Tämä kuvaa kehityssuunnan, ei anna lupaa toteuttaa koko suunnitelmaa. Aktiivin
 
 Sovellus valitsee kokonaisista tilauksista materiaalipisteellä batchin, optimoi materiaalin ja muodostaa erillisellä schedulerilla nippusahauksen profiiliblokeittain. Worker-numerointi, järjestetyt kuittaukset, undo/reload, UI:n toistoryhmät, 3+3-esitys ja aktiivisen blokin materiaalivalmistelu toimivat. Operaattori päättää materiaalin kantotavan. B-009:n ensiversio kirjaa yhden korvatun salon nykyisessä operaatiossa, säilyttää alkuperäisen suunnitelman ja johtaa fyysisen toteuman. Mahdoton jatko pysäyttää työn; kelvollinen valmis toteuma määrää finalisoinnin varastosiirtymän.
 
+B-013:n rajattu jatkopolku on käytössä: pysähtyneestä työstä muodostetaan tekemättömille kappaleille V3-jatkosuunnitelma alkuperäisiltä fyysisiltä lähteiltä. Sama tuotantokortti säilyttää worker-numerot, reload/undo-rajan ja yhdistetyn finalisoinnin. Koko käyttöpolku sekä jatkon kiskosekapari on testattu oikeassa selaimessa; näyttö ja rajat ovat [valmistuneissa backlog-kohdissa](docs/history/COMPLETED_BACKLOG.md).
+
 Mahdollisessa esimiesdemossa kokonaisuus esitellään prototyyppinä; demo tai regressioiden läpäisy ei yksin todista tuotantovalmiutta. Näkyvä käyttöpolku ja materiaalitalouden selitettävyys säilyvät tärkeinä.
 
 Sahausfysiikka ja ensimmäinen material/inventory-core ovat omissa moduuleissaan. Kapasiteettivarat ovat käytössä erillään kerfistä. Reachable-state-DP ja vakaa pattern-merge ovat productionissa. Batch-selector on edelleen synkroninen exhaustive-haku; tutkimuksen anytime-hakua ei ole kytketty selaimeen. Testit ja checkpointien käyttö on kuvattu [TESTING.md](docs/TESTING.md):ssä.
 
 ## Seuraava konkreettinen vaihe
 
-**Pysähtyneen työn jatkosuunnitelma (B-013).** B-009:n toteumamalli ja fyysiset estot ovat käytössä. Seuraavaksi rajataan osittainen uudelleenoptimointi, joka säilyttää toteutuneet kappaleet ja alkuperäisen planin vertailuna, käyttää salojen todellisia jäljellä olevia kapasiteetteja ja muodostaa erikseen jäljitettävän jatkosuunnitelman. Tämä vaatii oman tehtävän ja digest-/reload-/undo-sopimuksen; nykyinen turvallinen pysähdys ei vielä tarjoa jatkoreittiä.
+**Jatkopolun käytännön tuotantovarmistus ja seuraavan työalueen valinta.** B-013:n pysähdys → jatko → reload/undo → finalisointi on toteutettu ja testattu. Pienin seuraava askel on operaattorin arvio nykyisillä käyttöohjeilla realistisesta työstä; seuraava koodivaihe rajataan erikseen alla olevista avoimista työalueista. Jatkon uutta poikkeamakierrosta tai manifestin ulkopuolista materiaalia ei lisätä automaattisesti.
 
 ## Seuraavat työalueet ja riippuvuudet
 
 | Työalue | Pienin järkevä eteneminen | Edellytys |
 | --- | --- | --- |
-| Tuotannon luotettavuus | Toteutuneen lähteen käsittelyn jälkeen pysähtyneen työn jatkosuunnitelma; myöhemmin batch-historia. Vasteen nippukapasiteetti vahvistetaan erikseen | Fysiikka, jäljitettävyys ja persistoi-ensin-turva säilyvät |
+| Tuotannon luotettavuus | Toteutuneen jatkopolun tuotantovarmistus; myöhemmin erikseen rajattu batch-historia. Vasteen nippukapasiteetti vahvistetaan erikseen | Fysiikka, jäljitettävyys ja persistoi-ensin-turva säilyvät |
 | Vaihe 1b: pienet moduulirajat | Material-core on irrotettu. Seuraava raja valitaan todellisista riippuvuuksista; optimizer vasta materiaalirajan selkiydyttyä, UI/persistenssin I/O myöhemmin | Täydet ennen/jälkeen-regressiot; ei käyttäytymismuutosta samassa refaktorissa |
 | Vaihe 1c: varaston käytettävyys | Todellisten saldojen käyttöönotto → hälytysluokittelu → profiiliaccordionit ja poikkeusyhteenveto → erillinen vastaanotto | Tuntemattoman/rajattoman saldon tulkinta ja alkusaldojen kirjaaminen päätetään; hälytys ei muuta optimizerin saatavuutta |
 | Kapasiteetin tuotantovarmistus | Mittaa lähteet, päät ja kappalepoikkeamat; kalibroi yhteiset varat erikseen | Nykyinen malli on toteutettu, mutta konservatiiviset oletukset eivät vielä ole laajasti tuotannossa kalibroituja |

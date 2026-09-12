@@ -149,7 +149,7 @@ const PRODUCTION_PLANNING = (() => {
         return pairs;
     }
 
-    function schedule(sources, kerf, profiles = profileDefaults) {
+    function schedule(sources, kerf, profiles = profileDefaults, originalPieces) {
         const physics = typeof CUTTING_PHYSICS !== "undefined" ? CUTTING_PHYSICS : require("./cutting-physics.js");
         const material = typeof MATERIAL !== "undefined" ? MATERIAL : require("./material.js");
         if (kerf < 0 || !physics.hasSupportedMillimeterPrecision(kerf)) throw new Error("Virheellinen sahausvara.");
@@ -225,7 +225,16 @@ const PRODUCTION_PLANNING = (() => {
             visited.add(state.source.id);
         }
         states.forEach(check);
-        const railPairs = createRailPairIndex(sources);
+        if (originalPieces !== undefined) {
+            const originalById = new Map(originalPieces.map(piece => [piece.pieceId, piece]));
+            if (originalById.size !== originalPieces.length || sources.some(source => source.pieces.some(piece => {
+                const original = originalById.get(piece.pieceId);
+                return !original || ["orderId", "openingId", "profileType", "color", "length", "quantity"].some(key =>
+                    (original[key] ?? null) !== (piece[key] ?? null));
+            }))) throw new Error("Jatkon kappaleet eivät vastaa alkuperäistä kysyntää.");
+        }
+        // Konteksti on tämän työn tai jatkon aloituskysyntä. Sitä ei pienennetä operaatiokierroksilla.
+        const railPairs = createRailPairIndex(originalPieces === undefined ? sources : [{ pieces: originalPieces }]);
         const operations = [];
         while ([...states.values()].some(s => s.pieces.length)) {
             const ready = [...states.values()].filter(s => s.pieces.length &&
@@ -240,7 +249,7 @@ const PRODUCTION_PLANNING = (() => {
             // blokissa on aina vähintään yksi topologisesti valmis lähde.
             if (!activeReady.length) throw new Error("Profiiliblokin materiaaliriippuvuudet estävät suorituksen.");
             // Jatkoleikkaus käyttää juuri syntynyttä, tarkasti tunnettua jäännöstä.
-            const priority = s => s.lastOperation || s.source.parentSourceId ? 0 : 1;
+            const priority = s => s.lastOperation || s.source.parentSourceId || s.source.previouslyUsed ? 0 : 1;
             const previous = operations.at(-1);
             const previousRail = previous?.pieces.find(isRail);
             const adjacent = p => previousRail && isRail(p) && openingKey(p) &&
@@ -302,7 +311,7 @@ const PRODUCTION_PLANNING = (() => {
                 const cut = cutState(state, output);
                 if (!cut.possible) throw new Error("Järjestetty sahaus ei mahdu lähteeseen.");
                 operation.sources.push({ id: state.source.id, profileType: state.source.profileType, color: state.source.color,
-                    origin: state.lastOperation ? "same-run-remnant" : state.source.origin,
+                    origin: state.lastOperation || state.source.previouslyUsed ? "same-run-remnant" : state.source.origin,
                     before: state.nominalRemaining, after: cut.nominalRemaining, waste: cut.waste });
                 operation.pieces.push({ ...output, sourceId: state.source.id });
                 state.remaining = cut.remaining;

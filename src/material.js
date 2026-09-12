@@ -731,6 +731,7 @@ const MATERIAL = (() => {
 
         const sourceIndex =
             nextSources.findIndex(source =>
+                source.sourceId === candidate.sourceId &&
                 source.source === candidate.source &&
                 source.profileType === candidate.profileType &&
                 (source.color ?? null) ===

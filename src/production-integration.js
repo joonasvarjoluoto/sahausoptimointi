@@ -132,7 +132,7 @@ function createInitialProductionExecutionState(plan, execution) {
 }
 
 function isProductionExecutionEventPrefix(state, plan, execution) {
-    if (!isPlainObject(state) || ![1, 2].includes(state.version) ||
+    if (!isPlainObject(state) || ![1, 2].includes(state.version) || state.continuation !== undefined ||
         state.planDigest !== createProductionPlanDigest(plan, execution) ||
         !Array.isArray(state.events) || state.events.length > execution.operations.length) return false;
     return state.events.every((event, index) => {
@@ -149,6 +149,9 @@ function isProductionExecutionEventPrefix(state, plan, execution) {
 }
 
 function isValidProductionExecutionState(state, plan, execution, kerf) {
+    if (state?.version === 3) {
+        try { replayProductionContinuationExecution(state, plan, execution, kerf); return true; } catch { return false; }
+    }
     if (!isProductionExecutionEventPrefix(state, plan, execution)) return false;
     if (state.version === 1) return true; // V1 säilyttää vain suunniteltujen lähteiden sopimuksen.
     try { replayProductionExecution(state, plan, execution, kerf); return true; } catch { return false; }
@@ -193,6 +196,7 @@ function findRemainingProductionConflict(ledger, execution, start, kerf) {
 }
 
 function replayProductionExecution(state, plan, execution, kerf) {
+    if (state?.version === 3) return replayProductionContinuationExecution(state, plan, execution, kerf);
     if (!isProductionExecutionEventPrefix(state, plan, execution) || !Number.isFinite(kerf) || kerf < 0 ||
         !CUTTING_PHYSICS.hasSupportedMillimeterPrecision(kerf)) throw new Error("Virheellinen sahausten toteumatila tai sahausvara.");
     const ledger = new Map(plan.bars.map(bar => {
@@ -221,7 +225,276 @@ function replayProductionExecution(state, plan, execution, kerf) {
         complete: state.events.length === execution.operations.length };
 }
 
+// Johdettu lähtötieto, ei jatkosuunnitelma. Execution tulee alkuperäisestä
+// createProductionExecution()-kutsusta; kappaleita ei kohdisteta uudelleen.
+function createProductionContinuationInput(state, plan, execution, kerf) {
+    if (state?.version === 3) throw new Error("Jatkolähtötila johdetaan jäädytetystä alkuperäisestä etuliitteestä.");
+    if (!plan.complete || plan.remainingItems.length) throw new Error("Jatkolähtötila vaatii täydellisen alkuperäisen suunnitelman.");
+    const replay = replayProductionExecution(state, plan, execution, kerf);
+    const plannedSources = new Map(plan.bars.map(bar => [bar.id, {
+        bar, quantities: new Map()
+    }]));
+    for (const { bar, quantities } of plannedSources.values()) {
+        for (const cut of bar.groupedCuts) {
+            quantities.set(cut.length, (quantities.get(cut.length) ?? 0) + cut.quantity);
+        }
+    }
+    const allPieces = [], pieceIds = new Set(), completedIds = new Set(), operationIds = new Set();
+    execution.operations.forEach((operation, index) => {
+        if (!operation.id || operationIds.has(operation.id) || !operation.pieces.length ||
+            operation.pieces.length !== operation.sources.length) throw new Error("Alkuperäisen operaation kappaleslotit ovat virheelliset.");
+        operationIds.add(operation.id);
+        operation.pieces.forEach((piece, slot) => {
+            const source = operation.sources[slot];
+            const planned = plannedSources.get(source.id);
+            if (typeof piece.pieceId !== "string" || !piece.pieceId || pieceIds.has(piece.pieceId) ||
+                typeof piece.orderId !== "string" || !piece.orderId ||
+                !(piece.openingId == null || typeof piece.openingId === "string") ||
+                piece.quantity !== 1 || piece.length !== operation.length ||
+                piece.sourceId !== source.id || !planned ||
+                piece.profileType !== source.profileType || piece.profileType !== planned.bar.profileType ||
+                (piece.color ?? null) !== (source.color ?? null) || (piece.color ?? null) !== (planned.bar.color ?? null) ||
+                !(planned.quantities.get(piece.length) > 0)) {
+                throw new Error("Alkuperäisen kappaleen tunniste tai provenance ei vastaa suunniteltua slottia.");
+            }
+            planned.quantities.set(piece.length, planned.quantities.get(piece.length) - 1);
+            pieceIds.add(piece.pieceId);
+            allPieces.push({ ...piece });
+            // Toteutunut salko ei vaihda kuitatun kappaleslotin identiteettiä.
+            if (index < state.events.length) completedIds.add(piece.pieceId);
+        });
+    });
+    if ([...plannedSources.values()].some(source => [...source.quantities.values()].some(quantity => quantity !== 0))) {
+        throw new Error("Alkuperäisen materiaaliplanin kappaleita puuttuu operaatiolistasta.");
+    }
+    const physicalSources = replay.bars.map(bar => ({
+        sourceId: bar.id, profileType: bar.profileType, color: bar.color ?? null,
+        source: bar.source, sourceLength: bar.sourceLength,
+        sourceCapacityAllowance: bar.sourceCapacityAllowance ?? 0,
+        pieceCapacityAllowance: bar.pieceCapacityAllowance ?? 0,
+        nominalRemaining: bar.nominalRemaining, remaining: bar.remaining,
+        // Erotus kantaa aiemmat varaukset; alkuperäisen sourceCapacityAllowance ei muutu.
+        carriedSourceCapacityAllowance: CUTTING_PHYSICS.dpUnitsToMillimeters(
+            CUTTING_PHYSICS.millimetersToDpUnits(bar.nominalRemaining) - CUTTING_PHYSICS.millimetersToDpUnits(bar.remaining)),
+        totalPieceCapacityAllowance: bar.totalPieceCapacityAllowance,
+        totalCapacityAllowance: bar.totalCapacityAllowance,
+        waste: bar.waste, groupedCuts: bar.groupedCuts.map(cut => ({ ...cut }))
+    }));
+    return {
+        allPieces,
+        completedPieces: allPieces.filter(piece => completedIds.has(piece.pieceId)),
+        remainingPieces: allPieces.filter(piece => !completedIds.has(piece.pieceId)),
+        physicalSources
+    };
+}
+
+// Yksi bar alkuperäistä fyysistä salkoa kohti. Virtuaalilähteen pituutta ei pisteytetä uutena materiaalina.
+function createPredictedProductionMaterialPlan(physicalSources, continuationBars, kerf) {
+    const sources = new Map(physicalSources.map(source => [source.sourceId, source]));
+    const proposed = new Map();
+    if (sources.size !== physicalSources.length) throw new Error("Fyysinen lähde esiintyy kahdesti.");
+    for (const bar of continuationBars) {
+        if (!sources.has(bar.sourceId) || proposed.has(bar.sourceId) || !bar.pattern.length) {
+            throw new Error("Jatko käyttää tuntematonta tai kahdennettua fyysistä lähdettä.");
+        }
+        proposed.set(bar.sourceId, bar.pattern);
+    }
+    const bars = physicalSources.flatMap(source => {
+        const groupedCuts = [...source.groupedCuts, ...(proposed.get(source.sourceId) ?? [])].map(cut => ({ ...cut }));
+        if (!groupedCuts.length) return [];
+        const capacity = MATERIAL.calculateMaterialBarCapacity(source.sourceLength, groupedCuts, kerf, source);
+        if (!capacity.possible) throw new Error("Jatkon yhdistetty fyysinen materiaalitase on mahdoton.");
+        return [{ sourceId: source.sourceId, source: source.source, sourceLength: source.sourceLength,
+            profileType: source.profileType, color: source.color, ...capacity, groupedCuts }];
+    });
+    return { complete: true, bars };
+}
+
+// Input on createProductionContinuationInput()-tulos. ID-kohdistus on ainoa ehdotettu materiaalijako.
+function evaluateProductionContinuationPlan(input, assignments, kerf) {
+    const remaining = new Map(input.remainingPieces.map(piece => [piece.pieceId, piece]));
+    const physical = new Map(input.physicalSources.map(source => [source.sourceId, source]));
+    const assignedPieces = new Set(), assignedSources = new Set();
+    if (remaining.size !== input.remainingPieces.length || physical.size !== input.physicalSources.length ||
+        input.completedPieces.some(piece => remaining.has(piece.pieceId))) throw new Error("Virheellinen jatkon lähtöjoukko.");
+    const sources = assignments.map(assignment => {
+        const source = physical.get(assignment.sourceId);
+        if (!source || assignedSources.has(source.sourceId) || !assignment.pieceIds.length) {
+            throw new Error("Jatkon lähde puuttuu, on kahdennettu tai on tyhjä.");
+        }
+        assignedSources.add(source.sourceId);
+        const pieces = assignment.pieceIds.map(id => {
+            const piece = remaining.get(id);
+            if (!piece || assignedPieces.has(id) || piece.profileType !== source.profileType || (piece.color ?? null) !== source.color) {
+                throw new Error("Jatkon kappale on vieras, jo tehty, kahdennettu tai väärää materiaalia.");
+            }
+            assignedPieces.add(id);
+            return { ...piece, sourceId: source.sourceId };
+        });
+        const capacity = MATERIAL.calculateMaterialBarCapacity(source.nominalRemaining,
+            pieces.map(piece => ({ length: piece.length, quantity: 1 })), kerf, {
+                sourceCapacityAllowance: source.carriedSourceCapacityAllowance, pieceCapacityAllowance: source.pieceCapacityAllowance
+            });
+        if (!capacity.possible || capacity.usableCapacity !== source.remaining) throw new Error("Jatkon kappaleet eivät mahdu fyysiseen lähtötilaan.");
+        return { id: source.sourceId, profileType: source.profileType, color: source.color,
+            origin: source.source === "new" ? "new" : "old-remnant", previouslyUsed: source.groupedCuts.length > 0,
+            sourceLength: source.nominalRemaining, ...capacity, pieces };
+    });
+    if (!remaining.size || assignedPieces.size !== remaining.size) throw new Error("Jatkon pitää kattaa koko epätyhjä tekemätön kysyntä.");
+    // Kiskon 1+1-erikoistapaus määräytyy jatkon aloituskysynnästä, ei jo tehdyistä kappaleista.
+    const execution = PRODUCTION_PLANNING.schedule(sources, kerf, PRODUCTION_PLANNING.profileDefaults, input.remainingPieces);
+    // Simuloi schedulerin todellinen järjestys alkuperäisistä fyysisistä lähteistä.
+    const ledger = new Map(input.physicalSources.map(source => [source.sourceId, { ...source, id: source.sourceId }]));
+    for (const operation of execution.operations) {
+        if (operation.sources.some(source => source.before !== ledger.get(source.id).nominalRemaining)) throw new Error("Jatkon lähtöpituus ei täsmää.");
+        applyProductionOperation(ledger, operation, operation.sources.map(source => source.id), kerf);
+        if (operation.sources.some(source => source.after !== ledger.get(source.id).nominalRemaining)) throw new Error("Jatkon loppupituus ei täsmää.");
+    }
+    const predictedPlan = createPredictedProductionMaterialPlan(input.physicalSources, sources.map(source => ({
+        sourceId: source.id, pattern: execution.operations.flatMap(operation => operation.pieces
+            .filter(piece => piece.sourceId === source.id).map(piece => ({ length: piece.length, quantity: 1 })))
+    })), kerf);
+    for (const bar of predictedPlan.bars) {
+        const actual = ledger.get(bar.sourceId);
+        if (["nominalRemaining", "remaining", "waste", "totalCapacityAllowance"].some(key => actual[key] !== bar[key])) {
+            throw new Error("Jatkon scheduler muutti ennustettua fyysistä tasetta.");
+        }
+    }
+    return { complete: true, assignments: assignments.map(assignment => ({ sourceId: assignment.sourceId, pieceIds: [...assignment.pieceIds] })),
+        predictedPlan, materialScore: scoreCompleteMaterialTransitionPlan(predictedPlan, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings), execution };
+}
+
+function createProductionContinuationPlan(state, plan, execution, kerf, options = {}) {
+    const input = createProductionContinuationInput(state, plan, execution, kerf);
+    if (!input.remainingPieces.length) return { complete: false, feasibilityStatus: "unknown", reason: "no-remaining-pieces" };
+    const variants = new Map();
+    for (const piece of input.remainingPieces) {
+        const key = JSON.stringify([piece.profileType, piece.color ?? null]);
+        if (!variants.has(key)) variants.set(key, []);
+        variants.get(key).push(piece);
+    }
+    const assignments = [];
+    for (const pieces of variants.values()) {
+        const physicalSources = input.physicalSources.filter(source => source.profileType === pieces[0].profileType && source.color === (pieces[0].color ?? null));
+        const materialSources = physicalSources.filter(source => source.nominalRemaining > 0 && source.remaining > 0).map(source => ({
+            sourceId: source.sourceId, source: source.source, profileType: source.profileType, color: source.color,
+            sourceLength: source.nominalRemaining, usableCapacity: source.remaining,
+            sourceCapacityAllowance: source.carriedSourceCapacityAllowance, pieceCapacityAllowance: source.pieceCapacityAllowance,
+            unlimited: false, quantity: 1
+        }));
+        const optimization = optimizeOrderInventoryBeamDP(mergeGroupedCuts(pieces), materialSources, kerf, {
+            ...PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS,
+            beamWidth: options.beamWidth ?? PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.beamWidth,
+            patternsPerState: options.patternsPerState ?? PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.patternsPerState,
+            skipFeasibilityFallback: true,
+            // Score on lähdekohtaisesti additiivinen: materiaalivariantit voidaan ratkaista erikseen.
+            evaluateCompletePlan: candidate => scoreCompleteMaterialTransitionPlan(
+                createPredictedProductionMaterialPlan(physicalSources, candidate.bars, kerf), PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings)
+        });
+        if (!optimization.complete) return { complete: false, feasibilityStatus: "unknown", reason: "no-validated-continuation" };
+        const pools = new Map();
+        for (const piece of pieces) {
+            if (!pools.has(piece.length)) pools.set(piece.length, []);
+            pools.get(piece.length).push(piece.pieceId);
+        }
+        for (const bar of optimization.bars) assignments.push({ sourceId: bar.sourceId,
+            pieceIds: bar.pattern.flatMap(cut => Array.from({ length: cut.quantity }, () => {
+                const id = pools.get(cut.length)?.shift();
+                if (!id) throw new Error("Materiaalihaku tuotti ylimääräisen kappaleen.");
+                return id;
+            })) });
+        if ([...pools.values()].some(pool => pool.length)) throw new Error("Materiaalihaku jätti kappaleita kohdistamatta.");
+    }
+    return evaluateProductionContinuationPlan(input, assignments, kerf);
+}
+
+// Avainten järjestys ei muuta identiteettiä; taulukoiden (slotit, kappaleet, operaatiot)
+// järjestys sen sijaan on osa sopimusta. Myös base-tapahtuman aikaleima sidotaan.
+function createProductionContinuationDigest(base, input, continuationPlan, kerf) {
+    const canonical = value => Array.isArray(value) ? value.map(canonical) :
+        value !== null && typeof value === "object" ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+    return "production-continuation-v1-" + hashProductionIdentity(JSON.stringify(canonical({
+        version: 1, planDigest: base.planDigest, baseEventCount: base.events.length,
+        events: base.events.map(event => ({ type: event.type, operationId: event.operationId,
+            completedAt: event.completedAt, actualSourceIds: event.actualSourceIds })),
+        physicalSources: input.physicalSources, allPieces: input.allPieces,
+        remainingPieces: input.remainingPieces, assignments: continuationPlan.assignments,
+        execution: continuationPlan.execution, kerf, profiles: PRODUCTION_PLANNING.profileDefaults
+    })));
+}
+
+function createProductionContinuationState(state, plan, execution, kerf) {
+    if (state?.version !== 2 || replayProductionExecution(state, plan, execution, kerf).remainingFeasible) {
+        throw new Error("Jatkosuunnitelma vaatii kelvollisen pysähtyneen V2-toteuman.");
+    }
+    const input = createProductionContinuationInput(state, plan, execution, kerf);
+    const continuationPlan = createProductionContinuationPlan(state, plan, execution, kerf);
+    if (!continuationPlan.complete) throw new Error("Täydellistä validoitua jatkosuunnitelmaa ei löytynyt. Työ säilyy pysähtyneenä.");
+    const next = { version: 3, planDigest: state.planDigest,
+        events: state.events.map(event => ({ ...event, actualSourceIds: [...event.actualSourceIds] })),
+        continuation: { digest: createProductionContinuationDigest(state, input, continuationPlan, kerf),
+            baseEventCount: state.events.length,
+            assignments: continuationPlan.assignments.map(assignment => ({ sourceId: assignment.sourceId, pieceIds: [...assignment.pieceIds] })),
+            events: [] }
+    };
+    replayProductionContinuationExecution(next, plan, execution, kerf);
+    return next;
+}
+
+// Ainoa V3-replay: alkuperäiset fyysiset salot → base-prefix → jatkon prefix.
+// Reload käyttää vain tallennettua kohdistusta. Haku ei kuulu tähän polkuun.
+function replayProductionContinuationExecution(state, plan, execution, kerf) {
+    const continuation = state?.continuation;
+    if (!isPlainObject(state) || state.version !== 3 || !isPlainObject(continuation) ||
+        !Array.isArray(state.events) || continuation.baseEventCount !== state.events.length ||
+        !Array.isArray(continuation.assignments) || !Array.isArray(continuation.events)) {
+        throw new Error("Virheellinen jatkosuunnitelman toteumatila.");
+    }
+    const base = { version: 2, planDigest: state.planDigest, events: state.events };
+    const baseReplay = replayProductionExecution(base, plan, execution, kerf);
+    if (baseReplay.remainingFeasible || !baseReplay.hasDeviation) throw new Error("Jatkon alkuperäinen etuliite ei ole pysähtynyt.");
+    const input = createProductionContinuationInput(base, plan, execution, kerf);
+    const continuationPlan = evaluateProductionContinuationPlan(input, continuation.assignments, kerf);
+    if (continuation.digest !== createProductionContinuationDigest(base, input, continuationPlan, kerf)) {
+        throw new Error("Jatkosuunnitelman identiteetti ei vastaa toteumaa ja kappalekohdistusta.");
+    }
+    const operations = continuationPlan.execution.operations;
+    if (continuation.events.length > operations.length) throw new Error("Jatkossa on liikaa kuittauksia.");
+    const ledger = new Map(baseReplay.bars.map(bar => [bar.id, bar]));
+    const completedPieceIds = input.completedPieces.map(piece => piece.pieceId);
+    continuation.events.forEach((event, index) => {
+        const operation = operations[index];
+        if (!isPlainObject(event) || event.type !== "operation-completed" || event.operationId !== operation.id ||
+            typeof event.completedAt !== "string" || !Number.isFinite(Date.parse(event.completedAt)) ||
+            !Array.isArray(event.actualSourceIds) || event.actualSourceIds.length !== operation.sources.length ||
+            event.actualSourceIds.some((id, slot) => id !== operation.sources[slot].id)) {
+            throw new Error("Jatkon kuittaus ei vastaa seuraavaa suunniteltua työvaihetta ja sen lähteitä.");
+        }
+        applyProductionOperation(ledger, operation, event.actualSourceIds, kerf);
+        completedPieceIds.push(...operation.pieces.map(piece => piece.pieceId));
+    });
+    const allIds = new Set(input.allPieces.map(piece => piece.pieceId));
+    if (new Set(completedPieceIds).size !== completedPieceIds.length || completedPieceIds.some(id => !allIds.has(id))) {
+        throw new Error("Toteuma kahdentaa kappaleen tai sisältää vieraan kappaleen.");
+    }
+    const continuationComplete = continuation.events.length === operations.length;
+    if (continuationComplete && completedPieceIds.length !== allIds.size) throw new Error("Valmis jatko ei kata koko alkuperäistä kysyntää.");
+    const conflict = findRemainingProductionConflict(ledger, continuationPlan.execution, continuation.events.length, kerf);
+    if (conflict) throw new Error("Jatkon fyysinen toteuma on ristiriitainen: " + conflict.reason);
+    return { bars: [...ledger.values()], hasDeviation: true, remainingFeasible: true, conflict: null,
+        complete: continuationComplete, continuationComplete, completedPieceIds,
+        continuationExecution: continuationPlan.execution };
+}
+
+function discardProductionContinuationState(state, plan, execution, kerf) {
+    replayProductionContinuationExecution(state, plan, execution, kerf);
+    if (state.continuation.events.length) throw new Error("Kirjattua jatkosuunnitelmaa ei voi hylätä.");
+    return { version: 2, planDigest: state.planDigest,
+        events: state.events.map(event => ({ ...event, actualSourceIds: [...event.actualSourceIds] })) };
+}
+
 function recordProductionSourceDeviation(state, plan, execution, kerf, actualSourceIds, completedAt = new Date().toISOString()) {
+    if (state?.version === 3) throw new Error("Jatkosuunnitelmassa kuitataan vain sen suunnitellut fyysiset lähteet.");
     const replay = replayProductionExecution(state, plan, execution, kerf);
     if (!replay.remainingFeasible || replay.complete) throw new Error("Pysäytettyä tai valmista työtä ei voi jatkaa.");
     const operation = execution.operations[state.events.length];
@@ -234,6 +507,7 @@ function recordProductionSourceDeviation(state, plan, execution, kerf, actualSou
 }
 
 function getProductionSourceAlternatives(state, plan, execution, kerf, slot) {
+    if (state?.version === 3) return [];
     const replay = replayProductionExecution(state, plan, execution, kerf);
     const operation = execution.operations[state.events.length];
     if (!operation || !replay.remainingFeasible || !Number.isInteger(slot) || !operation.sources[slot]) return [];
@@ -255,6 +529,19 @@ function createExecutedMaterialPlan(state, plan, execution, kerf) {
 }
 
 function completeNextProductionOperation(state, plan, execution, completedAt = new Date().toISOString(), kerf) {
+    if (state?.version === 3) {
+        const replay = replayProductionContinuationExecution(state, plan, execution, kerf);
+        if (replay.complete || typeof completedAt !== "string" || !Number.isFinite(Date.parse(completedAt))) {
+            throw new Error("Seuraavaa jatkotyövaihetta ei voida kuitata.");
+        }
+        const operation = replay.continuationExecution.operations[state.continuation.events.length];
+        const next = { ...state, continuation: { ...state.continuation, events: [...state.continuation.events, {
+            type: "operation-completed", operationId: operation.id, completedAt,
+            actualSourceIds: operation.sources.map(source => source.id)
+        }] } };
+        replayProductionContinuationExecution(next, plan, execution, kerf);
+        return next;
+    }
     if (!isValidProductionExecutionState(state, plan, execution, kerf) || state.events.length >= execution.operations.length ||
         typeof completedAt !== "string" || !Number.isFinite(Date.parse(completedAt))) {
         throw new Error("Seuraavaa työvaihetta ei voida kuitata.");
@@ -270,6 +557,11 @@ function completeNextProductionOperation(state, plan, execution, completedAt = n
 }
 
 function undoLatestProductionOperationState(state, plan, execution, kerf) {
+    if (state?.version === 3) {
+        replayProductionContinuationExecution(state, plan, execution, kerf);
+        if (!state.continuation.events.length) throw new Error("Jatkon undo-raja saavutettu. Tyhjä jatko voidaan hylätä erikseen.");
+        return { ...state, continuation: { ...state.continuation, events: state.continuation.events.slice(0, -1) } };
+    }
     if (!isValidProductionExecutionState(state, plan, execution, kerf) || state.events.length === 0) {
         throw new Error("Peruttavaa työvaihetta ei ole.");
     }
@@ -332,17 +624,33 @@ function renderProductionDetails(plan, productionState) {
     const orders = getOrdersFromForm();
     const selected = getPlanOrders(plan, orders);
     const kerf = Number(document.getElementById("kerf").value);
-    const execution = createProductionExecution(plan, orders, kerf);
-    if (!isValidProductionExecutionState(productionState, plan, execution, kerf)) {
+    const originalExecution = createProductionExecution(plan, orders, kerf);
+    if (!isValidProductionExecutionState(productionState, plan, originalExecution, kerf)) {
         throw new Error("Sahausten toteumatila ei vastaa nykyistä suunnitelmaa.");
     }
-    const manifest = createWorkerSourceManifest(plan, execution);
-    const physical = replayProductionExecution(productionState, plan, execution, kerf);
+    const manifest = createWorkerSourceManifest(plan, originalExecution);
+    const physical = replayProductionExecution(productionState, plan, originalExecution, kerf);
+    const isContinuation = productionState.version === 3;
+    const execution = isContinuation ? physical.continuationExecution : originalExecution;
+    const events = isContinuation ? productionState.continuation.events : productionState.events;
+    const basePieceCount = isContinuation ? originalExecution.operations.slice(0, productionState.events.length)
+        .reduce((sum, operation) => sum + operation.pieces.length, 0) : 0;
+    const continuationPieceCount = isContinuation ? execution.operations.reduce((sum, operation) => sum + operation.pieces.length, 0) : 0;
+    // Numerot tulevat aina alkuperäisestä manifestista. Jatkon valmistelu käyttää
+    // sen omia lähteitä ja niiden ensimmäisiä lähtöpituuksia, ei uusia numeroita.
+    const continuationSources = new Map();
+    if (isContinuation) execution.operations.forEach(operation => operation.sources.forEach(source => {
+        if (!continuationSources.has(source.id)) continuationSources.set(source.id, source);
+    }));
+    const preparationManifest = isContinuation ? manifest.filter(source => continuationSources.has(source.sourceId)).map(source => ({
+        ...source, sourceLength: continuationSources.get(source.sourceId).before,
+        origin: continuationSources.get(source.sourceId).origin
+    })) : manifest;
     const workerSourceById = new Map(manifest.map(source => [source.sourceId, source]));
     const score = scoreCompleteMaterialTransitionPlan(adaptStoredPlanForVerification(plan), PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings);
     const count = normalizeOrderCuts(selected).reduce((n, cut) => n + cut.quantity, 0);
     const names = new Map(orders.map(o => [o.id, o.name || o.id]));
-    const completedCount = productionState.events.length;
+    const completedCount = events.length;
     const view = createProductionOperationView(execution, completedCount);
     const { current, currentGroup } = view;
     const cutOperations = execution.operations.filter(operation => operation.kind === "cut");
@@ -368,8 +676,7 @@ function renderProductionDetails(plan, productionState) {
         operationBlock(operation).id === activeBlock.id).length;
     const workerNumber = sourceId => workerSourceById.get(sourceId).workerNumber;
     const sourceLabel = id => `${escapeHtml(PROFILE_TYPES[workerSourceById.get(id).profileType].label)} ${workerNumber(id)}`;
-    const differenceText = operation => {
-        const event = productionState.events[execution.operations.indexOf(operation)];
+    const differenceText = (operation, event = events[execution.operations.indexOf(operation)]) => {
         if (!event) return "";
         return operation.sources.flatMap((source, slot) => event.actualSourceIds[slot] === source.id ? [] :
             [`<strong class="production-source-difference">Suunniteltu ${sourceLabel(source.id)} → toteutunut ${sourceLabel(event.actualSourceIds[slot])}</strong>`]).join("; ");
@@ -382,9 +689,10 @@ function renderProductionDetails(plan, productionState) {
                 : `käyttämätön · ${formatMillimeters(bar.sourceLength)}`}</li>`).join("")}</ul></details>` : "";
     const conflictNotice = physical.remainingFeasible ? "" : `<div class="validation-message" role="alert">
         <strong>Työ pysäytetty</strong><p>Poikkeama on tallennettu. ${sourceLabel(physical.conflict.sourceId)} ei pysty toteuttamaan jäljellä olevaa työvaihetta ${execution.operations.find(operation => operation.id === physical.conflict.operationId).number}.
-        ${escapeHtml(physical.conflict.reason)} Sahausta ja työn päättämistä ei sallita. Suunnitelma täytyy uudelleenoptimoida; toiminto ei ole vielä käytettävissä.</p>
+        ${escapeHtml(physical.conflict.reason)} Alkuperäistä suunnitelmaa ei voi jatkaa sellaisenaan. Jo tehdyt kappaleet säilyvät. Ohjelma voi yrittää muodostaa jatkosuunnitelman tekemättömille kappaleille.</p>
+        <button type="button" onclick="activateCurrentProductionContinuationFromUi(this)">MUODOSTA JATKOSUUNNITELMA</button>
         <p>Peru viimeisin kuittaus vain, jos kirjaus oli virheellinen. Peruminen ei palauta fyysisesti sahattua materiaalia.</p></div>`;
-    const changeableSlots = current && physical.remainingFeasible ? current.sources.flatMap((source, slot) => {
+    const changeableSlots = !isContinuation && current && physical.remainingFeasible ? current.sources.flatMap((source, slot) => {
         const alternatives = getProductionSourceAlternatives(productionState, plan, execution, kerf, slot);
         return alternatives.length ? [{ source, slot, alternatives }] : [];
     }) : [];
@@ -416,16 +724,16 @@ function renderProductionDetails(plan, productionState) {
     const preparation = activeBlock === null
         ? `<section class="worker-preparation worker-preparation--complete"><h2>Kaikki profiiliblokit valmisteltu ✓</h2></section>`
         : (() => {
-            const groups = groupWorkerPreparationSources(manifest, activeBlock.profileTypes);
+            const groups = groupWorkerPreparationSources(preparationManifest, activeBlock.profileTypes);
             const sourceCount = groups.reduce((count, group) => count + group.sources.length, 0);
             const text = blockText[activeBlock.id] ?? {
                 title: activeBlock.id.toUpperCase(), preparation: "Valmistele profiilin salot"
             };
             return `<details class="worker-preparation" open><summary>${text.preparation} · ${sourceCount} kpl</summary>
-                <p>Koko aktiivisen profiiliblokin materiaalitarve. Merkitse fyysisiin salkoihin alla olevat numerot.</p>
+                <p>${isContinuation ? "Jatkosuunnitelman aktiivisen profiiliblokin materiaalitarve jatkon lähtöpituuksineen. Säilytä saloissa alkuperäiset numerot." : "Koko aktiivisen profiiliblokin materiaalitarve. Merkitse fyysisiin salkoihin alla olevat numerot."}</p>
                 <div class="worker-source-manifest">${groups.map(group => `<section class="worker-material-group">
                     <h3>${escapeHtml(PROFILE_TYPES[group.profileType].label)} · ${escapeHtml(getMaterialColorLabel(group.color))}</h3>
-                    <p><strong>${group.origin === "new" ? "Uudet salot" : "Olemassa olevat jäännökset"} · ${group.sources.length} kpl</strong></p>
+                    <p><strong>${group.origin === "new" ? "Uudet salot" : group.origin === "same-run-remnant" ? "Jatkoleikattavat salot" : "Olemassa olevat jäännökset"} · ${group.sources.length} kpl</strong></p>
                     ${group.origin === "new"
                         ? `<p>Salot ${group.sources.map(source => source.workerNumber).join(", ")}</p><p>${[...new Set(group.sources.map(source => formatMillimeters(source.sourceLength)))].join(" / ")}</p>`
                         : `<ul>${group.sources.map(source => `<li>Salko ${source.workerNumber} · ${formatMillimeters(source.sourceLength)}</li>`).join("")}</ul>`}
@@ -457,6 +765,9 @@ function renderProductionDetails(plan, productionState) {
         ? `<details class="production-completed"><summary>Tehdyt työvaiheet · ${completedOperations.length}</summary><ol>
             ${completedOperations.map(operation => `<li>${operationTitle(operation)} · ${formatMillimeters(operation.length)} · ${operation.sources.map(source => `${escapeHtml(PROFILE_TYPES[source.profileType].label)} ${workerNumber(source.id)}`).join(", ")} ${differenceText(operation)}</li>`).join("")}
             </ol></details>` : "";
+    const baseDetails = isContinuation ? `<details class="production-completed"><summary>Alkuperäisen suunnitelman kirjatut työvaiheet · ${productionState.events.length}</summary><ol>
+        ${originalExecution.operations.slice(0, productionState.events.length).map((operation, index) =>
+            `<li>Työvaihe ${operation.number} · ${formatMillimeters(operation.length)} · ${operation.sources.map(source => sourceLabel(source.id)).join(", ")} ${differenceText(operation, productionState.events[index])}</li>`).join("")}</ol></details>` : "";
     const previewSources = operation => {
         const rows = [];
         for (const source of operation.sources) {
@@ -487,11 +798,15 @@ function renderProductionDetails(plan, productionState) {
         + suuri romu ${score.largeScrapPenaltyEquivalent.toFixed(1)}. Yksikkö: materiaalin ekvivalenttipituus, ei euro.</p></section>
         ${preparation}
         <section class="production-execution" aria-label="Sahausten eteneminen">
+            ${isContinuation ? `<h2>JATKOSUUNNITELMA</h2><p>Jatkon alkaessa tehty ${basePieceCount} kappaletta, jäljellä ${continuationPieceCount} kappaletta.
+                Koko työstä nyt tehty ${physical.completedPieceIds.length} / ${count} kappaletta. Alkuperäinen suunnitelma säilyy vertailuna.</p>` : ""}
             <p class="production-total-progress" aria-live="polite">${activeBlock === null
                 ? `Tehty ${completedCount} / ${execution.operations.length} työvaihetta`
-                : `${blockText[activeBlock.id]?.title ?? escapeHtml(activeBlock.id)} ${activeBlockCompleted} / ${activeBlockOperations.length} · koko batch ${completedCount} / ${execution.operations.length}`}</p>
-            ${conflictNotice}${preview(view.previous, true)}${currentCard}${preview(view.next, false)}${completedDetails}${actualBalances}
+                : `${blockText[activeBlock.id]?.title ?? escapeHtml(activeBlock.id)} ${activeBlockCompleted} / ${activeBlockOperations.length} · ${isContinuation ? "jatko" : "koko batch"} ${completedCount} / ${execution.operations.length}`}</p>
+            ${conflictNotice}${preview(view.previous, true)}${currentCard}${preview(view.next, false)}${completedDetails}${baseDetails}${actualBalances}
             <button class="operation-undo-button" type="button" onclick="undoLatestProductionOperation()" ${completedCount ? "" : "disabled"}>Peru viimeisin kuittaus</button>
+            ${isContinuation ? `${completedCount ? "" : '<button type="button" onclick="discardCurrentProductionContinuation()">HYLKÄÄ JATKOSUUNNITELMA</button>'}
+                <p>Peruminen ja tyhjän jatkon hylkäys korjaavat kirjauksia. Ne eivät palauta fyysisesti sahattua materiaalia.</p>` : ""}
             <p id="operationStatus" class="finalization-status" aria-live="polite"></p>
         </section>
         <details class="plan-summary"><summary>Tuotantomittarit · ${execution.metrics.cutOperationCount} sahausliikettä</summary>

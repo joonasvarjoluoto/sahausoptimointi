@@ -303,6 +303,158 @@ const test = new vm.Script(`(async () => {
                 "Kuusi uutta salkoa kuluu seitsemästä ja salon 3 toteutunut jäännös tallentuu");
         }
     }
+    const continuationFixture = createProductionContinuationStateFixture();
+    const prepareContinuation = (fixture = continuationFixture) => {
+        liveOrders = fixture.orders;
+        currentGeneratedPlan = fixture.plan;
+        currentProductionExecutionState = JSON.parse(JSON.stringify(fixture.base));
+        stockRows = Object.keys(PROFILE_TYPES).map(profileType => ({ profileType, color: "black", quantity: fixture.plan.bars.some(b => b.source === "remnant") ? "6" : "7", unlimited: false, additional: false }));
+        remnantRows = fixture.plan.bars.some(b => b.source === "remnant")
+            ? [{ profileType: "verticalProfile", color: "black", length: "6000", quantity: "1" }] : [];
+        completedBarIds.clear();
+        fixture.plan.bars.forEach(bar => completedBarIds.add(bar.id));
+        saveCurrentWorkState();
+    };
+    prepareContinuation();
+    renderCuttingPlan(currentGeneratedPlan);
+    assert(elements.result.innerHTML.includes('onclick="activateCurrentProductionContinuationFromUi(this)"') &&
+        elements.result.innerHTML.includes("MUODOSTA JATKOSUUNNITELMA"), "V2-pysähdys tarjoaa jatkon aktivoinnin");
+    const stoppedSnapshot = storage;
+    const search = createProductionContinuationPlan;
+    createProductionContinuationPlan = () => ({ complete: false, feasibilityStatus: "unknown" });
+    assert(!activateCurrentProductionContinuation() && storage === stoppedSnapshot && currentProductionExecutionState.version === 2 && completedBarIds.size === 7,
+        "Ratkaisematon haku säilyttää V2:n ja kaikki valmistumismerkinnät");
+    const activationButton = { disabled: false, textContent: "MUODOSTA JATKOSUUNNITELMA", isConnected: true };
+    const pendingActivation = activateCurrentProductionContinuationFromUi(activationButton);
+    assert(activationButton.disabled && productionContinuationActivationPending &&
+        !(await activateCurrentProductionContinuationFromUi(activationButton)), "Aktivoinnin UI lukitsee painikkeen ja estää tuplapainalluksen");
+    assert(!(await pendingActivation) && !activationButton.disabled && !productionContinuationActivationPending &&
+        storage === stoppedSnapshot && elements.operationStatus.textContent.includes("ei löytynyt"), "Ratkaisematon UI-haku palauttaa painikkeen ja näyttää virheen");
+    createProductionContinuationPlan = search;
+    failWrite = true;
+    assert(!(await activateCurrentProductionContinuationFromUi(activationButton)) && storage === stoppedSnapshot && currentProductionExecutionState.version === 2 && completedBarIds.size === 7,
+        "Aktivoinnin tallennusvirhe säilyttää V2:n atomisesti");
+    failWrite = false;
+    assert(await activateCurrentProductionContinuationFromUi(activationButton) && currentProductionExecutionState.version === 3, "UI-controller aktivoi validoidun V3:n");
+    const assignedIds = new Set(currentProductionExecutionState.continuation.assignments.map(a => a.sourceId));
+    assert(continuationFixture.plan.bars.every(b => completedBarIds.has(b.id) === !assignedIds.has(b.id)) &&
+        JSON.parse(storage).completedBarIds.join() === [...completedBarIds].join(), "Aktivointi tyhjentää vain jatkon käyttämät valmistumismerkinnät samassa snapshotissa");
+    const emptyV3 = storage;
+    createProductionContinuationPlan = () => { throw new Error("Reload ei saa hakea"); };
+    currentProductionExecutionState = null;
+    assert(restoreSavedWorkState() && JSON.stringify(currentProductionExecutionState) === JSON.stringify(JSON.parse(emptyV3).executionState), "Tyhjä V3 palautuu ilman optimizeria");
+    assert(elements.result.innerHTML.includes('onclick="completeCurrentProductionOperation()"') && elements.result.innerHTML.includes("JATKOSUUNNITELMA") &&
+        !elements.result.innerHTML.includes("Käytin eri salkoa") && elements.result.innerHTML.includes("HYLKÄÄ JATKOSUUNNITELMA") &&
+        elements.result.innerHTML.includes("Alkuperäinen sahaussuunnitelma · vertailu"),
+        "V3 näyttää jatkon kuittauksen ja tyhjän jatkon hylkäyksen ilman lähdepoikkeamaa");
+    const activeContinuation = replayProductionExecution(currentProductionExecutionState, currentGeneratedPlan, continuationFixture.execution, 3).continuationExecution;
+    assert(elements.result.innerHTML.includes('data-operation-id="' + activeContinuation.operations[0].id + '"') &&
+        elements.result.innerHTML.includes("Salot 5</p>") &&
+        elements.result.innerHTML.includes("Suunniteltu Pystyprofiili 7 → toteutunut Pystyprofiili 3"),
+        "Jatkon operaatio käyttää omaa scheduleria, valmistelu säilyttää Pysty 5 -numeron ja poikkeamahistoria säilyy");
+    failWrite = true;
+    assert(!discardCurrentProductionContinuation() && storage === emptyV3 && currentProductionExecutionState.version === 3, "Hylkäyksen tallennusvirhe säilyttää V3:n");
+    completeCurrentProductionOperation();
+    assert(storage === emptyV3 && currentProductionExecutionState.continuation.events.length === 0, "Jatkokuittauksen tallennusvirhe säilyttää tyhjän lokin");
+    failWrite = false;
+    undoLatestProductionOperation();
+    assert(storage === emptyV3 && currentProductionExecutionState.events.length === 1, "Tavallinen undo ei ylitä tyhjää jatkorajaa");
+    assert(discardCurrentProductionContinuation() && currentProductionExecutionState.version === 2 &&
+        JSON.stringify(currentProductionExecutionState.events) === JSON.stringify(continuationFixture.base.events), "Erillinen hylkäys palauttaa alkuperäisen V2-pysähdyksen");
+    undoLatestProductionOperation();
+    assert(currentProductionExecutionState.events.length === 0, "V2:ssa alkuperäisen kirjauksen undo toimii edelleen");
+    createProductionContinuationPlan = search;
+    for (const oldRemnant of [false, true]) {
+        const fixture = createProductionContinuationStateFixture(oldRemnant);
+        prepareContinuation(fixture);
+        liveOrders = [...liveOrders, createOrderInput("waiting-v3", "Odottava", "black", {
+            verticalProfile: [{ length: "1200", quantity: "1", openingId: "W" }]
+        })];
+        assert(persistProductionExecutionState(fixture.state), "Tunnettu riippumaton jatkojako tallentuu");
+        const baseEvents = JSON.stringify(currentProductionExecutionState.events);
+        for (let index = 0; index < fixture.continuationPlan.execution.operations.length; index++) {
+            currentGeneratedPlan.bars.forEach(b => completedBarIds.add(b.id));
+            completeCurrentProductionOperation();
+            const event = currentProductionExecutionState.continuation.events[index];
+            assert(!elements.result.innerHTML.includes("HYLKÄÄ JATKOSUUNNITELMA") &&
+                elements.result.innerHTML.includes('onclick="undoLatestProductionOperation()" >'), "Kirjatulla jatkolla on käytettävä undo mutta ei hylkäystä");
+            assert(event.actualSourceIds.every(id => !completedBarIds.has(id)), "Kuittaus poistaa muutettujen fyysisten salojen valmistumismerkinnät");
+            const beforeReload = storage;
+            const renderedBeforeReload = elements.result.innerHTML;
+            createProductionContinuationPlan = () => { throw new Error("Reload ei saa hakea"); };
+            assert(restoreSavedWorkState() && storage === beforeReload && JSON.stringify(currentProductionExecutionState) === JSON.stringify(JSON.parse(beforeReload).executionState), "Osittainen/valmis V3 palautuu täsmälleen ilman hakua");
+            assert(elements.result.innerHTML === renderedBeforeReload, "V3 reload säilyttää koko renderöidyn kortin, numerot, esikatselun ja valmistumismerkinnät");
+            createProductionContinuationPlan = search;
+            failWrite = true;
+            undoLatestProductionOperation();
+            assert(storage === beforeReload && currentProductionExecutionState.continuation.events.length === index + 1, "V3-undon tallennusvirhe ei muuta lokia");
+            failWrite = false;
+            event.actualSourceIds.forEach(id => completedBarIds.add(id));
+            undoLatestProductionOperation();
+            assert(currentProductionExecutionState.continuation.events.length === index && JSON.stringify(currentProductionExecutionState.events) === baseEvents &&
+                event.actualSourceIds.every(id => !completedBarIds.has(id)), "Undo säilyttää base-prefixin ja poistaa valmistumismerkinnät");
+            completeCurrentProductionOperation();
+        }
+        assert(!isCurrentPlanReadyForFinalization(), "Kaikki kappaleet eivät yksin riitä ilman salon valmistumismerkintöjä");
+        const markButton = id => ({ dataset: { barId: id, barNumber: id }, closest: () => ({}) });
+        const missingId = currentGeneratedPlan.bars.find(b => !completedBarIds.has(b.id)).id;
+        const beforeMark = storage;
+        failWrite = true;
+        toggleBarCompletion(markButton(missingId));
+        assert(!completedBarIds.has(missingId) && storage === beforeMark, "V3-salon valmistumismerkintä tallentuu ennen live-tilan vaihtoa");
+        failWrite = false;
+        currentGeneratedPlan.bars.filter(b => !completedBarIds.has(b.id)).forEach(b => toggleBarCompletion(markButton(b.id)));
+        assert(isCurrentPlanReadyForFinalization(), "Valmis yhdistetty toteuma ja koko manifestin merkinnät sallivat finalisoinnin");
+        saveCurrentWorkState();
+        const beforeFinal = storage, originalStock = JSON.stringify(stockRows), originalOrders = JSON.stringify(liveOrders);
+        failWrite = true;
+        finalizeCurrentWork();
+        assert(storage === beforeFinal && JSON.stringify(stockRows) === originalStock && JSON.stringify(liveOrders) === originalOrders &&
+            JSON.stringify(currentProductionExecutionState) === JSON.stringify(JSON.parse(beforeFinal).executionState), "Finalisoinnin tallennusvirhe säilyttää koko V3:n, varaston ja tilaukset");
+        failWrite = false;
+        finalizeCurrentWork();
+        assert(currentGeneratedPlan === null && currentProductionExecutionState === null && liveOrders.length === 1 && liveOrders[0].id === "waiting-v3" && JSON.parse(storage).orders[0].id === "waiting-v3",
+            "Batch poistuu vasta lopullisen snapshotin onnistuttua");
+        assert(stockRows.find(r => r.profileType === "verticalProfile").quantity === "2", "Vain käytetyt alkuperäiset uudet salot kuluvat, kaksi käyttämätöntä säilyy");
+        assert(remnantRows.length === 2 && remnantRows.some(r => r.length === "4976" && r.quantity === "3") &&
+            remnantRows.some(r => r.length === "3468" && r.quantity === "1"), "Yhdistetyt riippumattomat jäännökset: 4976 × 3 ja 3468 × 1; 976 on romua ja vanha 6000 kului kerran");
+    }
+    prepareContinuation();
+    persistProductionExecutionState(continuationFixture.state);
+    completeCurrentProductionOperation();
+    const validRecoverySnapshot = storage;
+    const corrupt = JSON.parse(storage); corrupt.executionState.continuation.digest += "broken";
+    storage = JSON.stringify(corrupt);
+    const corruptRaw = storage;
+    assert(!restoreSavedWorkState() && workRecoveryLocked && storage === corruptRaw, "Korruptoitunut V3 lukitsee palautuksen ja säilyttää raakatallenteen");
+    assert(elements.result.textContent.includes("tallenne säilytettiin") && elements.result.textContent.includes("Uutta työtä ei voi aloittaa"),
+        "Recovery-ilmoitus kertoo säilytetystä tallenteesta ja uuden työn estosta");
+    assert(!saveCurrentWorkState() && !writeWorkStateSnapshot(createWorkStateSnapshot()), "Automaattinen ja suora tallennus eivät ohita recovery-lukkoa");
+    removeSavedWorkState(); resetWorkToDefaults(); startNewWork(); handleOrderInputChange();
+    await calculate(); completeCurrentProductionOperation(); undoLatestProductionOperation(); finalizeCurrentWork();
+    assert(storage === corruptRaw, "Tyhjennys, syötteet, laskenta ja tuotannon controllerit eivät hävitä korruptoitunutta toteumaa");
+    storage = validRecoverySnapshot;
+    assert(restoreSavedWorkState() && !workRecoveryLocked && currentProductionExecutionState.version === 3, "Vain kelvollinen palautus vapauttaa recovery-lukon");
+    for (const mutate of [s => s.schemaVersion = 5, s => s.engineVersion = "wrong", s => s.executionState.version = 2,
+        s => delete s.executionState.continuation, s => s.completedBarIds.push("foreign")]) {
+        const invalid = JSON.parse(validRecoverySnapshot); mutate(invalid); storage = JSON.stringify(invalid);
+        const raw = storage;
+        assert(!restoreSavedWorkState() && workRecoveryLocked && !saveCurrentWorkState() && storage === raw,
+            "V3:n outer-, engine-, version-, rakenne- ja manifestivirheitä ei migroida tai ylikirjoiteta");
+        storage = validRecoverySnapshot; restoreSavedWorkState();
+    }
+    const railsFixture = createRailContinuationRegressionFixture();
+    liveOrders = railsFixture.orders;
+    currentGeneratedPlan = railsFixture.plan;
+    currentProductionExecutionState = railsFixture.base;
+    completedBarIds.clear();
+    assert(activateCurrentProductionContinuation(), "Kiskojatko aktivoituu controllerista");
+    assert(elements.result.innerHTML.includes("JATKOSUUNNITELMA") && elements.result.innerHTML.includes("SALOT · 2 kpl") &&
+        elements.result.innerHTML.includes("Alakisko") && elements.result.innerHTML.includes("Yläkisko") &&
+        elements.result.innerHTML.includes("5000 mm"), "Continuationin 1+1 näkyy yhtenä kiskosekanippuna");
+    storage = validRecoverySnapshot.slice(0, -1);
+    const brokenJson = storage;
+    assert(!restoreSavedWorkState() && workRecoveryLocked && !saveCurrentWorkState() && storage === brokenJson, "Katkennut V3-JSON säilyy palautusta varten");
     console.log("Tuotannon ohjaus-/persistenssitestit: " + checks + " läpäisty");
 })()`);
 

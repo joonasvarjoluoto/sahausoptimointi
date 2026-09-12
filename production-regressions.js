@@ -143,6 +143,503 @@ function runProductionSourceDeviationRegressionTests() {
         invalid.version = 1;
         assert(!isValidProductionExecutionState(invalid, plan, execution, kerf), "V1:tä ei tulkita jälkikäteen poikkeamaskeemaksi");
     }
+    assert(runProductionContinuationInputRegressionTests(), "Jatkolähtötilan regressiot");
+    assert(runProductionContinuationPlanRegressionTests(), "Jatkosuunnitelman regressiot");
+    assert(runProductionContinuationStateRegressionTests(), "Jatkon V3-tilakoneen regressiot");
+    return true;
+}
+
+// Riippumaton tunnettu materiaalijako, ei optimizerin tämänhetkisen valinnan checkpoint.
+function createProductionContinuationStateFixture(oldRemnant = false) {
+    const fixture = createProductionSourceDeviationFixture(true);
+    if (oldRemnant) {
+        fixture.plan.bars[2].source = "remnant";
+        fixture.execution = createProductionExecution(fixture.plan, fixture.orders, fixture.kerf);
+    }
+    const { plan, execution, kerf } = fixture;
+    const base = recordProductionSourceDeviation(createInitialProductionExecutionState(plan, execution), plan, execution, kerf,
+        execution.operations[0].sources.map(source => source.id === "bar-7" ? "bar-3" : source.id), "2026-09-12T09:00:00Z");
+    const input = createProductionContinuationInput(base, plan, execution, kerf);
+    const continuationPlan = evaluateProductionContinuationPlan(input, [
+        { sourceId: "bar-7", pieceIds: ["piece-3-1"] },
+        { sourceId: "bar-3", pieceIds: ["piece-5-1", "piece-6-1"] }
+    ], kerf);
+    const state = { version: 3, planDigest: base.planDigest, events: JSON.parse(JSON.stringify(base.events)), continuation: {
+        digest: createProductionContinuationDigest(base, input, continuationPlan, kerf),
+        baseEventCount: base.events.length, assignments: continuationPlan.assignments, events: []
+    } };
+    return { ...fixture, base, input, continuationPlan, state };
+}
+
+function runProductionContinuationStateRegressionTests() {
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+    const reject = (fn, message) => { let threw = false; try { fn(); } catch { threw = true; } assert(threw, message); };
+    const copy = value => JSON.parse(JSON.stringify(value));
+    const { plan, execution, kerf, base, input, continuationPlan, state } = createProductionContinuationStateFixture();
+    const original = JSON.stringify({ plan, execution, base, state });
+    const activated = createProductionContinuationState(base, plan, execution, kerf);
+    assert(activated.version === 3 && isValidProductionExecutionState(activated, plan, execution, kerf), "Pysähtynyt V2 aktivoituu V3:ksi");
+    for (const version of [1, 2]) reject(() => createProductionContinuationState({ ...base, version, events: [] }, plan, execution, kerf), "Jatko vaatii pysähtyneen V2:n");
+    reject(() => createProductionContinuationState(state, plan, execution, kerf), "Toista jatkoa ei aktivoida");
+    for (const mutate of [
+        s => s.planDigest += "x", s => s.events[0].operationId += "x",
+        s => s.events[0].completedAt = "2026-09-12T10:00:00Z",
+        s => s.events[0].actualSourceIds.reverse(), s => s.continuation.baseEventCount++,
+        s => s.continuation.digest += "x", s => s.continuation.assignments[0].sourceId = "foreign",
+        s => s.continuation.assignments[0].pieceIds[0] = "piece-7-1",
+        s => s.continuation.assignments[0].pieceIds.push("piece-3-1"),
+        s => s.continuation.assignments.pop(), s => s.continuation.events.push({})
+    ]) {
+        const changed = copy(state); mutate(changed);
+        assert(!isValidProductionExecutionState(changed, plan, execution, kerf), "Muutettu jatkotallenne hylätään");
+    }
+    const digest = (b = base, i = input, c = continuationPlan, k = kerf) => createProductionContinuationDigest(b, i, c, k);
+    for (const mutate of [i => i.remainingPieces[0].pieceId += "x", i => i.remainingPieces[0].openingId += "x",
+        i => i.physicalSources[0].sourceCapacityAllowance++, i => i.physicalSources[0].remaining--]) {
+        const changed = copy(input); mutate(changed);
+        assert(digest(base, changed) !== state.continuation.digest, "Digest sitoo kappaleet, provenancen ja fyysisen kapasiteetin");
+    }
+    const changedScheduler = copy(continuationPlan); changedScheduler.execution.operations[0].id += "x";
+    assert(digest(base, input, changedScheduler) !== digest() && digest(base, input, continuationPlan, 3.4) !== digest(), "Digest sitoo schedulerin ja kerfin");
+    const reorderedInput = Object.fromEntries(Object.entries(input).reverse());
+    assert(digest(base, reorderedInput) === digest(), "Olioavainten järjestys ei muuta kanonista digestiä");
+    const reSigned = copy(state);
+    reSigned.continuation.assignments[0].sourceId = "bar-3";
+    reSigned.continuation.digest = digest(base, input, { ...continuationPlan, assignments: reSigned.continuation.assignments });
+    assert(!isValidProductionExecutionState(reSigned, plan, execution, kerf), "Uudelleen laskettu digest ei ohita kapasiteettia ja kohdistuksen validointia");
+    const changedExecution = copy(execution); changedExecution.operations[1].pieces[0].openingId = "other";
+    assert(!isValidProductionExecutionState(state, plan, changedExecution, kerf), "Reload hylkää muuttuneen alkuperäisen provenancen");
+    const changedPlan = copy(plan); changedPlan.bars[0].sourceCapacityAllowance++;
+    assert(!isValidProductionExecutionState(state, changedPlan, execution, kerf) && !isValidProductionExecutionState(state, plan, execution, 3.4), "Reload hylkää kapasiteetin ja kerfin muutoksen");
+    reject(() => undoLatestProductionOperationState(state, plan, execution, kerf), "Tyhjä jatko ei ylitä undo-rajaa");
+    const discarded = discardProductionContinuationState(state, plan, execution, kerf);
+    assert(JSON.stringify(discarded) === JSON.stringify(base) && undoLatestProductionOperationState(discarded, plan, execution, kerf).events.length === 0,
+        "Vasta erillinen hylkäys sallii alkuperäisen kirjauksen korjauksen");
+    assert(JSON.stringify(replayProductionExecution(state, plan, execution, kerf).bars) === JSON.stringify(replayProductionExecution(base, plan, execution, kerf).bars), "Aktivointi/hylkäys ei muuta fyysistä tasetta");
+    let current = state;
+    for (let n = 0; n < continuationPlan.execution.operations.length; n++) {
+        current = completeNextProductionOperation(current, plan, execution, "2026-09-12T11:00:00Z", kerf);
+        const replay = replayProductionExecution(current, plan, execution, kerf);
+        assert(JSON.stringify(current.events) === JSON.stringify(base.events), "Alkuperäinen prefix on jäädytetty");
+        assert(JSON.stringify(replayProductionExecution(copy(current), plan, execution, kerf)) === JSON.stringify(replay), "Osittainen ja valmis V3 palautuvat identtisinä");
+        const undone = undoLatestProductionOperationState(current, plan, execution, kerf);
+        assert(undone.continuation.events.length === n && JSON.stringify(undone.events) === JSON.stringify(base.events), "Undo poistaa vain jatkon viimeisen eventin");
+        reject(() => discardProductionContinuationState(current, plan, execution, kerf), "Kirjattua jatkoa ei hylätä");
+    }
+    const wrongSource = copy(current); wrongSource.continuation.events[0].actualSourceIds[0] = "bar-6";
+    assert(!isValidProductionExecutionState(wrongSource, plan, execution, kerf), "Jatkossa hyväksytään vain suunnitellut fyysiset lähteet");
+    reject(() => recordProductionSourceDeviation(state, plan, execution, kerf, ["bar-6"]), "Jatkon poikkeamaa ei tulkita V2:ksi");
+    reject(() => completeNextProductionOperation(current, plan, execution, undefined, kerf), "Valmista jatkoa ei kuitata kahdesti");
+    const replay = replayProductionExecution(current, plan, execution, kerf);
+    assert(replay.complete && replay.continuationComplete && replay.conflict === null &&
+        replay.completedPieceIds.slice().sort().join() === input.allPieces.map(p => p.pieceId).sort().join(), "Koko alkuperäinen kysyntä valmistuu kerran");
+    const actual = createExecutedMaterialPlan(current, plan, execution, kerf);
+    assert(actual.bars.length === 5 && new Set(actual.bars.map(b => b.id)).size === 5, "Yksi bar per oikeasti käytetty fyysinen lähde");
+    const continued = actual.bars.find(b => b.id === "bar-3");
+    assert(continued.sourceLength === 6000 && continued.nominalRemaining === 3491 && continued.remaining === 3468 && continued.waste === 9,
+        "1000+800+700 käyttää yhden 6000 mm salon, kolmen leikkauksen kerfin ja alkuperäiset varat");
+    assert(actual.bars.find(b => b.id === "bar-7").remaining === 976, "5000 mm jättää 976 mm turvallisen jäännöksen");
+    assert(JSON.stringify({ plan, execution, base, state }) === original, "Siirtymät eivät mutatoi syötteitä");
+    return true;
+}
+
+function runProductionContinuationInputRegressionTests() {
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+    const reject = (fn, message) => { let threw = false; try { fn(); } catch { threw = true; } assert(threw, message); };
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const ids = pieces => pieces.map(piece => piece.pieceId);
+    const fixture = createProductionSourceDeviationFixture(true);
+    const { plan, execution, kerf } = fixture;
+    const initial = createInitialProductionExecutionState(plan, execution);
+    const state = recordProductionSourceDeviation(initial, plan, execution, kerf,
+        execution.operations[0].sources.map(source => source.id === "bar-7" ? "bar-3" : source.id), "2026-09-10T10:00:00Z");
+    const before = JSON.stringify({ plan, execution, initial, state });
+    const input = createProductionContinuationInput(state, plan, execution, kerf);
+    const originalPieces = execution.operations.flatMap(operation => operation.pieces);
+    assert(JSON.stringify(input.allPieces) === JSON.stringify(originalPieces), "Alkuperäiset kappaleet ja koko provenance säilyvät schedulerin slottijärjestyksessä");
+    assert(ids(input.completedPieces).join() === "piece-1-1,piece-2-1,piece-4-1,piece-7-1", "7 → 3 valmistaa suunnitellut neljä piece-ID:tä");
+    assert(input.remainingPieces.map(piece => `${piece.pieceId}:${piece.length}`).join() === "piece-3-1:5000,piece-5-1:800,piece-6-1:700",
+        "5000 mm kappale on edelleen tekemättä; jäljellä olevien järjestys säilyy");
+    const completedIds = new Set(ids(input.completedPieces));
+    const partition = [...input.completedPieces, ...input.remainingPieces];
+    assert(partition.length === input.allPieces.length && new Set(ids(partition)).size === input.allPieces.length &&
+        input.remainingPieces.every(piece => !completedIds.has(piece.pieceId)) &&
+        input.allPieces.every(piece => partition.includes(piece)), "Completed ja remaining ovat alkuperäisen kappalejoukon erillinen, kattava jako");
+    const physical = input.physicalSources.find(source => source.sourceId === "bar-3");
+    assert(physical.source === "new" && physical.sourceLength === 6000 && physical.nominalRemaining === 4997 && physical.remaining === 4976 &&
+        physical.sourceCapacityAllowance === 20 && physical.pieceCapacityAllowance === 1 && physical.carriedSourceCapacityAllowance === 21 &&
+        physical.totalPieceCapacityAllowance === 1 && physical.totalCapacityAllowance === 21 && physical.waste === 3 &&
+        JSON.stringify(physical.groupedCuts) === JSON.stringify([{ length: 1000, quantity: 1 }]), "Salon 3 alkuperä, toteutunut leikkaus ja fyysinen kapasiteetti säilyvät");
+    const unused = input.physicalSources.find(source => source.sourceId === "bar-7");
+    assert(unused.sourceLength === 6000 && unused.nominalRemaining === 6000 && unused.remaining === 5980 &&
+        unused.carriedSourceCapacityAllowance === 20 && unused.groupedCuts.length === 0 && unused.waste === 0,
+        "Käyttämätön salko 7 säilyy kokonaisena alkuperäisellä kapasiteetilla");
+    assert(input.physicalSources.map(source => source.sourceId).join() === plan.bars.map(bar => bar.id).join() &&
+        input.physicalSources.length === 7 && new Set(input.physicalSources.map(source => source.sourceId)).size === 7,
+        "Samamittaiset fyysiset salot säilyvät erillisinä manifestin järjestyksessä");
+    assert(JSON.stringify(input) === JSON.stringify(createProductionContinuationInput(clone(state), clone(plan), clone(execution), kerf)),
+        "Jatkolähtötilan johtaminen on deterministinen");
+    assert(JSON.stringify({ plan, execution, initial, state }) === before, "Johtaminen ei mutatoi syötteitä");
+    input.allPieces[0].openingId = "changed";
+    physical.groupedCuts[0].length = 1;
+    unused.nominalRemaining = 1;
+    assert(JSON.stringify({ plan, execution, initial, state }) === before &&
+        createProductionContinuationInput(state, plan, execution, kerf).physicalSources.find(source => source.sourceId === "bar-3").groupedCuts[0].length === 1000,
+        "Tuloksen muokkaus ei muuta alkuperäistä provenancea tai seuraavan kutsun fyysistä tasetta");
+    assert(!replayProductionExecution(state, plan, execution, kerf).remainingFeasible, "Apurin kutsuminen ei poista B-009-pysähdystä");
+    reject(() => completeNextProductionOperation(state, plan, execution, undefined, kerf), "Jatkolähtötieto ei avaa kuittausta");
+    reject(() => createExecutedMaterialPlan(state, plan, execution, kerf), "Jatkolähtötieto ei avaa finalisointia");
+    const empty = createProductionContinuationInput(initial, plan, execution, kerf);
+    assert(empty.completedPieces.length === 0 && empty.remainingPieces.length === 7 && empty.physicalSources.every(source => source.groupedCuts.length === 0),
+        "Tyhjä V1-prefix jättää kaikki kappaleet ja salot käyttämättömiksi");
+    let done = initial;
+    while (done.events.length < execution.operations.length) done = completeNextProductionOperation(done, plan, execution, undefined, kerf);
+    const finished = createProductionContinuationInput(done, plan, execution, kerf);
+    assert(finished.remainingPieces.length === 0 && finished.completedPieces.length === 7, "Valmis V1-prefix jättää tekemättömän kysynnän tyhjäksi");
+
+    const repeated = createProductionSourceDeviationFixture(false);
+    repeated.plan.bars[2].groupedCuts = [{ length: 1000, quantity: 2 }];
+    Object.assign(repeated.plan.bars[2], MATERIAL.calculateMaterialBarCapacity(6000, repeated.plan.bars[2].groupedCuts, 3));
+    const repeatedOrders = [createOrderInput("deviation", "", "black", { verticalProfile: repeated.plan.bars.flatMap(bar =>
+        bar.groupedCuts.map(cut => ({ length: String(cut.length), quantity: String(cut.quantity), openingId: "A" }))) })];
+    const repeatedExecution = createProductionExecution(repeated.plan, repeatedOrders, 3);
+    const repeatedState = completeNextProductionOperation(createInitialProductionExecutionState(repeated.plan, repeatedExecution), repeated.plan, repeatedExecution,
+        "2026-09-10T10:00:00Z", 3);
+    const repeatedInput = createProductionContinuationInput(repeatedState, repeated.plan, repeatedExecution, 3);
+    assert(repeatedInput.completedPieces.some(piece => piece.pieceId === "piece-3-1") &&
+        repeatedInput.remainingPieces.some(piece => piece.pieceId === "piece-3-2" && piece.sourceId === "bar-3" && piece.length === 1000),
+        "Samasta salosta tehty 1000 mm kappale ei valmista seuraavaa samanmittaista kappaletta");
+
+    // Eri tilaukset ja aukot, sama mitta: valmistuminen ei saa perustua mittaryhmään.
+    const provenanceFixture = createProductionSourceDeviationFixture(false);
+    provenanceFixture.plan.bars[4].profileType = "horizontalProfile";
+    provenanceFixture.plan.bars[4].color = "gray";
+    const orders = provenanceFixture.plan.bars.map((bar, index) => createOrderInput(`order-${index}`, "", bar.color, {
+        [bar.profileType]: [{ length: String(bar.groupedCuts[0].length), quantity: "1", openingId: index % 2 ? "" : `opening-${index}` }]
+    }));
+    provenanceFixture.plan.batch.orderIds = orders.map(order => order.id);
+    provenanceFixture.plan.bars[2].source = "remnant";
+    const provenanceExecution = createProductionExecution(provenanceFixture.plan, orders, 3);
+    const provenanceState = completeNextProductionOperation(createInitialProductionExecutionState(provenanceFixture.plan, provenanceExecution),
+        provenanceFixture.plan, provenanceExecution, "2026-09-10T10:00:00Z", 3);
+    const provenanceInput = createProductionContinuationInput(provenanceState, provenanceFixture.plan, provenanceExecution, 3);
+    assert(JSON.stringify(provenanceInput.allPieces) === JSON.stringify(provenanceExecution.operations.flatMap(operation => operation.pieces)) &&
+        new Set(provenanceInput.completedPieces.map(piece => piece.orderId)).size === 4 &&
+        provenanceInput.allPieces.some(piece => piece.openingId === null) && provenanceInput.allPieces.some(piece => piece.openingId === "opening-0"),
+        "Samamittaisten eri tilausten provenance ja puuttuvat aukot säilyvät");
+    assert(provenanceInput.physicalSources.find(source => source.sourceId === "bar-3").source === "remnant", "Alkuperäinen vanha jäännöslähde säilyttää lähdelajinsa");
+    assert(provenanceInput.remainingPieces.some(piece => piece.profileType === "horizontalProfile" && piece.color === "gray") &&
+        provenanceInput.physicalSources.every(source => {
+            const bar = provenanceFixture.plan.bars.find(bar => bar.id === source.sourceId);
+            return source.profileType === bar.profileType && source.color === bar.color;
+        }), "Jatkossa kappaleiden ja fyysisten lähteiden profiilit ja värit säilyvät");
+
+    for (const change of [
+        copy => { copy.planDigest += "wrong"; },
+        copy => { copy.events[0].operationId = "unknown"; },
+        copy => { copy.events[0].operationId = execution.operations[1].id; },
+        copy => { copy.events.push(clone(copy.events[0])); },
+        copy => { copy.events[0].actualSourceIds[0] = "unknown"; },
+        copy => { copy.events.push({ type: "operation-completed", operationId: execution.operations[1].id,
+            actualSourceIds: ["bar-7"], completedAt: "2026-09-10T10:01:00Z" }); }
+    ]) {
+        const corrupt = clone(state);
+        change(corrupt);
+        reject(() => createProductionContinuationInput(corrupt, plan, execution, kerf), "Vierasta digestiä, virheellistä prefixiä tai pysähdyksen jälkeistä kirjausta ei hyväksytä");
+    }
+    for (const change of [
+        copy => { copy.operations[0].pieces[1].pieceId = copy.operations[0].pieces[0].pieceId; },
+        copy => { copy.operations[1].pieces[0].pieceId = copy.operations[0].pieces[0].pieceId; },
+        copy => { copy.operations[0].pieces[0].pieceId = ""; },
+        copy => { copy.operations[0].pieces.pop(); },
+        copy => { copy.operations[0].pieces[0].sourceId = "bar-3"; },
+        copy => { copy.operations[0].pieces[0].length = 999; },
+        copy => { copy.operations[0].pieces[0].quantity = 2; },
+        copy => { copy.operations[0].pieces[0].profileType = "horizontalProfile"; },
+        copy => { copy.operations[0].pieces[0].color = "gray"; },
+        copy => { copy.operations[0].pieces[0].orderId = ""; },
+        copy => { copy.operations[1].id = copy.operations[0].id; },
+        copy => { copy.operations.pop(); }
+    ]) {
+        const corruptExecution = clone(execution);
+        change(corruptExecution);
+        // Päivitetty digest ei saa peittää rikkinäistä kappalejoukkoa tai slottikohdistusta.
+        const corruptState = { ...state, planDigest: createProductionPlanDigest(plan, corruptExecution) };
+        reject(() => createProductionContinuationInput(corruptState, plan, corruptExecution, kerf), "Virheellinen alkuperäinen kappalejoukko hylätään myös täsmäävällä digestillä");
+    }
+
+    const units = CUTTING_PHYSICS.millimetersToDpUnits;
+    function checkCapacityContinuation(source, future, testKerf) {
+        const full = MATERIAL.calculateMaterialBarCapacity(source.sourceLength, [...source.groupedCuts, ...future], testKerf, source);
+        const tail = MATERIAL.calculateMaterialBarCapacity(source.nominalRemaining, future, testKerf, {
+            sourceCapacityAllowance: source.carriedSourceCapacityAllowance, pieceCapacityAllowance: source.pieceCapacityAllowance
+        });
+        assert(full.possible && tail.possible && full.nominalRemaining === tail.nominalRemaining && full.remaining === tail.remaining &&
+            units(full.waste) === units(source.waste) + units(tail.waste) &&
+            units(full.totalCapacityAllowance) === units(tail.totalCapacityAllowance) &&
+            units(full.totalPieceCapacityAllowance) === units(source.totalPieceCapacityAllowance) + units(tail.totalPieceCapacityAllowance) &&
+            full.sourceCapacityAllowance === source.sourceCapacityAllowance && tail.usableCapacity === source.remaining,
+            "Yhdistetty laskenta ja replaysta jatkaminen säilyttävät pituudet, kumulatiivisen sahahukan ja varat");
+        return full;
+    }
+    for (const testKerf of [3, 0, 3.4]) {
+        const setup = createProductionSourceDeviationFixture(true, testKerf);
+        const start = createInitialProductionExecutionState(setup.plan, setup.execution);
+        const actual = setup.execution.operations[0].sources.map(source => source.id === "bar-7" ? "bar-3" : source.id);
+        const recorded = recordProductionSourceDeviation(start, setup.plan, setup.execution, testKerf, actual, "2026-09-10T10:00:00Z");
+        const derived = createProductionContinuationInput(recorded, setup.plan, setup.execution, testKerf);
+        const source = derived.physicalSources.find(source => source.sourceId === "bar-3");
+        const full = checkCapacityContinuation(source, [{ length: 800, quantity: 1 }, { length: 700, quantity: 1 }], testKerf);
+        if (testKerf === 3) assert(full.nominalRemaining === 3491 && full.remaining === 3468 && full.waste === 9 && full.totalCapacityAllowance === 23,
+            "6000 → 1000 + 800 + 700: nimellinen 3491, turvallinen 3468, sahahukka 9 ja varat 23 mm");
+        const safeFitLength = CUTTING_PHYSICS.dpUnitsToMillimeters(units(source.remaining) - units(testKerf) - units(source.pieceCapacityAllowance));
+        const safeFit = checkCapacityContinuation(source, [{ length: safeFitLength, quantity: 1 }], testKerf);
+        assert(safeFit.remaining === 0 && safeFit.nominalRemaining > 0 && source.nominalRemaining !== safeFitLength,
+            "Turvallisen kapasiteetin nolla on edelleen cut, ei nimellinen release");
+        assert(!MATERIAL.calculateMaterialBarCapacity(source.nominalRemaining, [{ length: 5000, quantity: 1 }], testKerf, {
+            sourceCapacityAllowance: source.carriedSourceCapacityAllowance, pieceCapacityAllowance: source.pieceCapacityAllowance
+        }).possible, "Jo kulutettua kapasiteettia ei tarjota uudelleen 5000 mm kappaleelle");
+    }
+    const zero = createProductionSourceDeviationFixture(true, 3, { sourceCapacityAllowance: 0, pieceCapacityAllowance: 0 });
+    const zeroStart = createInitialProductionExecutionState(zero.plan, zero.execution);
+    const zeroRecorded = recordProductionSourceDeviation(zeroStart, zero.plan, zero.execution, 3,
+        zero.execution.operations[0].sources.map(source => source.id === "bar-7" ? "bar-3" : source.id));
+    const zeroSource = createProductionContinuationInput(zeroRecorded, zero.plan, zero.execution, 3).physicalSources.find(source => source.sourceId === "bar-3");
+    const exact = checkCapacityContinuation(zeroSource, [{ length: zeroSource.nominalRemaining, quantity: 1 }], 3);
+    const release = CUTTING_PHYSICS.cutPiece(zeroSource.nominalRemaining, zeroSource.nominalRemaining, 3);
+    assert(zeroSource.carriedSourceCapacityAllowance === 0 && release.possible && release.waste === 0 &&
+        exact.nominalRemaining === 0 && exact.remaining === 0 && exact.waste === zeroSource.waste,
+        "Nollavaroilla nimellinen täsmäsovitus on release ilman uutta sahahukkaa");
+    const releasePlan = { ...zero.plan, bars: [{ ...zero.plan.bars[0], groupedCuts: [{ length: 1000, quantity: 1 }, { length: 4997, quantity: 1 }],
+        ...MATERIAL.calculateMaterialBarCapacity(6000, [{ length: 1000, quantity: 1 }, { length: 4997, quantity: 1 }], 3,
+            { sourceCapacityAllowance: 0, pieceCapacityAllowance: 0 }) }] };
+    const releaseOrders = [createOrderInput("deviation", "", "black", { verticalProfile:
+        [1000, 4997].map(length => ({ length: String(length), quantity: "1" })) })];
+    const releaseExecution = createProductionExecution(releasePlan, releaseOrders, 3);
+    let releaseState = createInitialProductionExecutionState(releasePlan, releaseExecution);
+    for (const operation of releaseExecution.operations) {
+        const derived = createProductionContinuationInput(releaseState, releasePlan, releaseExecution, 3);
+        const source = derived.physicalSources[0];
+        assert((source.nominalRemaining === operation.length ? "release" : "cut") === operation.kind,
+            "Johdettu nimellispituus säilyttää alkuperäisen schedulerin cut/release-rajan");
+        releaseState = completeNextProductionOperation(releaseState, releasePlan, releaseExecution, undefined, 3);
+    }
+    const exhausted = createProductionContinuationInput(releaseState, releasePlan, releaseExecution, 3);
+    assert(exhausted.remainingPieces.length === 0 && exhausted.physicalSources.length === 1 &&
+        exhausted.physicalSources[0].nominalRemaining === 0 && exhausted.physicalSources[0].remaining === 0 &&
+        exhausted.physicalSources[0].groupedCuts.length === 2, "Myös loppuun käytetyn fyysisen salon identiteetti ja leikkaukset säilyvät");
+    return true;
+}
+
+// Tavallinen scheduler tekee ensin saman aukon 1000 mm kiskot yksittäin.
+// Toisen lähdepoikkeama jättää molemmat 5000 mm kappaleet tekemättä ja pysäyttää työn.
+function createRailContinuationRegressionFixture() {
+    const orders = [createOrderInput("rail-continuation", "", "black", { rails: [
+        { length: "1000", quantity: "2", openingId: "A" },
+        { length: "5000", quantity: "2", openingId: "A" }
+    ] })];
+    const bars = [["bottomRail", 1000], ["topRail", 1000], ["bottomRail", 5000], ["topRail", 5000]].map(([profileType, length], index) => {
+        const groupedCuts = [{ length, quantity: 1 }];
+        const capacity = MATERIAL.calculateMaterialBarCapacity(6000, groupedCuts, 3);
+        return { id: `bar-${index + 1}`, number: index + 1, profileType, color: "black", source: "new", sourceLength: 6000,
+            groupedCuts, ...capacity, remnantStatus: getRemnantStatus(capacity.remaining, PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings) };
+    });
+    const plan = { complete: true, remainingItems: [], bars, batch: { version: 1, orderIds: [orders[0].id],
+        settings: { minBatchPieces: 1, targetBatchPieces: 4, maxBatchPieces: 4 } } };
+    const execution = createProductionExecution(plan, orders, 3);
+    let base = completeNextProductionOperation(createInitialProductionExecutionState(plan, execution), plan, execution, "2026-09-12T12:00:00Z", 3);
+    base = recordProductionSourceDeviation(base, plan, execution, 3, ["bar-4"], "2026-09-12T12:01:00Z");
+    return { orders, plan, execution, base, input: createProductionContinuationInput(base, plan, execution, 3) };
+}
+
+function runProductionContinuationPlanRegressionTests() {
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+    const reject = (fn, message) => { let threw = false; try { fn(); } catch { threw = true; } assert(threw, message); };
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const { plan, execution, kerf } = createProductionSourceDeviationFixture(true);
+    const state = recordProductionSourceDeviation(createInitialProductionExecutionState(plan, execution), plan, execution, kerf,
+        execution.operations[0].sources.map(source => source.id === "bar-7" ? "bar-3" : source.id), "2026-09-10T10:00:00Z");
+    const input = createProductionContinuationInput(state, plan, execution, kerf);
+    const before = JSON.stringify({ plan, execution, state, input });
+    const result = createProductionContinuationPlan(state, plan, execution, kerf);
+    assert(result.complete, "Pysähtyneelle B-009-fixturelle löytyy täydellinen jatko");
+    const pieces = result.execution.operations.flatMap(operation => operation.pieces);
+    assert(pieces.length === 3 && new Set(pieces.map(piece => piece.pieceId)).size === 3 &&
+        pieces.map(piece => piece.pieceId).sort().join() === "piece-3-1,piece-5-1,piece-6-1" &&
+        pieces.every(piece => !input.completedPieces.some(done => done.pieceId === piece.pieceId)), "Vain kolme tekemätöntä piece-ID:tä kohdistuu kerran");
+    assert(result.assignments.every(assignment => input.physicalSources.some(source => source.sourceId === assignment.sourceId)) &&
+        new Set(result.assignments.map(assignment => assignment.sourceId)).size === result.assignments.length,
+        "Vain alkuperäisen manifestin yksilölliset fyysiset salot kelpaavat");
+    const known = evaluateProductionContinuationPlan(input, [
+        { sourceId: "bar-7", pieceIds: ["piece-3-1"] }, { sourceId: "bar-3", pieceIds: ["piece-5-1", "piece-6-1"] }
+    ], kerf);
+    assert(known.predictedPlan.bars.find(bar => bar.sourceId === "bar-3").remaining === 3468 &&
+        known.predictedPlan.bars.find(bar => bar.sourceId === "bar-3").waste === 9 && known.predictedPlan.bars.length === 5,
+        "Käsin tunnettu jatko säilyttää yhdistetyn fyysisen taseen ja viisi käytettyä salkoa");
+    assert(result.materialScore.totalCostEquivalent <= known.materialScore.totalCostEquivalent,
+        "Fixturen tutkittu ratkaisu ei ole tunnettua kelvollista jatkoa kalliimpi");
+    for (const candidate of [result, known]) {
+        const ledger = new Map(replayProductionExecution(state, plan, execution, kerf).bars.map(bar => [bar.id, bar]));
+        for (const operation of candidate.execution.operations) {
+            for (const source of operation.sources) assert(source.before === ledger.get(source.id).nominalRemaining,
+                "Scheduler alkaa fyysisen salon todellisesta pituudesta");
+            applyProductionOperation(ledger, operation, operation.sources.map(source => source.id), kerf);
+            for (const source of operation.sources) assert(source.after === ledger.get(source.id).nominalRemaining,
+                "Schedulerin jälkipituus vastaa yhdistettyä replayta");
+        }
+        for (const bar of candidate.predictedPlan.bars) {
+            const actual = ledger.get(bar.sourceId);
+            const direct = MATERIAL.calculateMaterialBarCapacity(bar.sourceLength, bar.groupedCuts, kerf, bar);
+            assert(direct.possible && direct.nominalRemaining === actual.nominalRemaining && direct.remaining === actual.remaining &&
+                direct.waste === actual.waste && bar.remaining === actual.remaining && bar.waste === actual.waste,
+                "Ennuste vastaa koko alkuperäisestä lähteestä laskettua leikkaussarjaa");
+        }
+        assert(JSON.stringify(candidate.materialScore) === JSON.stringify(scoreCompleteMaterialTransitionPlan(candidate.predictedPlan,
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings)), "Score tulee yhdistetystä toteumasta");
+        assert(candidate.materialScore.sourceValueEquivalent === candidate.predictedPlan.bars.length * 6000,
+            "Käytetty uusi salko veloitetaan alkuperäisenä kerran; käyttämättömiä ei veloiteta");
+    }
+    assert(known.execution.operations.some(operation => operation.sources.some(source => source.id === "bar-3" && source.before === 4997)) &&
+        known.execution.operations.some(operation => operation.sources.some(source => source.id === "bar-7" && source.before === 6000)),
+        "Käytetty ja käyttämätön fyysinen lähde aloittavat oikeista pituuksista");
+    assert(JSON.stringify(result) === JSON.stringify(createProductionContinuationPlan(state, plan, execution, kerf)) &&
+        JSON.stringify({ plan, execution, state, input }) === before, "Lähteet, piece-kohdistus, scheduler ja score toistuvat ilman mutaatioita");
+    reject(() => completeNextProductionOperation(state, plan, execution, undefined, kerf), "Puhdas jatkohaku ei avaa alkuperäisen työn kuittausta");
+    for (const assignments of [
+        [{ sourceId: "outside", pieceIds: ["piece-3-1", "piece-5-1", "piece-6-1"] }],
+        [{ sourceId: "bar-7", pieceIds: ["piece-3-1"] }, { sourceId: "bar-7", pieceIds: ["piece-5-1", "piece-6-1"] }],
+        [{ sourceId: "bar-7", pieceIds: ["piece-3-1", "piece-5-1", "piece-5-1"] }],
+        [{ sourceId: "bar-7", pieceIds: ["piece-3-1", "piece-5-1", "piece-7-1"] }],
+        [{ sourceId: "bar-7", pieceIds: ["piece-3-1", "unknown"] }],
+        [{ sourceId: "bar-7", pieceIds: ["piece-3-1"] }],
+        [{ sourceId: "bar-3", pieceIds: ["piece-3-1", "piece-5-1", "piece-6-1"] }]
+    ]) reject(() => evaluateProductionContinuationPlan(input, assignments, kerf), "Virheelliset kappaleet, lähteet ja ylikulutus hylätään");
+
+    const oldPlan = clone(plan);
+    oldPlan.bars[2].source = "remnant";
+    const oldExecution = createProductionExecution(oldPlan, createProductionSourceDeviationFixture(true).orders, kerf);
+    const oldState = { ...state, planDigest: createProductionPlanDigest(oldPlan, oldExecution) };
+    const oldInput = createProductionContinuationInput(oldState, oldPlan, oldExecution, kerf);
+    const oldKnown = evaluateProductionContinuationPlan(oldInput, known.assignments, kerf);
+    const oldBar = oldKnown.predictedPlan.bars.find(bar => bar.sourceId === "bar-3");
+    assert(oldBar.source === "remnant" && oldBar.sourceLength === 6000 && oldBar.sourceCapacityAllowance === 20 && oldBar.remaining === 3468 &&
+        oldKnown.materialScore.sourceValueEquivalent === 4 * 6000 + 6000 * evaluateRemnantDisposition(6000,
+            PROTOTYPE_MATERIAL_OPTIMIZER_SETTINGS.scoreSettings).savedValueFactor,
+        "Vanhan jäännöksen alkuperäinen lähdearvo ja kapasiteettivarat säilyvät yhdistetyssä scoressa");
+    assert(createProductionContinuationPlan(oldState, oldPlan, oldExecution, kerf).complete, "Haku tukee myös jo käytettyä vanhaa jäännöstä");
+
+    function twoSources(lengths, cuts) {
+        const twoPlan = { ...clone(plan), bars: lengths.map((length, index) => ({ ...clone(plan.bars[index]),
+            source: length === 6000 ? "new" : "remnant", sourceLength: length,
+            groupedCuts: [{ length: cuts[index], quantity: 1 }],
+            ...MATERIAL.calculateMaterialBarCapacity(length, [{ length: cuts[index], quantity: 1 }], 3)
+        })) };
+        const orders = [createOrderInput("deviation", "", "black", { verticalProfile: cuts.map(length => ({ length: String(length), quantity: "1" })) })];
+        const scheduled = createProductionExecution(twoPlan, orders, 3);
+        return { plan: twoPlan, execution: scheduled, state: createInitialProductionExecutionState(twoPlan, scheduled) };
+    }
+    const twins = twoSources([6000, 6000], [5000, 5000]);
+    const twinResult = createProductionContinuationPlan(twins.state, twins.plan, twins.execution, 3);
+    assert(twinResult.complete && twinResult.assignments.length === 2 &&
+        twinResult.assignments.map(assignment => assignment.sourceId).sort().join() === "bar-1,bar-2" &&
+        twinResult.execution.operations[0].sources.length === 2, "Identtiset fyysiset lähteet kuluvat kumpikin kerran ja säilyvät schedulerissa erillisinä");
+    const sourceRows = ["a", "b"].map(sourceId => ({ sourceId, source: "new", profileType: "verticalProfile", color: "black",
+        sourceLength: 6000, usableCapacity: 5980, sourceCapacityAllowance: 20, pieceCapacityAllowance: 1, quantity: 1, unlimited: false }));
+    const sourceBefore = JSON.stringify(sourceRows);
+    const candidates = findMaterialSourceCandidates([{ length: 5000, quantity: 2 }], sourceRows, 3);
+    const candidateB = candidates.find(candidate => candidate.sourceId === "b");
+    const afterB = consumeMaterialSource(sourceRows, candidateB);
+    assert(afterB[0].quantity === 1 && afterB[1].quantity === 0 && consumeMaterialSource(afterB, candidateB) === null &&
+        JSON.stringify(sourceRows) === sourceBefore, "Kulutus kohdistuu sourceId:hen eikä ensimmäiseen samanmittaiseen lähteeseen; haarat eivät mutatoidu");
+    for (const badSources of [[sourceRows[0], sourceRows[0]], [{ ...sourceRows[0], quantity: 2 }],
+        [{ ...sourceRows[0], unlimited: true }], [sourceRows[0], { ...sourceRows[1], sourceId: undefined }]]) {
+        reject(() => optimizeOrderInventoryBeamDP([{ length: 5000, quantity: 1 }], badSources, 3), "Fyysisten lähteiden kaksoiskäyttö, ryhmittely ja rajattomuus hylätään");
+    }
+    const shortage = twoSources([2000, 6000], [1000, 5000]);
+    const stopped = recordProductionSourceDeviation(shortage.state, shortage.plan, shortage.execution, 3, ["bar-2"]);
+    const savedFallback = findExactFiniteInventoryFeasibilityPlan;
+    try {
+        findExactFiniteInventoryFeasibilityPlan = () => { throw new Error("Continuation ei saa käyttää yhteisten varojen exact-fallbackia"); };
+        const failed = createProductionContinuationPlan(stopped, shortage.plan, shortage.execution, 3);
+        assert(!failed.complete && failed.feasibilityStatus === "unknown" && failed.reason === "no-validated-continuation" &&
+            !failed.execution && !failed.assignments && !failed.predictedPlan && !failed.materialScore,
+            "Riittämätön alkuperäinen manifesti palauttaa unknown-tuloksen ilman osittaista jatkoa tai ulkopuolista materiaalia");
+        const physicalFailure = optimizeOrderInventoryBeamDP([{ length: 7000, quantity: 1 }], sourceRows, 3);
+        assert(!physicalFailure.complete && physicalFailure.feasibilityStatus === "unknown" && !physicalFailure.stats.feasibilityFallback.attempted,
+            "Myös fyysisen beamin suora käyttö jättää exact-fallbackin ajamatta");
+    } finally { findExactFiniteInventoryFeasibilityPlan = savedFallback; }
+    let finishedState = twins.state;
+    while (finishedState.events.length < twins.execution.operations.length) finishedState = completeNextProductionOperation(finishedState, twins.plan, twins.execution, undefined, 3);
+    const noDemand = createProductionContinuationPlan(finishedState, twins.plan, twins.execution, 3);
+    assert(!noDemand.complete && noDemand.reason === "no-remaining-pieces" && !noDemand.execution, "Tyhjälle kysynnälle ei muodosteta jatkosuunnitelmaa");
+
+    // Jatkon 1+1-kelpoisuus määräytyy jatkon alussa jäljellä olevasta kysynnästä.
+    function rails(count, completedBottom = count / 2 - 1, completedTop = count / 2 - 1) {
+        const orders = [createOrderInput("rails", "", "black", { rails: [{ length: "4000", quantity: String(count), openingId: "A" }] })];
+        const cuts = normalizeOrderCuts(orders);
+        const bars = cuts.flatMap(cut => Array.from({ length: cut.quantity }, () => ({
+            profileType: cut.profileType, color: cut.color, source: "new", sourceLength: 6000,
+            groupedCuts: [{ length: 4000, quantity: 1 }], ...MATERIAL.calculateMaterialBarCapacity(6000, [{ length: 4000, quantity: 1 }], 3)
+        }))).map((bar, index) => ({ ...bar, id: `bar-${index + 1}`, number: index + 1, remnantStatus: "reusable" }));
+        const railPlan = { complete: true, remainingItems: [], bars, batch: { version: 1, orderIds: ["rails"], settings: { minBatchPieces: 1, targetBatchPieces: count, maxBatchPieces: count } } };
+        // Erilliset yhden salon operaatiot mahdollistavat 2+2-kysynnän puolikkaan prefixin.
+        const profiles = Object.fromEntries(Object.entries(PRODUCTION_PLANNING.profileDefaults).map(([key, rule]) => [key, { ...rule, maxStackSize: 1 }]));
+        const scheduled = PRODUCTION_PLANNING.schedule(PRODUCTION_PLANNING.attachPieces(railPlan, cuts), 3, profiles);
+        const bottom = scheduled.operations.filter(op => op.pieces[0].profileType === "bottomRail");
+        const top = scheduled.operations.filter(op => op.pieces[0].profileType === "topRail");
+        const chosen = [...bottom.slice(0, completedBottom), ...top.slice(0, completedTop),
+            ...bottom.slice(completedBottom), ...top.slice(completedTop)];
+        const railExecution = { ...scheduled, operations: chosen.map((operation, index) => ({ ...operation, id: `operation-${index + 1}`, number: index + 1 })) };
+        let railState = createInitialProductionExecutionState(railPlan, railExecution);
+        for (let i = 0; i < completedBottom + completedTop; i++) railState = completeNextProductionOperation(railState, railPlan, railExecution, "2026-09-12T12:00:00Z", 3);
+        return createProductionContinuationPlan(railState, railPlan, railExecution, 3);
+    }
+    const four = rails(4), two = rails(2);
+    assert(four.complete && four.execution.operations.length === 1 && four.execution.operations[0].sources.length === 2,
+        "Alkuperäisen 2+2:n jäljellä oleva 1+1 muodostaa kiskosekaparin");
+    assert(rails(6).execution.metrics.cutOperationCount === 1, "Myös alkuperäisen 3+3:n jäljellä oleva 1+1 muodostaa sekaparin");
+    for (const result of [rails(4, 0, 0), rails(4, 0, 1)]) assert(result.execution.operations.every(op =>
+        new Set(op.pieces.map(p => p.profileType)).size === 1), "Jatkon 2+2 ja 2+1 säilyvät profiilikohtaisina");
+    assert(two.complete && two.execution.operations.length === 1 && two.execution.operations[0].sources.length === 2,
+        "Alkuperäinen aito 1+1 säilyttää sallitun kiskosekaparin");
+    const fixture = createRailContinuationRegressionFixture();
+    const corrected = createProductionContinuationPlan(fixture.base, fixture.plan, fixture.execution, 3);
+    // Ennen korjausta talteen otettu koko kohdistus ja materiaalipisteen erittely.
+    assert(JSON.stringify(corrected.assignments) === JSON.stringify([
+        { sourceId: "bar-3", pieceIds: ["piece-4-1"] }, { sourceId: "bar-2", pieceIds: ["piece-3-1"] }
+    ]), "Kiskokorjaus säilyttää materiaalihakijan koko kohdistuksen");
+    assert(JSON.stringify(corrected.materialScore) === JSON.stringify({ sourceValueEquivalent: 24000,
+        recoveredRemnantValueEquivalent: 8853.44, kerfRecoveredValueEquivalent: 0,
+        newStockRemnantCreationPenaltyEquivalent: 100, remnantHandlingPenaltyEquivalent: 40,
+        largeScrapPenaltyEquivalent: 2638.4, totalCostEquivalent: 17924.96 }), "Koko materiaalipiste säilyy ennen korjausta otettuna checkpointina");
+    assert(corrected.execution.metrics.cutOperationCount === 1 && corrected.execution.metrics.bundleUtilization === 1,
+        "Jäljellä olevat kaksi 5000 mm kiskoa: sahausliikkeet 2 → 1 ja nippukäyttö 0,5 → 1");
+    for (const field of ["length", "color", "openingId", "orderId"]) {
+        const changed = JSON.parse(JSON.stringify(fixture.input));
+        const piece = changed.remainingPieces[0];
+        piece[field] = field === "length" ? 4900 : field === "color" ? "gray" : "other";
+        Object.assign(changed.allPieces.find(p => p.pieceId === piece.pieceId), piece);
+        if (field === "color") changed.physicalSources.find(s => s.sourceId === corrected.assignments[0].sourceId).color = "gray";
+        assert(evaluateProductionContinuationPlan(changed, corrected.assignments, 3).execution.operations.length === 2,
+            "Jatkon eri mitta, väri, aukko tai tilaus estää parin: " + field);
+    }
+    const missingOpening = JSON.parse(JSON.stringify(fixture.input));
+    missingOpening.remainingPieces.forEach(p => p.openingId = "");
+    assert(evaluateProductionContinuationPlan(missingOpening, corrected.assignments, 3).execution.operations.length === 2,
+        "Puuttuvia aukkoja ei arvata jatkossakaan");
+    const v3 = createProductionContinuationState(fixture.base, fixture.plan, fixture.execution, 3);
+    const stored = Object.assign(createStoredPlanSemanticRegressionState(), { orders: fixture.orders, generatedPlan: fixture.plan,
+        executionState: v3, completedBarIds: [], remnantRows: [], stockProfileRows: Object.keys(PROFILE_TYPES).map(profileType =>
+            ({ profileType, color: "black", quantity: "7", unlimited: false, additional: false })) });
+    assert(isValidStoredWorkState(JSON.parse(JSON.stringify(stored))), "V3:n tallennevalidointi regeneroi korjatun kiskoschedulerin");
+    assert(v3.continuation.digest === createProductionContinuationState(fixture.base, fixture.plan, fixture.execution, 3).continuation.digest &&
+        v3.planDigest === fixture.base.planDigest, "Jatkodigest on deterministinen; alkuperäinen V1/V2-digest säilyy");
+    const completed = completeNextProductionOperation(v3, fixture.plan, fixture.execution, "2026-09-12T12:02:00Z", 3);
+    assert(replayProductionExecution(completed, fixture.plan, fixture.execution, 3).completedPieceIds.length === 4 &&
+        isValidStoredWorkState({ ...stored, executionState: completed }), "Yksi jatkon sekakuittaus valmistaa molemmat kappaleet ja palautuu");
+    stored.executionState = JSON.parse(JSON.stringify(v3));
+    stored.executionState.continuation.digest = "production-continuation-v1-90c382a4698e4e0b";
+    assert(!isValidStoredWorkState(stored), "Ennen korjausta talteen otettu kahden erillissahauksen digest hylätään");
     return true;
 }
 
@@ -233,6 +730,20 @@ function runProductionRegressionTests() {
         "Valmiin kiskon poimintaa ei muuteta sekanipun sahausliikkeeksi");
     const restricted = { ...P.profileDefaults, bottomRail: { compatibilityGroup: "topRail", maxStackSize: 1 } };
     assert(P.schedule(railSources(2), 3, restricted).operations.length === 2, "Pari kunnioittaa kapasiteettia");
+    const restrictedPair = railSources(2);
+    assert(P.schedule(restrictedPair, 3, restricted, restrictedPair.flatMap(s => s.pieces)).operations.length === 2,
+        "Myös jatkon eksplisiittinen kysyntäkonteksti kunnioittaa nippukapasiteettia");
+    const railParent = source("z-parent", [1000], "bottomRail");
+    const railChild = source("zz-child", [4000], "bottomRail", "black", railParent.remaining,
+        { origin: "same-run-remnant", parentSourceId: railParent.id });
+    const readyTop = source("a-ready-top", [4000], "topRail");
+    for (const s of [railChild, readyTop]) Object.assign(s.pieces[0], { orderId: "ready-rails", openingId: "A" });
+    const dependentRails = [railParent, railChild, readyTop];
+    const readyResult = P.schedule(dependentRails, 3, P.profileDefaults, dependentRails.flatMap(s => s.pieces));
+    const childOperation = readyResult.operations.find(op => op.sources.some(s => s.id === railChild.id));
+    const parentOperation = readyResult.operations.find(op => op.sources.some(s => s.id === railParent.id));
+    assert(readyResult.operations[0].sources[0].id === readyTop.id && readyResult.operations.every(op => op.sources.length === 1) &&
+        childOperation.dependencyIds.includes(parentOperation.id), "Kelvollinen 1+1-pari ei ohita keskeneräistä parent-lähdettä");
     const shared = { ...P.profileDefaults, bottomRail: { compatibilityGroup: "topRail", maxStackSize: 2 } };
     assert(P.schedule(railSources(4), 3, shared).operations.every(o => new Set(o.pieces.map(p => p.profileType)).size === 1), "Yleinen ryhmä ei ohita kiskosääntöä");
     const adjacentRails = railSources(4);

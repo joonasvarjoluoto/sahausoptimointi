@@ -21,6 +21,8 @@ Aktiivisen koodin säännöt ovat [materiaalimallissa](docs/domain/MATERIAL.md) 
 
 **Käyttäjän aukkoparisääntö 8.9.2026:** kun aukossa on yksi ala- ja yksi yläkisko, ne kelmutetaan ja nimetään heti pariksi ja kannattaa sahata yhdessä. Neljästä yhteiskappaleesta alkaen profiilit niputetaan erikseen; saman aukon samaa mittaa kannattaa tehdä peräkkäin. Tarkat valmius- ja yhteensopivuusehdot ovat tuotantomallissa.
 
+**Vahvistettu tuotantoperuste ja continuation-tarkennus, käyttäjä 12.9.2026:** ala- ja yläkiskot ovat fyysisesti omissa varastokehikoissaan. Alkuperäisessä 2+2-tilanteessa ja suuremmissa määrissä profiilikohtainen niputus vähentää yksittäisten ala- ja yläkiskojen erottelua ja materiaalin käsittelyä. Peruste on logistiikka, ei tekninen kielto sahata profiileja yhdessä. Jos fyysisen työn jälkeen samasta aukosta on jatkon alkaessa jäljellä vain 1+1, logistinen peruste erillissahaukselle poistuu ja sekasahaus on haluttu, tehokkaampi toimintatapa normaalien yhteensopivuusehtojen täyttyessä. Käyttäjä hyväksyi tällä perusteella rajatun continuation-schedulerin korjauksen; tavallisen työn niputus ja materiaalipiste eivät muutu. Aktiivinen sääntö on [tuotantomallin kiskoparikohdassa](docs/domain/PRODUCTION.md#aukkokohtainen-kiskopari).
+
 ## Tilauksen ja fyysisen salon jäljitettävyys
 
 **Vahvistettu tuotantokuvaus, käyttäjän muistio 6.9.2026:** tilaus on käytännössä yhtä väriä ja tavallisesti tarvitsee kaikkia profiileja. Tämä ei tarkoita, että vain joitakin profiileja sisältävä tilaus pitäisi hylätä. Ylä- ja alakiskoilla on samat mitat ja määrät.

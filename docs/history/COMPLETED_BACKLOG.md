@@ -2,6 +2,13 @@
 
 > Historiallinen arkisto 10.9.2026. Alkuperäiset havainto- ja testitiedot säilyvät alla; ne eivät määritä nykyistä toimintaa. B-004:n vanha otsikko oli ristiriidassa sen valmistumismerkinnän kanssa: korjaus on valmis. B-007:n jäljellä oleva suorituskykyrajoite jatkuu [avoimen backlogin](../../BACKLOG.md) kohdassa B-011.
 
+### B-013 — Pysähtyneen työn jatkosuunnitelma alkuperäisillä fyysisillä lähteillä
+
+- **Tila:** valmis rajatussa ensiversiossa 12.9.2026. B-009:n lähdepoikkeama voi estää alkuperäisen tulevan suunnitelman; tehtyjä sahauksia ei voi palauttaa undolla.
+- **Toteutus:** tekemättömien alkuperäisten piece-ID:iden haku alkuperäisiltä fyysisiltä sourceId:iltä, V3:n erillinen jatkodigest ja tapahtumaloki, deterministinen reload ilman optimizeria, undo/hylkäysraja, palautuslukko sekä yhdistetty finalisointi. UI tarjoaa aktivoinnin, jatkon operaatiokortin, alkuperäiset worker-numerot ja nykyiset kuittaus-/valmistumisohjaimet.
+- **Näyttö:** core 39/39, 151 ohjaus-/persistenssitarkistusta, neljä material-fixturea sekä 1354 pattern-tapausta ja 15 muuttumatonta tavallisen plan/score/scheduler-checkpointia. Oikeassa Codex in-app -selaimessa erillisellä localhost-testialkuperällä ajettiin 7 × 6000 mm musta Pysty / kerf 3: 7 → 3 -poikkeama, pysähdys, aktivointi, tyhjän jatkon reload ja hylkäys, uudelleenaktivointi, kuittaus, reload, undo, loppukuittaukset, valmis reload, kaikki salon valmistumismerkinnät, niiden reload ja finalisointi. Jäljelle jäi 2 uutta Pysty-salkoa sekä 4976 mm × 3 ja 4272 mm × 1 jäännökset; batch poistui. Lisäksi kiskofixturen 5000 mm:n 1+1-sekanippu, sen reload ja kuittaus sekä korruptoituneen V3:n näkyvä palautuslukko ja reload tarkistettiin. Käyttäjän oikeaa työtä ei käytetty.
+- **Säilyvät rajat:** vain alkuperäisen manifestin lähteet, yksi jatkosuunnitelma, jatkossa vain suunnitellut lähteet, synkroninen rajattu haku. Ulkopuolinen materiaali, jatkon uudet lähdepoikkeamat, pysyvä batch-historia ja laaja recovery-editori eivät sisälly tähän hyväksymisrajaan. Aktiivinen sopimus on [tuotantomallissa](../domain/PRODUCTION.md).
+
 ### B-009 — Toteutuneen fyysisen salon poikkeama, ensimmäinen turvallinen versio
 
 - **Tila:** valmis 10.9.2026. Lähtöhavainto 9.9.2026: suunnitellun nipun 1/2/7/4 sijasta käytettiin 1/2/3/4.

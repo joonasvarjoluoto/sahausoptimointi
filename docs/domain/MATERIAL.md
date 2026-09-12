@@ -34,6 +34,8 @@ Rajattomalla uudella lähteellä `quantity` on `null`. Äärellinen määrä on 
 
 `getMaterialSourcesForProfile()` muodostaa yhden profiilin ja värin käytettävissä olevat uudet ja vanhat lähteet. `consumeMaterialSource()` palauttaa päivitetyn lähdetilan mutatoimatta alkuperäistä tai muita beam-haaroja. Rajattoman saatavuus säilyy, äärellisen määrä vähenee. Beam-tilan identiteetti huomioi jäljellä olevan kysynnän ja äärelliset lähdemäärät.
 
+Tuotannon [rajatussa jatkohaussa](PRODUCTION.md) lähteellä ja ehdokkaalla on lisäksi fyysinen `sourceId`, jonka on täsmättävä kulutuksessa. Tavallisista varastoryhmistä kenttä puuttuu molemmilta. Tämä ei lisää varastoon pysyviä yksilötunnisteita.
+
 Uuden työn raakalistassa on jokaiselle kuudelle profiilille rajaton harmaa oletusrivi (`additional: false`) ja rajaton musta poistettava lisärivi. Palautus ei korvaa tallennettuja saatavuuksia tällä oletuksella. Tallennuksen yhden oletusrivin ja duplikaattien säännöt ovat arkkitehtuuridokumentissa.
 
 ## Nimellinen fysiikka ja turvallinen kapasiteetti

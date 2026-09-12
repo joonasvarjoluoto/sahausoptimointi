@@ -1234,6 +1234,7 @@ function findMaterialSourceCandidates(
 
             candidates.push({
                 ...candidate,
+                ...(materialSource.sourceId === undefined ? {} : { sourceId: materialSource.sourceId }),
 
                 source:
                     materialSource.source,
@@ -5878,6 +5879,15 @@ function optimizeOrderInventoryBeamDP(
     }
 
 
+    // Fyysiset ID:t ovat jatkohaun valinnainen sopimus. Tavallinen varasto pysyy ryhmiteltynä.
+    const physicalSources = materialSources.some(source => source.sourceId !== undefined);
+    if (physicalSources && (materialSources.some(source => typeof source.sourceId !== "string" || !source.sourceId ||
+        source.unlimited || source.quantity !== 1) || new Set(materialSources.map(source => source.sourceId)).size !== materialSources.length)) {
+        throw new Error("Fyysiset lähteet tarvitsevat yksilöllisen sourceId:n ja määrän 1.");
+    }
+    const evaluateCompletePlan = options.evaluateCompletePlan ??
+        (plan => scoreCompleteMaterialTransitionPlan(plan, scoreSettings));
+
     function copyItems(sourceItems) {
 
         return sourceItems.map(item => ({
@@ -5898,6 +5908,7 @@ function optimizeOrderInventoryBeamDP(
     function copyBars(sourceBars) {
 
         return sourceBars.map(bar => ({
+            ...(bar.sourceId === undefined ? {} : { sourceId: bar.sourceId }),
             pattern: bar.pattern.map(item => ({
                 length: item.length,
                 quantity: item.quantity
@@ -6051,6 +6062,10 @@ function optimizeOrderInventoryBeamDP(
                 .join("|");
 
 
+        // Eri fyysisten salojen jaot voivat jättää eri loppuarvon, vaikka kysyntä ja vapaat lähteet täsmäävät.
+        if (physicalSources) return JSON.stringify([itemKey,
+            state.remainingMaterialSources.map(source => [source.sourceId, source.quantity]),
+            state.bars.map(bar => [bar.sourceId, bar.pattern])]);
         return itemKey + "//" + sourceKey;
     }
 
@@ -6071,6 +6086,7 @@ function optimizeOrderInventoryBeamDP(
 
 
                 return (
+                    (bar.sourceId === undefined ? "" : JSON.stringify(bar.sourceId) + ":") +
                     bar.source +
                     ":" +
                     bar.sourceLength +
@@ -6271,6 +6287,7 @@ function optimizeOrderInventoryBeamDP(
                     ...state.bars,
 
                     {
+                        ...(candidate.sourceId === undefined ? {} : { sourceId: candidate.sourceId }),
                         pattern:
                             candidate.pattern.map(
                                 item => ({
@@ -6352,14 +6369,7 @@ function optimizeOrderInventoryBeamDP(
 
 
                     const score =
-                        scoreCompleteMaterialTransitionPlan(
-                            {
-                                complete: true,
-                                bars:
-                                    childState.bars
-                            },
-                            scoreSettings
-                        );
+                        evaluateCompletePlan({ complete: true, bars: childState.bars });
 
 
                     if (
@@ -6460,7 +6470,7 @@ function optimizeOrderInventoryBeamDP(
     };
 
 
-    if (bestCompleteState === null) {
+    if (bestCompleteState === null && !physicalSources && options.skipFeasibilityFallback !== true) {
 
         // Pisteytysbeam pysyy ensisijaisena hakuna. Tarkka haku
         // varmistaa vain rajatun äärellisen varaston toteutettavuuden.
@@ -6497,17 +6507,14 @@ function optimizeOrderInventoryBeamDP(
                 );
 
             bestCompleteScore =
-                scoreCompleteMaterialTransitionPlan(
-                    {
-                        complete: true,
-                        bars:
-                            bestCompleteState.bars
-                    },
-                    scoreSettings
-                );
+                evaluateCompletePlan({ complete: true, bars: bestCompleteState.bars });
         }
     }
 
+
+    if (bestCompleteState === null && (physicalSources || options.skipFeasibilityFallback === true)) {
+        feasibilityFallbackStats.status = "unsupported-physical-sources";
+    }
 
     stats.feasibilityFallback =
         feasibilityFallbackStats;
@@ -10741,6 +10748,8 @@ const DEFAULT_KERF = "3";
 const completedBarIds = new Set();
 let currentGeneratedPlan = null;
 let currentProductionExecutionState = null;
+// Vain palautusvalidointi vapauttaa lukon. Raakatallenne säilyy localStoragessa.
+let workRecoveryLocked = false;
 let workInputRevision = 0;
 
 
@@ -11731,6 +11740,7 @@ function createWorkStateSnapshot({
 
 
 function writeWorkStateSnapshot(workStateSnapshot) {
+    if (workRecoveryLocked) return false;
 
     try {
         localStorage.setItem(
@@ -11748,6 +11758,7 @@ function writeWorkStateSnapshot(workStateSnapshot) {
 
 
 function saveCurrentWorkState() {
+    if (workRecoveryLocked) return false;
 
     return writeWorkStateSnapshot(
         createWorkStateSnapshot()
@@ -11756,6 +11767,7 @@ function saveCurrentWorkState() {
 
 
 function removeSavedWorkState() {
+    if (workRecoveryLocked) return;
 
     try {
         localStorage.removeItem(WORK_STORAGE_KEY);
@@ -11766,6 +11778,7 @@ function removeSavedWorkState() {
 
 
 function resetWorkToDefaults() {
+    if (workRecoveryLocked) return;
     restoreProductionSettings();
 
     document.getElementById("stockLength").value =
@@ -11861,6 +11874,19 @@ function migrateStoredWorkState(state) {
 }
 
 
+function lockWorkStateRecovery() {
+    workRecoveryLocked = true;
+    // Epäkelpoa tallennetta tai aiempaa live-plania ei esitetä sahausohjeena.
+    currentGeneratedPlan = null;
+    currentProductionExecutionState = null;
+    completedBarIds.clear();
+    const message = document.getElementById("result");
+    message.className = "work-state-message";
+    message.textContent = "Tallennetun jatkosuunnitelman tarkistus epäonnistui. Työ ja tallennus on lukittu; alkuperäinen tallenne säilytettiin palautusta varten. Uutta työtä ei voi aloittaa tämän tallenteen päälle. Älä jatka sahaamista tämän näkymän perusteella.";
+    updateProductionInputLock();
+    return false;
+}
+
 function restoreSavedWorkState() {
 
     let serializedState;
@@ -11879,11 +11905,18 @@ function restoreSavedWorkState() {
 
 
     let state;
+    // Myös katkennut JSON tai muutettu execution-versio voi sisältää toteutuneen
+    // jatkon. Sitä ei saa hävittää vanhojen testitallenteiden reset-polulla.
+    let containsContinuation = /"continuation"\s*:|"version"\s*:\s*3\b/.test(serializedState);
 
 
     try {
-        state = migrateStoredWorkState(JSON.parse(serializedState));
+        state = JSON.parse(serializedState);
+        containsContinuation ||= state?.executionState?.version >= 3;
+        // Migraatio ei saa tyhjentää V3-lokia, vaikka outer-versio olisi korruptoitunut.
+        if (!containsContinuation) state = migrateStoredWorkState(state);
     } catch {
+        if (containsContinuation || workRecoveryLocked) return lockWorkStateRecovery();
         removeSavedWorkState();
         resetWorkToDefaults();
         return false;
@@ -11891,6 +11924,7 @@ function restoreSavedWorkState() {
 
 
     if (!isValidStoredWorkState(state)) {
+        if (containsContinuation || workRecoveryLocked) return lockWorkStateRecovery();
         removeSavedWorkState();
         resetWorkToDefaults();
         const message = document.getElementById("result");
@@ -11902,6 +11936,7 @@ function restoreSavedWorkState() {
     }
 
 
+    workRecoveryLocked = false;
     document.getElementById("stockLength").value =
         String(state.stockLength);
 
@@ -12082,6 +12117,7 @@ function canFinalizePlan(
 
 
 function isCurrentPlanReadyForFinalization() {
+    if (workRecoveryLocked) return false;
     if (currentGeneratedPlan?.batch !== undefined) {
         try {
             const execution = createProductionExecution(currentGeneratedPlan, getOrdersFromForm(), Number(document.getElementById("kerf").value));
@@ -12330,6 +12366,7 @@ function finalizeCurrentWork() {
 
 
 function toggleBarCompletion(button) {
+    if (workRecoveryLocked) return;
 
     const barId = button.dataset.barId;
     const barNumber = button.dataset.barNumber;
@@ -12342,6 +12379,20 @@ function toggleBarCompletion(button) {
 
 
     const isCompleted = completedBarIds.has(barId);
+
+    if (currentProductionExecutionState?.version === 3) {
+        const nextCompleted = new Set(completedBarIds);
+        if (isCompleted) nextCompleted.delete(barId); else nextCompleted.add(barId);
+        const snapshot = createWorkStateSnapshot({ completedBarIdsForStorage: [...nextCompleted] });
+        if (!isValidStoredWorkState(snapshot) || !writeWorkStateSnapshot(snapshot)) {
+            showFinalizationError("Salon valmistumista ei voitu tallentaa. Merkintä ei muuttunut.");
+            return;
+        }
+        completedBarIds.clear();
+        nextCompleted.forEach(id => completedBarIds.add(id));
+        renderCuttingPlan(currentGeneratedPlan);
+        return;
+    }
 
 
     if (isCompleted) {
@@ -12387,8 +12438,31 @@ function toggleBarCompletion(button) {
 
 
 function persistProductionExecutionState(nextState) {
+    if (workRecoveryLocked) return false;
+    const previous = currentProductionExecutionState;
     const nextCompleted = new Set(completedBarIds);
-    if (nextState.version === 2) {
+    if (previous?.version === 3 || nextState.version === 3) {
+        const kerf = Number(document.getElementById("kerf").value);
+        const execution = createProductionExecution(currentGeneratedPlan, getOrdersFromForm(), kerf);
+        if (!isValidProductionExecutionState(previous, currentGeneratedPlan, execution, kerf)) return false;
+        const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+        if (nextState.planDigest !== previous?.planDigest || !same(nextState.events, previous.events)) return false;
+        if (previous.version === 3) {
+            if (nextState.version === 2) {
+                if (previous.continuation.events.length) return false;
+            } else if (nextState.version === 3) {
+                const { events: oldEvents, ...oldIdentity } = previous.continuation;
+                const { events: nextEvents, ...nextIdentity } = nextState.continuation;
+                if (!same(oldIdentity, nextIdentity) || Math.abs(oldEvents.length - nextEvents.length) !== 1 ||
+                    !same(oldEvents.slice(0, Math.min(oldEvents.length, nextEvents.length)), nextEvents.slice(0, Math.min(oldEvents.length, nextEvents.length)))) return false;
+                const index = Math.min(oldEvents.length, nextEvents.length);
+                (nextEvents[index] ?? oldEvents[index]).actualSourceIds.forEach(id => nextCompleted.delete(id));
+            } else return false;
+        } else {
+            if (previous.version !== 2 || nextState.continuation.events.length) return false;
+            nextState.continuation.assignments.forEach(assignment => nextCompleted.delete(assignment.sourceId));
+        }
+    } else if (nextState.version === 2) {
         const index = Math.min(nextState.events.length, currentProductionExecutionState.events.length);
         const changedEvent = nextState.events[index] ?? currentProductionExecutionState.events[index];
         changedEvent?.actualSourceIds.forEach(id => nextCompleted.delete(id));
@@ -12397,6 +12471,7 @@ function persistProductionExecutionState(nextState) {
         executionStateForStorage: nextState,
         completedBarIdsForStorage: [...nextCompleted]
     });
+    if ((previous?.version === 3 || nextState.version === 3) && !isValidStoredWorkState(snapshot)) return false;
     if (!writeWorkStateSnapshot(snapshot)) return false;
     currentProductionExecutionState = nextState;
     completedBarIds.clear();
@@ -12405,6 +12480,58 @@ function persistProductionExecutionState(nextState) {
     return true;
 }
 
+
+let productionContinuationActivationPending = false;
+async function activateCurrentProductionContinuationFromUi(button) {
+    if (productionContinuationActivationPending) return false;
+    productionContinuationActivationPending = true;
+    const stateBefore = currentProductionExecutionState;
+    const controls = [...document.querySelectorAll(".production-execution button")].map(control => ({ control, disabled: control.disabled }));
+    controls.forEach(({ control }) => control.disabled = true);
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = "Muodostetaan jatkosuunnitelmaa…";
+    try {
+        // Anna selaimelle mahdollisuus piirtää lukitut toiminnot ennen synkronista hakua.
+        await new Promise(resolve => setTimeout(resolve, 0));
+        if (currentProductionExecutionState !== stateBefore) return false;
+        return activateCurrentProductionContinuation();
+    } finally {
+        productionContinuationActivationPending = false;
+        controls.forEach(({ control, disabled }) => { if (control.isConnected) control.disabled = disabled; });
+        if (button.isConnected) { button.disabled = false; button.textContent = originalText; }
+    }
+}
+
+function activateCurrentProductionContinuation() {
+    if (workRecoveryLocked || currentGeneratedPlan?.batch === undefined) return false;
+    try {
+        const kerf = Number(document.getElementById("kerf").value);
+        const execution = createProductionExecution(currentGeneratedPlan, getOrdersFromForm(), kerf);
+        const next = createProductionContinuationState(currentProductionExecutionState, currentGeneratedPlan, execution, kerf);
+        if (!persistProductionExecutionState(next)) throw new Error("Jatkosuunnitelmaa ei voitu tallentaa. Työ säilyy pysähtyneenä.");
+        return true;
+    } catch (error) {
+        const status = document.getElementById("operationStatus");
+        if (status) status.textContent = error.message;
+        return false;
+    }
+}
+
+function discardCurrentProductionContinuation() {
+    if (workRecoveryLocked || currentGeneratedPlan?.batch === undefined) return false;
+    try {
+        const kerf = Number(document.getElementById("kerf").value);
+        const execution = createProductionExecution(currentGeneratedPlan, getOrdersFromForm(), kerf);
+        const next = discardProductionContinuationState(currentProductionExecutionState, currentGeneratedPlan, execution, kerf);
+        if (!persistProductionExecutionState(next)) throw new Error("Jatkosuunnitelman hylkäystä ei voitu tallentaa. Toteumatila säilyy.");
+        return true;
+    } catch (error) {
+        const status = document.getElementById("operationStatus");
+        if (status) status.textContent = error.message;
+        return false;
+    }
+}
 
 function completeCurrentProductionOperation() {
     if (currentGeneratedPlan?.batch === undefined || currentProductionExecutionState === null) return;
@@ -12489,6 +12616,7 @@ function completeCurrentProductionDeviation() {
 }
 
 function hasCurrentProductionDeviation() {
+    if (workRecoveryLocked || currentProductionExecutionState?.version === 3) return true;
     if (currentProductionExecutionState?.version !== 2) return false;
     // V2 voi jäädä tyhjäksi undon jälkeen. Digestin tai fysiikan virhe lukitsee turvallisesti.
     try {
@@ -12543,7 +12671,7 @@ function renderCuttingPlan(plan) {
 
     let result = renderProductionDetails(plan, currentProductionExecutionState) + `
         <section class="plan-summary">
-            <h2>Laskettu sahaussuunnitelma</h2>
+            <h2>${currentProductionExecutionState?.version === 3 ? "Alkuperäinen sahaussuunnitelma · vertailu" : "Laskettu sahaussuunnitelma"}</h2>
             <p>
                 Salkoja tarvitaan:
                 <strong>${plan.bars.length}</strong>
