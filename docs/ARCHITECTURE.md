@@ -15,11 +15,12 @@ Sovellus toimii suoraan selaimessa ilman rakennusvaihetta, paketinhallintaa tai 
 | [src/production-integration.js](../src/production-integration.js) | Sovittimet lomakkeen, optimizerin, tuotantotuloksen, renderöinnin ja persistenssin välillä; worker-manifesti, digest, toteumaloki ja johdettu suoritusnäkymä |
 | [app.js](../app.js) | Käynnistys, lomakkeet, optimizerit, score/disposition, jälkivarasto, UI-ohjaus, localStorage ja suuri osa dev-testeistä |
 | [production-regressions.js](../production-regressions.js) | Node-ajurin erikseen lataamat tuotantoregressiot; ei selaimen tuotantoriippuvuus |
+| [src/work-snapshots.js](../src/work-snapshots.js) | Nimetty katseluarkisto: canonical-työtilan kopio, validointi, erillinen IndexedDB-store sekä read-only-dialogit. Ei aktiivisen työn palautusta tai kirjoituksia |
 
 Selain lataa tässä järjestyksessä:
 
 ```text
-cutting-physics → material → production-planning → production-integration → app
+cutting-physics → material → production-planning → production-integration → app → work-snapshots
 ```
 
 Node-ajurit lataavat samat lähteet samassa järjestyksessä tuoreeseen VM-ympäristöön. Puhdas sahaus-, materiaali- ja tuotantosuunnittelurajapinta tukee myös CommonJS-`require()`-latausta. `CUTTING_PHYSICS` ja `MATERIAL` ovat suljettuja, jäädytettyjä rajapintoja. `app.js`:n ohuet `var`-aliaset säilyttävät siirrettyjen funktioiden konsoli-/`window`-kutsut ilman toteutuksen kopiointia; `PROFILE_TYPES`-alias viittaa samaan olioon.
@@ -96,3 +97,21 @@ Tallennus ja palautus ovat sovelluksen I/O-raja. Erityisesti finalisointi ja ope
 V3:n reload tarkistaa ulomman rakenteen ja alkuperäisen planin ensin, muodostaa alkuperäisen executionin sekä pysähtyneen base-replayn, validoi tallennetun jatkokohdistuksen, regeneroi schedulerin ja tarkistaa jatkodigestin, jatkotapahtumat, yhdistetyn fyysisen toteuman sekä valmistumismerkinnät alkuperäistä manifestia vasten. Optimizeria ei kutsuta. Alkuperäinen plan pysyy finalisoinnin ja worker-identiteetin vertailuna.
 
 Kelvoton V3, jatkodataa sisältävä väärä execution-/outer-versio tai tunnistettavasti katkennut V3-JSON asettaa vain muistissa olevan `workRecoveryLocked`-lukon. Raakatallenne säilyy nykyisessä localStorage-avaimessa; `writeWorkStateSnapshot()`, automaattitallennus, tallenteen poisto ja työn resetointi eivät ohita lukkoa. Epäkelpoa työtä ei palauteta live-sahausohjeeksi. Ilmoitus ja syötteiden lukitus riittävät tässä vaiheessa; erillistä recovery-UI:ta tai rinnakkaista varmuuskopiototuutta ei lisätä. Vain onnistunut, kokonaan validoitu palautus vapauttaa lukon.
+
+## Nimetyt paikalliset snapshotit
+
+Snapshot on käyttäjän nimeämä immutable katselukopio; aktiivinen työ säilyy yllä kuvatussa localStorage-avaimessa. **TALLENNA SNAPSHOT** kopioi `createWorkStateSnapshot()`-tuloksen JSON-syväkopioksi ja hyväksyy sen nykyisellä `isValidStoredWorkState()`-validaattorilla. Palautuslukittua aktiivista työtä ei arkistoida. Snapshotilla ei voi palauttaa, jatkaa, yhdistää tai korvata aktiivista työtä. Export/import ja automaattinen batch-historia eivät kuulu tähän versioon.
+
+Record: `{ snapshotVersion: 1, id, name, note, createdAt, updatedAt, workState, presentation }`. ID on `crypto.randomUUID()`, nimi trimmattu 1–120 merkkiä (samat nimet sallitaan), kommentti valinnainen enintään 500 merkkiä. Ajat ovat ISO-UTC-aikoja; UI näyttää paikallisen ajan. Rename muuttaa vain nimeä ja `updatedAt`-aikaa; luontiaika ja sisältö säilyvät. Lista järjestyy luontiajan mukaan uusin ensin, tasatilanne ID:llä. Poisto vaatii nimellä yksilöidyn vahvistusdialogin ja poistaa vain valitun ID:n.
+
+`workState` säilyttää koko nykyisen skeeman 6 / `material-v0.4`-tallenteen: tilaukset, varastorivit, asetukset, alkuperäisen generatedPlanin, batchin, V1/V2/V3-toteuman ja completedBarIds:n. Se on arkiston auktoritatiivinen laskentatieto, ei uusi optimizer-datamalli. Koska työtila ei tallenna scheduleria eikä piste-erittelyä, luonti jäädyttää lisäksi versionoidun **esitystarkisteen** `presentation = { execution, physical, manifest, score }` (luonnoksessa null). Se sisältää olemassa olevien apurien tulokset, myös fyysisen replayn V3-jatko-executionin. Sitä ei käytetä tuotannon ohjaukseen tai aktiivisen työn totuutena.
+
+Myöhempi B-014:n aktiiviseksi palautus perustuu validoituun canonical `workState`:en, ei `presentation`:iin. `presentation` palvelee vain historiallista read-only-esittämistä eikä ole aktiivisen työn toinen auktoritatiivinen tila.
+
+Avauksessa work-state-validaattori tarkistaa rakenteen, version, materiaalitaseen, alkuperäisen digestin, jatkodigestin ja toteuman. Nykyinen kanoninen validointi johtaa schedulerin integrity-tarkistukseen, mutta ei aja batch-selectoria tai optimizeria. Esitystarkisteen pitää vastata täsmälleen validoidusta tilasta johdettua tulosta; jos esimerkiksi scheduler tai score on muuttunut versionumeron säilymisestä huolimatta, arkisto merkitään yhteensopimattomaksi. **Viewer näyttää tallennetun esitystarkisteen**, ei vaihda siihen uudelleen laskettua järjestystä. Avaus ja reload eivät migroi, kirjoita tai optimoi snapshotia. Vaurioitunut/yhteensopimaton record säilyy listassa manuaalisesti poistettavana eikä aktivoi työtilan recovery-lukkoa.
+
+Tallennus: selaimen/originin erillinen IndexedDB `sahausoptimointi.snapshots`, tietokantaversio 1, object store `snapshots`, keyPath `id`. Ei localStorage-indeksiä eikä automaattista poistokiintiötä. Yksi lisäys, rename tai poisto tehdään yhdessä readwrite-transaktiossa; onnistuminen ilmoitetaan vasta commitin jälkeen. Rinnakkaiset välilehdet eivät kirjoita koko snapshot-listaa toistensa päälle. Virhe tai quota/abort säilyttää aiemmat recordit; se ei muuta active-work-storea. IndexedDB ei kuluta aktiivisen localStoragen omaa tilakiintiötä. Paikallinen arkisto ei ole ulkoinen varmuuskopio ja selaintietojen poistaminen poistaa sen.
+
+12.9.2026 koon mittaus UTF-8-JSONina: seitsemän salon V3-fixturen canonical work-state 4 851 tavua, koko record noin 13 172 tavua; saman kysynnän 50 tilauksen luonnos noin 33 105 tavua. Synteettinen 50 tilauksen / 350 kappaleen / 350 salon validoitu suunnitelma noin 450 447 tavua. Nämä ovat testiaineiston kokoja, eivät ylärajoja: monet suuret arkistot perustelevat IndexedDB:n ja erilliset transaktiot localStorage-listan sijaan.
+
+`SNAPSHOT — VAIN KATSELU` on erillinen modaalinen HTML-dialogi. Tausta on selaimen toimesta inertti; aktiivista lomake-DOM:ia, plania, lokia tai autosavea ei vaihdeta edes väliaikaisesti. Viewer käyttää nykyisiä mitta-/väri-/disposition-formaatteja ja materiaalikorttien CSS-luokkia. Se näyttää tilaukset, alkuperäisen materiaaliplanin/pisteen, valitun batchin, lähteet/leikkaukset/loppudispositionin, alkuperäisen ja mahdollisen jatkon järjestyksen sekä toteutuneet tapahtumat ja saldot. Sillä ei ole sahaus-, undo-, finalisointi- tai muokkauscontrollereita. **PALAA AKTIIVISEEN TYÖHÖN** sulkee vain dialogin.

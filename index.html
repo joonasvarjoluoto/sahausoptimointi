@@ -94,6 +94,36 @@
         </details>
         <div id="result" aria-live="polite"></div>
 
+        <section class="input-panel" aria-labelledby="snapshotsHeading">
+            <button type="button" onclick="showSnapshotEditor()">TALLENNA SNAPSHOT</button>
+            <h2 id="snapshotsHeading">TALLENNETUT SNAPSHOTIT</h2>
+            <p>Nimetty kopio tästä työstä vain katselua varten. Tallennetaan tähän selaimeen; aktiivinen työ säilyy erillään.</p>
+            <p id="snapshotStatus" role="status"></p>
+            <div id="snapshotList"></div>
+        </section>
+        <dialog id="snapshotEditor" aria-labelledby="snapshotEditorTitle">
+            <form id="snapshotForm">
+                <h2 id="snapshotEditorTitle">Tallenna snapshot</h2>
+                <label>Nimi<input id="snapshotName" required maxlength="120"></label>
+                <label id="snapshotNoteField">Kommentti (valinnainen)<textarea id="snapshotNote" maxlength="500"></textarea></label>
+                <p id="snapshotEditorStatus" role="alert"></p>
+                <button id="snapshotSubmit" type="submit">Tallenna</button>
+                <button type="button" onclick="document.getElementById('snapshotEditor').close()">Peruuta</button>
+            </form>
+        </dialog>
+        <dialog id="snapshotViewer" aria-label="Snapshot vain katselu">
+            <button class="snapshot-return" type="button" onclick="document.getElementById('snapshotViewer').close()">PALAA AKTIIVISEEN TYÖHÖN</button>
+            <div id="snapshotContent"></div>
+        </dialog>
+        <dialog id="snapshotDelete" aria-labelledby="snapshotDeleteTitle">
+            <h2 id="snapshotDeleteTitle">Poistetaanko snapshot?</h2>
+            <p id="snapshotDeleteName"></p>
+            <p>Poistoa ei voi perua. Aktiivinen työ säilyy ennallaan.</p>
+            <p id="snapshotDeleteStatus" role="alert"></p>
+            <button id="snapshotDeleteConfirm" type="button" onclick="confirmDeleteWorkSnapshot()">POISTA SNAPSHOT</button>
+            <button type="button" onclick="document.getElementById('snapshotDelete').close()">Peruuta</button>
+        </dialog>
+
 
         <section class="new-work-section" aria-labelledby="newWorkHeading">
             <h2 id="newWorkHeading">Aloita alusta</h2>
@@ -114,6 +144,7 @@
     <script src="src/production-planning.js"></script>
     <script src="src/production-integration.js"></script>
     <script src="app.js"></script>
+    <script src="src/work-snapshots.js"></script>
 
 </body>
 

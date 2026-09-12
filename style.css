@@ -1369,3 +1369,24 @@ input[type="number"]:disabled {
     outline-offset: 2px;
     border-radius: 4px;
 }
+/* Katseludialogi tekee taustan inertiksi muuttamatta aktiivisen työn DOM:ia. */
+#snapshotViewer, #snapshotEditor, #snapshotDelete {
+    background: #eef1f4;
+    color: #17202a;
+    border: 1px solid #68717d;
+    border-radius: 12px;
+    padding: 20px;
+    max-height: 90vh;
+    width: min(960px, 94vw);
+    box-sizing: border-box;
+}
+#snapshotEditor, #snapshotDelete { max-width: 460px; }
+#snapshotEditor label { display: block; margin: 12px 0; }
+#snapshotEditor input, #snapshotEditor textarea { display: block; width: 100%; box-sizing: border-box; }
+#snapshotList article { border-top: 1px solid #68717d; padding: 12px 0; }
+#snapshotList button, #snapshotEditor button { margin: 4px; }
+.snapshot-return { position: sticky; top: 0; z-index: 1; margin-bottom: 12px; }
+dialog::backdrop { background: #000a; }
+@media (prefers-color-scheme: dark) {
+    #snapshotViewer, #snapshotEditor, #snapshotDelete { background: #13181d; color: #e6edf3; }
+}

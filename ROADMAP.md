@@ -10,6 +10,8 @@ B-013:n rajattu jatkopolku on käytössä: pysähtyneestä työstä muodostetaan
 
 Mahdollisessa esimiesdemossa kokonaisuus esitellään prototyyppinä; demo tai regressioiden läpäisy ei yksin todista tuotantovalmiutta. Näkyvä käyttöpolku ja materiaalitalouden selitettävyys säilyvät tärkeinä.
 
+Nimetty paikallinen snapshot mahdollistaa tallennushetken suunnitelman ja toteuman esittelyn erillisessä katselunäkymässä. Aktiiviseksi työksi palautus on erillinen B-014-tehtävä. [Snapshotin sopimus ja tallennus](docs/ARCHITECTURE.md#nimetyt-paikalliset-snapshotit).
+
 Sahausfysiikka ja ensimmäinen material/inventory-core ovat omissa moduuleissaan. Kapasiteettivarat ovat käytössä erillään kerfistä. Reachable-state-DP ja vakaa pattern-merge ovat productionissa. Batch-selector on edelleen synkroninen exhaustive-haku; tutkimuksen anytime-hakua ei ole kytketty selaimeen. Testit ja checkpointien käyttö on kuvattu [TESTING.md](docs/TESTING.md):ssä.
 
 ## Seuraava konkreettinen vaihe

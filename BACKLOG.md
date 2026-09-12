@@ -4,6 +4,12 @@ Tässä ovat todelliset avoimet ongelmat ja rajoitteet. Merkintä ei anna toteut
 
 Tila: havaittu, suunniteltu tai tutkittavana. Prioriteetti kertoo vaikutuksesta, ei automaattisesta toteutusjärjestyksestä. Sulje valmistunut kohta siirtämällä sen olennainen näyttö historiaan tai tutkimusraporttiin.
 
+## B-014 — Restore named snapshot as active work safely
+
+- **Tila / prioriteetti:** suunniteltu, erikseen rajattava; käyttäjän jatkotehtävä 12.9.2026.
+- **Rajoite:** nimetty snapshot on vain katseltava arkisto. Sitä ei voi palauttaa aktiiviseksi työksi eikä sen tuotantoa jatkaa.
+- **Hyväksymisraja:** päätä myöhemmin aktiivisen työn suojaus, fyysisen tuotannon ja varaston vanhenemisen käsittely, V1/V2/V3-toteumien palautuskelpoisuus, vahvistus, atominen vaihto sekä recovery/undo-rajat. Pelkkä vanhan JSONin kirjoitus currentWork-avaimeen ei ole turvallinen restore. [Snapshot-sopimus](docs/ARCHITECTURE.md#nimetyt-paikalliset-snapshotit).
+
 ## B-006 — Synkroninen batch-haku suurissa tilausjonoissa
 
 - **Tila / prioriteetti:** havaittu, keskitaso; tutkittava ennen suuren jonon tavallista käyttöä. Havaittu 8.9.2026.
