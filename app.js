@@ -11991,6 +11991,10 @@ function restoreSavedWorkState() {
 
     if (currentGeneratedPlan !== null) {
         renderCuttingPlan(currentGeneratedPlan);
+    } else {
+        const resultElement = document.getElementById("result");
+        resultElement.className = "";
+        resultElement.replaceChildren();
     }
 
 

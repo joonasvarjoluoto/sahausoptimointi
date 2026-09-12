@@ -1,14 +1,15 @@
 # Avoin backlog
 
-Tässä ovat todelliset avoimet ongelmat ja rajoitteet. Merkintä ei anna toteutuslupaa. Kehitysjärjestys on [roadmapissa](ROADMAP.md); [valmistuneet B-001/B-003/B-004/B-005/B-007/B-009/B-013](docs/history/COMPLETED_BACKLOG.md) ovat historiassa. ID:tä ei käytetä uudelleen.
+Tässä ovat todelliset avoimet ongelmat ja rajoitteet. Merkintä ei anna toteutuslupaa. Kehitysjärjestys on [roadmapissa](ROADMAP.md); [valmistuneet B-001/B-003/B-004/B-005/B-007/B-009/B-013/B-014](docs/history/COMPLETED_BACKLOG.md) ovat historiassa. ID:tä ei käytetä uudelleen.
 
 Tila: havaittu, suunniteltu tai tutkittavana. Prioriteetti kertoo vaikutuksesta, ei automaattisesta toteutusjärjestyksestä. Sulje valmistunut kohta siirtämällä sen olennainen näyttö historiaan tai tutkimusraporttiin.
 
-## B-014 — Restore named snapshot as active work safely
+## B-015 — In-progress snapshot recovery and reconciliation
 
-- **Tila / prioriteetti:** suunniteltu, erikseen rajattava; käyttäjän jatkotehtävä 12.9.2026.
-- **Rajoite:** nimetty snapshot on vain katseltava arkisto. Sitä ei voi palauttaa aktiiviseksi työksi eikä sen tuotantoa jatkaa.
-- **Hyväksymisraja:** päätä myöhemmin aktiivisen työn suojaus, fyysisen tuotannon ja varaston vanhenemisen käsittely, V1/V2/V3-toteumien palautuskelpoisuus, vahvistus, atominen vaihto sekä recovery/undo-rajat. Pelkkä vanhan JSONin kirjoitus currentWork-avaimeen ei ole turvallinen restore. [Snapshot-sopimus](docs/ARCHITECTURE.md#nimetyt-paikalliset-snapshotit).
+- **Tila / prioriteetti:** suunniteltava erikseen, korkea turvallisuusvaatimus; erotettu B-014:n valmiista ennen fyysistä tuotantoa sallitusta palautuksesta 12.9.2026.
+- **Rajoite:** snapshot, jossa on V1/V2/V3-tapahtuma tai salon valmistumismerkintä, säilyy vain katseltavana. Myös tällaisen toteuman sisältävä aktiivinen työ estää toisen snapshotin palautuksen.
+- **Syy:** fyysisesti aloitettua työtä ei voi turvallisesti kelata JSON-tilaa vaihtamalla. Varastosaldot, toteutuneet lähdepoikkeamat, jatkon tilanne ja operaattorin todellinen sahaus pitää sovittaa fyysiseen tilanteeseen eksplisiittisesti.
+- **Seuraava hyväksymisraja:** määritä operaattorin reconciliation-työnkulku, varaston vanheneminen, recovery-lukitun raakatallenteen käsittely, toteumatapahtumien todentaminen ja audit trail. Älä avaa nykyistä B-014-estopredikaattia ilman näitä päätöksiä ja omia regressioita. [Snapshot-sopimus](docs/ARCHITECTURE.md#nimetyt-paikalliset-snapshotit).
 
 ## B-006 — Synkroninen batch-haku suurissa tilausjonoissa
 

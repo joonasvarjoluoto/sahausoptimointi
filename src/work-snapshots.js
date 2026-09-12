@@ -1,4 +1,4 @@
-// Erillinen katseluarkisto. Mikään tämän moduulin polku ei palauta aktiivista työtä.
+// Erillinen snapshot-arkisto. Katselu pysyy read-onlyna; aktiiviseksi palautus kulkee validoidun persistoi-ensin-rajan kautta.
 const WORK_SNAPSHOTS = (() => {
     const clone = value => JSON.parse(JSON.stringify(value));
     const nameOf = name => {
@@ -41,6 +41,40 @@ const WORK_SNAPSHOTS = (() => {
         if (!record || typeof record !== 'object') throw Error('Vaurioitunutta snapshotia ei voi nimetä uudelleen.');
         return { ...clone(record), name: nameOf(name), updatedAt: new Date().toISOString() };
     }
+    function hasPhysicalProduction(state) {
+        if (Array.isArray(state?.completedBarIds) && state.completedBarIds.length) return true;
+        const execution = state?.executionState;
+        return (Array.isArray(execution?.events) && execution.events.length > 0) ||
+            (Array.isArray(execution?.continuation?.events) && execution.continuation.events.length > 0);
+    }
+    function isCompletelyEmpty(state) {
+        const expected = {
+            schemaVersion: WORK_STATE_SCHEMA_VERSION,
+            engineVersion: WORK_STATE_ENGINE_VERSION,
+            savedAt: state?.savedAt,
+            batchSettings: Object.fromEntries(Object.entries(PRODUCTION_PLANNING.batchDefaults).map(([key, value]) => [key, String(value)])),
+            stockLength: DEFAULT_STOCK_LENGTH,
+            kerf: DEFAULT_KERF,
+            stockProfileRows: Object.keys(PROFILE_TYPES).flatMap(profileType => [
+                { profileType, color: 'gray', quantity: '1', unlimited: true, additional: false },
+                { profileType, color: 'black', quantity: '1', unlimited: true, additional: true }
+            ]),
+            remnantRows: [],
+            orders: [createOrderInput('order-1')],
+            generatedPlan: null,
+            executionState: null,
+            completedBarIds: []
+        };
+        return JSON.stringify(state) === JSON.stringify(expected);
+    }
+    function summarize(state) {
+        let pieces = '–';
+        try { pieces = normalizeOrderCuts(state.orders).reduce((total, cut) => total + cut.quantity, 0); } catch {}
+        const events = (state.executionState?.events?.length ?? 0) +
+            (state.executionState?.continuation?.events?.length ?? 0);
+        return `${state.orders.length} tilausta · ${pieces} kpl · ${state.generatedPlan ? 'laskettu suunnitelma' : 'luonnos'}` +
+            (state.generatedPlan ? ` · ${events} kirjattua työvaihetta` : '');
+    }
     const newest = entries => [...entries].sort((a, b) =>
         (Date.parse(b.record?.createdAt) || 0) - (Date.parse(a.record?.createdAt) || 0) || String(a.id).localeCompare(String(b.id)));
 
@@ -75,6 +109,10 @@ const WORK_SNAPSHOTS = (() => {
                 entries.push({ id: cursor.primaryKey, record: cursor.value }); cursor.continue();
             };
         }),
+        get: id => transaction('readonly', (objects, done) => {
+            const request = objects.get(id);
+            request.onsuccess = () => done(request.result === undefined ? null : clone(request.result));
+        }),
         add: record => transaction('readwrite', objects => objects.add(clone(record))),
         rename: (id, name) => {
             name = nameOf(name);
@@ -90,6 +128,62 @@ const WORK_SNAPSHOTS = (() => {
         },
         remove: id => transaction('readwrite', objects => objects.delete(id))
     };
+
+    const restoreFailure = (message, activePersisted = false, safetySnapshot = null) => {
+        const error = Error(message);
+        error.activePersisted = activePersisted;
+        error.safetySnapshot = safetySnapshot;
+        return error;
+    };
+    async function restoreActive(id, dependencies) {
+        const target = await store.get(id);
+        if (!target || target.id !== id || !valid(target)) {
+            throw restoreFailure('Snapshot on yhteensopimaton tai vaurioitunut.');
+        }
+        if (dependencies.isRecoveryLocked()) {
+            throw restoreFailure('Aktiivinen työ on palautuslukittu. Raakatallenne säilytetään eikä sitä voi korvata.');
+        }
+        const current = clone(dependencies.readActive());
+        if (!isValidStoredWorkState(current)) {
+            throw restoreFailure('Aktiivisen työn canonical tila ei läpäissyt validointia.');
+        }
+        if (hasPhysicalProduction(current)) {
+            throw restoreFailure('Aktiivisessa työssä on jo fyysisiä valmistumismerkintöjä tai kirjattuja työvaiheita.');
+        }
+        if (hasPhysicalProduction(target.workState)) {
+            throw restoreFailure('Snapshotissa on jo fyysisiä valmistumismerkintöjä tai kirjattuja työvaiheita.');
+        }
+
+        let safetySnapshot = null;
+        if (!isCompletelyEmpty(current)) {
+            const timestamp = new Date().toLocaleString('fi-FI');
+            safetySnapshot = create(current, `Ennen palautusta – ${timestamp}`,
+                `Luotu automaattisesti ennen snapshotin “${target.name}” palauttamista aktiiviseksi työksi.`);
+            try { await store.add(safetySnapshot); }
+            catch { throw restoreFailure('Aktiivisen työn turvakopion tallennus epäonnistui. Palautusta ei tehty.'); }
+        }
+
+        const activeState = clone(target.workState);
+        activeState.savedAt = new Date().toISOString();
+        if (!isValidStoredWorkState(activeState)) {
+            throw restoreFailure('Snapshotin canonical työtila ei ole palautuskelpoinen.', false, safetySnapshot);
+        }
+        if (!dependencies.persistActive(activeState)) {
+            throw restoreFailure('Aktiivisen työn tallennus epäonnistui.', false, safetySnapshot);
+        }
+        try {
+            if (dependencies.readPersistedActive &&
+                JSON.stringify(dependencies.readPersistedActive()) !== JSON.stringify(activeState)) {
+                throw Error('Tallennetun aktiivisen työn tarkistus epäonnistui.');
+            }
+            if (dependencies.activatePersisted() !== true) {
+                throw Error('Tallennetun aktiivisen työn lataus epäonnistui.');
+            }
+        } catch {
+            throw restoreFailure('Snapshot tallennettiin aktiiviseksi työksi, mutta näkymän lataus epäonnistui. Lataa sivu uudelleen.', true, safetySnapshot);
+        }
+        return { target: clone(target), activeState: clone(activeState), safetySnapshot: clone(safetySnapshot) };
+    }
 
     // Vain merkkijonoesitys ja olemassa olevat formaatit/CSS-luokat; ei live-DOM:n tilapäistä vaihtoa.
     function render(record) {
@@ -139,12 +233,14 @@ const WORK_SNAPSHOTS = (() => {
             `<li>${source(bar.id)} · nimellinen ${mm(bar.nominalRemaining)} · turvallinen ${mm(bar.remaining)} · sahahukka ${mm(bar.waste)}</li>`).join('')}</ul></details>`;
         return html;
     }
-    return Object.freeze({ create, valid, rename, newest, store, render });
+    return Object.freeze({ create, valid, rename, newest, hasPhysicalProduction, isCompletelyEmpty, summarize, restoreActive, store, render });
 })();
 
 let snapshotBusy = false;
 let snapshotEntries = [];
 let snapshotEditingId = null;
+let snapshotViewingId = null;
+let snapshotViewingRecord = null;
 function snapshotStatus(message) { document.getElementById('snapshotStatus').textContent = message; }
 async function refreshSnapshotList() {
     const list = document.getElementById('snapshotList');
@@ -201,12 +297,66 @@ async function submitWorkSnapshot(event) {
 }
 async function openWorkSnapshot(id) {
     try {
-        const entry = (await WORK_SNAPSHOTS.store.list()).find(entry => entry.id === id);
-        if (!entry || entry.record?.id !== id) throw Error('Snapshotia ei voi avata.');
-        const html = WORK_SNAPSHOTS.render(entry.record);
+        const record = await WORK_SNAPSHOTS.store.get(id);
+        if (!record || record.id !== id) throw Error('Snapshotia ei voi avata.');
+        const html = WORK_SNAPSHOTS.render(record);
+        snapshotViewingId = id;
+        snapshotViewingRecord = record;
         document.getElementById('snapshotContent').innerHTML = html;
+        updateSnapshotRestoreAvailability(record);
         document.getElementById('snapshotViewer').showModal();
     } catch { snapshotStatus('Snapshotia ei voi avata: se on yhteensopimaton tai vaurioitunut. Tallenne säilytettiin.'); }
+}
+function updateSnapshotRestoreAvailability(record) {
+    const button = document.getElementById('snapshotRestoreButton');
+    const reason = document.getElementById('snapshotRestoreReason');
+    button.disabled = true;
+    try {
+        if (workRecoveryLocked) throw Error('Palautus ei ole käytettävissä: aktiivinen työ on palautuslukittu.');
+        const active = createWorkStateSnapshot();
+        if (!isValidStoredWorkState(active)) throw Error('Palautus ei ole käytettävissä: aktiivinen työ ei läpäissyt validointia.');
+        if (WORK_SNAPSHOTS.hasPhysicalProduction(active)) throw Error('Palautus ei ole käytettävissä: aktiivisessa työssä on jo fyysistä toteumaa.');
+        if (WORK_SNAPSHOTS.hasPhysicalProduction(record.workState)) throw Error('Palautus ei ole käytettävissä: snapshotissa on jo fyysistä toteumaa.');
+        button.disabled = false;
+        reason.textContent = 'Palautus luo ensin turvakopion nykyisestä aktiivisesta työstä.';
+    } catch (error) { reason.textContent = error.message; }
+}
+function showSnapshotRestoreConfirmation() {
+    const button = document.getElementById('snapshotRestoreButton');
+    if (snapshotBusy || button.disabled || !snapshotViewingRecord) return;
+    const active = createWorkStateSnapshot();
+    document.getElementById('snapshotRestoreTarget').textContent =
+        `${snapshotViewingRecord.name} · ${new Date(snapshotViewingRecord.createdAt).toLocaleString('fi-FI')} · ${WORK_SNAPSHOTS.summarize(snapshotViewingRecord.workState)}`;
+    document.getElementById('snapshotRestoreActive').textContent = WORK_SNAPSHOTS.summarize(active);
+    document.getElementById('snapshotRestoreStatus').textContent = '';
+    document.getElementById('snapshotRestore').showModal();
+}
+async function confirmSnapshotRestore() {
+    if (snapshotBusy || snapshotViewingId === null) return;
+    snapshotBusy = true;
+    const button = document.getElementById('snapshotRestoreConfirm');
+    button.disabled = true;
+    try {
+        const outcome = await WORK_SNAPSHOTS.restoreActive(snapshotViewingId, {
+            isRecoveryLocked: () => workRecoveryLocked,
+            readActive: () => createWorkStateSnapshot(),
+            persistActive: state => writeWorkStateSnapshot(state),
+            readPersistedActive: () => JSON.parse(localStorage.getItem(WORK_STORAGE_KEY)),
+            activatePersisted: () => restoreSavedWorkState()
+        });
+        document.getElementById('snapshotRestore').close();
+        document.getElementById('snapshotViewer').close();
+        snapshotStatus(outcome.safetySnapshot
+            ? 'Snapshot palautettiin aktiiviseksi työksi. Aiemmasta työstä luotiin automaattinen turvakopio.'
+            : 'Snapshot palautettiin aktiiviseksi työksi. Tyhjästä oletustyöstä ei luotu turhaa turvakopiota.');
+        await refreshSnapshotList();
+    } catch (error) {
+        document.getElementById('snapshotRestoreStatus').textContent = error.activePersisted
+            ? error.message
+            : `${error.message || 'Palautus epäonnistui.'} Aktiivinen työ säilyy ennallaan.` +
+                (error.safetySnapshot ? ' Luotu turvakopio säilyi snapshot-listassa.' : '');
+        await refreshSnapshotList();
+    } finally { snapshotBusy = false; button.disabled = false; }
 }
 let snapshotDeletingId = null;
 function deleteWorkSnapshot(id) {

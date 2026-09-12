@@ -10,7 +10,7 @@ async function runSnapshotBrowserRegressions() {
     const initial = JSON.stringify(await store.list());
     const first = S.create(createWorkStateSnapshot(), 'IndexedDB regression'); ids.push(first.id);
     const second = S.create(createWorkStateSnapshot(), 'IndexedDB regression'); ids.push(second.id);
-    const get = async id => (await store.list()).find(entry => entry.id === id)?.record;
+    const get = async id => await store.get(id) ?? undefined;
     const abortWrite = async (method, action) => {
         const original = IDBObjectStore.prototype[method];
         IDBObjectStore.prototype[method] = function (...args) {
@@ -51,6 +51,48 @@ async function runSnapshotBrowserRegressions() {
         assert(!(await get(damaged.id)) && !!(await get(second.id)), 'Corrupt entry manually deletable');
         await store.remove(first.id);
         assert(!(await get(first.id)) && !!(await get(second.id)), 'Delete exact ID');
+
+        const restoreState = createStoredPlanSemanticRegressionState();
+        const restoreTarget = S.create(restoreState, 'IndexedDB restore target'); ids.push(restoreTarget.id);
+        await store.add(restoreTarget);
+        const targetBefore = JSON.stringify(await get(restoreTarget.id));
+        const currentDraft = JSON.parse(JSON.stringify(restoreState));
+        currentDraft.generatedPlan = null; currentDraft.executionState = null; currentDraft.completedBarIds = [];
+        currentDraft.orders[0].name = 'Active draft before restore';
+        let persisted = JSON.parse(JSON.stringify(currentDraft));
+        let live = JSON.parse(JSON.stringify(currentDraft));
+        const restored = await S.restoreActive(restoreTarget.id, {
+            isRecoveryLocked: () => false,
+            readActive: () => JSON.parse(JSON.stringify(live)),
+            persistActive: state => { persisted = JSON.parse(JSON.stringify(state)); return true; },
+            readPersistedActive: () => JSON.parse(JSON.stringify(persisted)),
+            activatePersisted: () => { live = JSON.parse(JSON.stringify(persisted)); return true; }
+        });
+        ids.push(restored.safetySnapshot.id);
+        assert(!!(await get(restored.safetySnapshot.id)) && restored.safetySnapshot.name.startsWith('Ennen palautusta – '),
+            'Real IndexedDB stores automatic safety snapshot before restore');
+        assert(JSON.stringify(await get(restoreTarget.id)) === targetBefore, 'Restore keeps original target record immutable');
+        assert(JSON.stringify(live.generatedPlan) === JSON.stringify(restoreState.generatedPlan) &&
+            JSON.stringify(live.executionState) === JSON.stringify(restoreState.executionState), 'Restore activates canonical workState exactly');
+
+        live = JSON.parse(JSON.stringify(currentDraft)); persisted = JSON.parse(JSON.stringify(currentDraft));
+        let failedSafetyId = null, writeRejected = false;
+        try {
+            await S.restoreActive(restoreTarget.id, {
+                isRecoveryLocked: () => false,
+                readActive: () => JSON.parse(JSON.stringify(live)),
+                persistActive: () => false,
+                readPersistedActive: () => JSON.parse(JSON.stringify(persisted)),
+                activatePersisted: () => true
+            });
+        } catch (error) {
+            writeRejected = !error.activePersisted;
+            failedSafetyId = error.safetySnapshot?.id;
+            if (failedSafetyId) ids.push(failedSafetyId);
+        }
+        assert(writeRejected && !!failedSafetyId && !!(await get(failedSafetyId)), 'Safety snapshot remains after active-store rejection');
+        assert(JSON.stringify(live) === JSON.stringify(currentDraft) && JSON.stringify(persisted) === JSON.stringify(currentDraft),
+            'Active-store rejection preserves persisted and live work');
         assert(localStorage.getItem(WORK_STORAGE_KEY) === activeRaw && canonical() === activeLive && !workRecoveryLocked,
             'All real IndexedDB paths preserve active bytes/live state/recovery');
     } finally {

@@ -112,8 +112,23 @@
             </form>
         </dialog>
         <dialog id="snapshotViewer" aria-label="Snapshot vain katselu">
-            <button class="snapshot-return" type="button" onclick="document.getElementById('snapshotViewer').close()">PALAA AKTIIVISEEN TYÖHÖN</button>
+            <div class="snapshot-viewer-actions">
+                <button class="snapshot-return" type="button" onclick="document.getElementById('snapshotViewer').close()">PALAA AKTIIVISEEN TYÖHÖN</button>
+                <button id="snapshotRestoreButton" type="button" onclick="showSnapshotRestoreConfirmation()">PALAUTA AKTIIVISEKSI TYÖKSI</button>
+            </div>
+            <p id="snapshotRestoreReason" role="status"></p>
             <div id="snapshotContent"></div>
+        </dialog>
+        <dialog id="snapshotRestore" aria-labelledby="snapshotRestoreTitle">
+            <h2 id="snapshotRestoreTitle">Palautetaanko snapshot aktiiviseksi työksi?</h2>
+            <h3>Palautettava snapshot</h3>
+            <p id="snapshotRestoreTarget"></p>
+            <h3>Nykyinen aktiivinen työ</h3>
+            <p id="snapshotRestoreActive"></p>
+            <p>Nykyinen aktiivinen työ korvataan. Siitä luodaan ensin automaattinen snapshot, ellei työ ole täysin tyhjä oletustila.</p>
+            <p id="snapshotRestoreStatus" role="alert"></p>
+            <button id="snapshotRestoreConfirm" type="button" onclick="confirmSnapshotRestore()">LUO TURVAKOPIO JA PALAUTA</button>
+            <button type="button" onclick="document.getElementById('snapshotRestore').close()">Peruuta</button>
         </dialog>
         <dialog id="snapshotDelete" aria-labelledby="snapshotDeleteTitle">
             <h2 id="snapshotDeleteTitle">Poistetaanko snapshot?</h2>

@@ -2,6 +2,14 @@
 
 > Historiallinen arkisto 10.9.2026. Alkuperäiset havainto- ja testitiedot säilyvät alla; ne eivät määritä nykyistä toimintaa. B-004:n vanha otsikko oli ristiriidassa sen valmistumismerkinnän kanssa: korjaus on valmis. B-007:n jäljellä oleva suorituskykyrajoite jatkuu [avoimen backlogin](../../BACKLOG.md) kohdassa B-011.
 
+### B-014 — Nimetyn snapshotin turvallinen palautus aktiiviseksi työksi
+
+- **Tila:** ensimmäinen rajattu versio valmis 12.9.2026.
+- **Toteutus:** validoitu canonical `workState` voidaan palauttaa luonnoksesta tai lasketusta suunnitelmasta ennen ensimmäistä fyysistä tapahtumaa. Vahvistus näyttää kohteen ja aktiivisen työn yhteenvedot, luo nykyisestä työstä automaattisen IndexedDB-turvasnapshotin ja kirjoittaa kohteen aktiiviseen localStorageen ennen live-näkymän vaihtoa. Täysin tyhjästä oletustyöstä ei tehdä turhaa kopiota. Snapshotin tallennettu `presentation` ei siirry aktiiviseksi tiedoksi eikä palautus aja optimizeria tai batch-hakua.
+- **Turvaraja:** recovery-lukko, yksikin V1/V2/V3-tapahtuma tai yksikin `completedBarIds`-merkintä estää palautuksen sekä aktiivisen työn että kohdesnapshotin puolella. `completedBarIds` tulkitaan konservatiivisesti fyysiseksi salon käsittelyn valmistumiseksi. Fyysisesti aloitetun snapshotin reconciliation on erillinen [B-015](../../BACKLOG.md).
+- **Virheraja:** kohde luetaan ID:llä uudelleen ja validoidaan ennen turvakopiota. Turvakopion virhe keskeyttää kaiken; active-store-virhe jättää live-tilan ennalleen ja turvakopio saa säilyä. Jos aktiivinen kirjoitus onnistuu mutta renderöinti epäonnistuu, uusi persisted canonical tila jää totuudeksi ja UI pyytää lataamaan sivun uudelleen. Alkuperäinen snapshot-record säilyy immutable-katselukopiona.
+- **Näyttö:** snapshot-ajurin 67 tarkistusta, oikean IndexedDB:n 20 tarkistusta sekä core 39/39, material-fixturet ja 151 production/controller-tarkistusta läpäisivät. Oikeassa Codex in-app -selaimessa erillisellä `127.0.0.1:8773`-originilla D1:n tapahtumaton 0/2-plan palautettiin luonnoksen päälle, turvakopio ja reload tarkistettiin, luonnos palautettiin takaisin planin päälle sekä aktiivisen 1/2-tapahtuman ja in-progress V3-kohteen estot varmennettiin. Käyttäjän oikeaa työtä ei käytetty.
+
 ### B-013 — Pysähtyneen työn jatkosuunnitelma alkuperäisillä fyysisillä lähteillä
 
 - **Tila:** valmis rajatussa ensiversiossa 12.9.2026. B-009:n lähdepoikkeama voi estää alkuperäisen tulevan suunnitelman; tehtyjä sahauksia ei voi palauttaa undolla.
